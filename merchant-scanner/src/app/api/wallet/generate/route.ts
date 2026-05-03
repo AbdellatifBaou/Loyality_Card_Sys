@@ -1,0 +1,40 @@
+import { NextResponse } from 'next/server';
+import { supabase } from '@/lib/supabase';
+import { generateLoyaltyObjectJwt, createLoyaltyClass } from '@/lib/google-wallet';
+import { v4 as uuidv4 } from 'uuid';
+
+export async function POST(req: Request) {
+  try {
+    const { merchantName, classId } = await req.json();
+
+    if (!merchantName || !classId) {
+      return NextResponse.json({ error: 'Missing merchantName or classId' }, { status: 400 });
+    }
+
+    // 1. Ensure LoyaltyClass exists in Google Wallet
+    await createLoyaltyClass(classId, merchantName);
+
+    // 2. Generate new Customer ID
+    const customerId = uuidv4();
+
+    // 3. Save customer in Supabase
+    const { error: dbError } = await supabase
+      .from('customers')
+      .insert([
+        { id: customerId, wallet_object_id: customerId, points: 0 }
+      ]);
+
+    if (dbError) {
+      console.error('Supabase Error:', dbError);
+      throw new Error('Database error');
+    }
+
+    // 4. Generate Google Wallet Add URL
+    const saveUrl = await generateLoyaltyObjectJwt(classId, customerId, 0);
+
+    return NextResponse.json({ url: saveUrl, customerId });
+  } catch (error: any) {
+    console.error('API Error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}

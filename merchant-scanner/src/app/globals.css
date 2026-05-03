@@ -1,0 +1,68 @@
+@import "tailwindcss";
+
+@theme {
+  --color-background: #0a0a0a;
+  --color-foreground: #ffffff;
+  
+  --color-card: #171717;
+  --color-card-foreground: #ffffff;
+  
+  --color-border: #262626;
+  --color-input: #262626;
+  
+  --color-primary: #ffffff;
+  --color-primary-foreground: #000000;
+  
+  --color-secondary: #262626;
+  --color-secondary-foreground: #ffffff;
+  
+  --color-accent: #3b82f6; /* Marketif Blue / Accent */
+  --color-accent-foreground: #ffffff;
+  
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #ffffff;
+  
+  --color-success: #10b981;
+  --color-success-foreground: #ffffff;
+
+  --radius-xl: 0.75rem;
+}
+
+:root {
+  --background: #0a0a0a;
+  --foreground: #ffffff;
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+  font-family: sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-image: radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.15), rgba(0, 0, 0, 0) 50%);
+}
+
+.glass-panel {
+  @apply bg-[#171717]/60 backdrop-blur-xl border border-white/10 shadow-2xl;
+}
+
+/* Animations */
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes pulse-border {
+  0% { border-color: rgba(59, 130, 246, 0.5); }
+  50% { border-color: rgba(59, 130, 246, 1); }
+  100% { border-color: rgba(59, 130, 246, 0.5); }
+}
+
+.scanning-active {
+  animation: pulse-border 2s infinite;
+}

@@ -1,0 +1,7 @@
+node_modules/
+.env
+.env.*
+*.local
+marketif-loyalty-*.json
+.DS_Store
+.next/
