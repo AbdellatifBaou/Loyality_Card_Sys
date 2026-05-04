@@ -31,6 +31,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   const [historyLoading, setHistoryLoading] = useState(false);
   const [editPoints, setEditPoints] = useState<number | null>(null);
   const [savingPoints, setSavingPoints] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Handle Login
   const handleLogin = (e: React.FormEvent) => {
@@ -278,6 +279,16 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                     <h2 className="text-lg font-bold text-white">Kundenkarten</h2>
                     <span className="ml-auto text-xs text-white/40 font-medium">{customerCount} Gesamt</span>
                   </div>
+                  {/* Search */}
+                  <div className="px-6 py-4 border-b border-white/5">
+                    <input
+                      type="text"
+                      value={searchQuery}
+                      onChange={e => setSearchQuery(e.target.value)}
+                      placeholder="Kunden-ID suchen…"
+                      className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none focus:border-white/20 transition-all font-mono"
+                    />
+                  </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
                       <thead>
@@ -289,7 +300,11 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         </tr>
                       </thead>
                       <tbody>
-                        {customers.map((customer: any) => {
+                        {customers
+                          .filter((c: any) =>
+                            !searchQuery || c.wallet_object_id?.toLowerCase().includes(searchQuery.toLowerCase())
+                          )
+                          .map((customer: any) => {
                           const pct = Math.round((customer.points / 10) * 100);
                           return (
                             <tr key={customer.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors cursor-pointer" onClick={() => openCustomer(customer)}>
