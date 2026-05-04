@@ -3,6 +3,9 @@ import path from 'path';
 import jwt from 'jsonwebtoken';
 import fs from 'fs';
 
+// Increment this whenever the card image design changes — forces Google Wallet to re-fetch
+const IMAGE_VERSION = '7';
+
 // Initialize Google Auth
 const getAuth = () => {
   const serviceAccountVar = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
@@ -43,37 +46,27 @@ export async function createLoyaltyClass(classId: string, merchantName: string) 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
   const isAroma = classId.includes('aroma');
 
-  const classData = {
-    id: `${issuerId}.${classId}`,
+  const sharedFields = {
     issuerName: merchantName,
-    programName: `${merchantName} Treueprogramm`,
+    programName: isAroma ? 'Mit Liebe serviert. Treue belohnt.' : `${merchantName} Treueprogramm`,
     programLogo: {
       sourceUri: {
-        uri: isAroma
-          ? `${appUrl}/Aroma_logo.png`
-          : `${appUrl}/Aroma_logo.png`,
+        uri: `${appUrl}/api/images/logo`,
       },
     },
-    reviewStatus: 'UNDER_REVIEW',
-    hexBackgroundColor: '#0A0A0A',
+    hexBackgroundColor: '#1A3828',
     ...(appUrl && !appUrl.includes('localhost')
-      ? {
-          heroImage: {
-            sourceUri: { uri: `${appUrl}/api/images/card/0` },
-          },
-        }
+      ? { heroImage: { sourceUri: { uri: `${appUrl}/api/images/card/0?v=${IMAGE_VERSION}` } } }
       : {}),
-    locations: [
-      {
-        latitude: 48.3715,
-        longitude: 10.8985,
-      },
-    ],
+    locations: [{ latitude: 48.3715, longitude: 10.8985 }],
   };
+
+  // reviewStatus only for initial insert — cannot be patched on existing classes
+  const insertData = { id: `${issuerId}.${classId}`, ...sharedFields, reviewStatus: 'UNDER_REVIEW' };
 
   try {
     const response = await walletClient.loyaltyclass.insert({
-      requestBody: classData,
+      requestBody: insertData,
     });
     return response.data;
   } catch (error: any) {
@@ -82,7 +75,7 @@ export async function createLoyaltyClass(classId: string, merchantName: string) 
       try {
         const patchResponse = await walletClient.loyaltyclass.patch({
           resourceId: `${issuerId}.${classId}`,
-          requestBody: classData,
+          requestBody: sharedFields,
         });
         return patchResponse.data;
       } catch (patchError: any) {
@@ -117,7 +110,7 @@ export async function generateLoyaltyObjectJwt(classId: string, objectId: string
     classId: `${issuerId}.${classId}`,
     state: 'ACTIVE',
     accountId: objectId,
-    accountName: 'Loyalty Member',
+    accountName: 'Stammgast ⭐',
     barcode: {
       type: 'QR_CODE',
       value: objectId,
@@ -132,7 +125,7 @@ export async function generateLoyaltyObjectJwt(classId: string, objectId: string
     ...(appUrl && !appUrl.includes('localhost')
       ? {
           heroImage: {
-            sourceUri: { uri: `${appUrl}/api/images/card/${points}` },
+            sourceUri: { uri: `${appUrl}/api/images/card/${points}?v=${IMAGE_VERSION}` },
           },
         }
       : {}),
@@ -179,7 +172,7 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
 
     const heroImageUri = isRedeem
       ? 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1000&q=80'
-      : `${appUrl}/api/images/card/${points}`;
+      : `${appUrl}/api/images/card/${points}?v=${IMAGE_VERSION}`;
 
     const updatedObject: any = {
       loyaltyPoints: {
