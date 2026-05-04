@@ -75,13 +75,13 @@ export async function GET() {
         {/* Aroma Logo */}
         <img
           src={`${appUrl}/Aroma_logo.png`}
-          width={90}
-          height={90}
+          width={130}
+          height={130}
           style={{
             objectFit: 'contain',
-            borderRadius: '18px',
-            border: `1.5px solid rgba(212,175,55,0.35)`,
-            marginBottom: '20px',
+            borderRadius: '26px',
+            border: `2px solid rgba(212,175,55,0.4)`,
+            marginBottom: '24px',
           }}
         />
 
@@ -90,11 +90,11 @@ export async function GET() {
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '10px',
+          gap: '14px',
         }}>
           <span style={{
-            fontSize: '15px',
-            letterSpacing: '5px',
+            fontSize: '20px',
+            letterSpacing: '6px',
             textTransform: 'uppercase',
             color: GOLD,
             fontWeight: 'bold',
@@ -103,35 +103,35 @@ export async function GET() {
           </span>
 
           <span style={{
-            fontSize: '44px',
+            fontSize: '58px',
             fontWeight: 'bold',
             color: '#FFFFFF',
-            letterSpacing: '-0.5px',
-            lineHeight: 1.1,
+            letterSpacing: '-1px',
+            lineHeight: 1.05,
             textAlign: 'center',
           }}>
             Herzlichen Glückwunsch! 🎉
           </span>
 
           <span style={{
-            fontSize: '20px',
-            color: 'rgba(255,255,255,0.6)',
+            fontSize: '26px',
+            color: 'rgba(255,255,255,0.65)',
             textAlign: 'center',
-            marginTop: '4px',
+            marginTop: '2px',
           }}>
             Dein Gratis-Getränk ist bereit
           </span>
 
           {/* Gold divider */}
           <div style={{
-            width: '120px',
+            width: '160px',
             height: '2px',
             background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)`,
-            margin: '8px 0',
+            margin: '6px 0',
           }} />
 
           <span style={{
-            fontSize: '14px',
+            fontSize: '17px',
             color: 'rgba(255,255,255,0.3)',
             letterSpacing: '1px',
             textAlign: 'center',
