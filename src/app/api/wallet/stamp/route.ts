@@ -21,16 +21,18 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid PIN' }, { status: 401 });
     }
 
-    // 2. Get customer
+    // 2. Get customer and their merchant
     const { data: customer, error: customerError } = await supabase
       .from('customers')
-      .select('id, points')
+      .select('id, points, merchants(*)')
       .eq('wallet_object_id', objectId)
       .single();
 
     if (customerError || !customer) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
+
+    const merchant = customer.merchants;
 
     // 3. Calculate new points
     let newPoints = customer.points + amount;
@@ -49,7 +51,7 @@ export async function POST(req: Request) {
     ]);
 
     // 5. Update Google Wallet
-    await updateLoyaltyObjectPoints(objectId, newPoints, type === 'redeem');
+    await updateLoyaltyObjectPoints(objectId, newPoints, type === 'redeem', merchant);
 
     return NextResponse.json({ success: true, newPoints, type });
   } catch (error: any) {

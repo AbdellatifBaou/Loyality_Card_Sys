@@ -42,21 +42,20 @@ export const walletClient = google.walletobjects({
 /**
  * Creates a generic LoyaltyClass for the Marketif Loyalty system
  */
-export async function createLoyaltyClass(classId: string, merchantName: string) {
+export async function createLoyaltyClass(classId: string, merchant: any) {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
-  const isAroma = classId.includes('aroma');
 
   const sharedFields = {
-    issuerName: merchantName,
-    programName: isAroma ? 'Mit Liebe serviert. Treue belohnt.' : `${merchantName} Treueprogramm`,
+    issuerName: merchant.name,
+    programName: `${merchant.name} Treueprogramm`,
     programLogo: {
       sourceUri: {
-        uri: `${appUrl}/api/images/logo`,
+        uri: merchant.logo_url || `${appUrl}/api/images/logo`,
       },
     },
-    hexBackgroundColor: '#1A3828',
+    hexBackgroundColor: merchant.primary_color || '#1A3828',
     ...(appUrl && !appUrl.includes('localhost')
-      ? { heroImage: { sourceUri: { uri: `${appUrl}/api/images/card/0?v=${IMAGE_VERSION}` } } }
+      ? { heroImage: { sourceUri: { uri: `${appUrl}/api/images/card/0?v=${IMAGE_VERSION}&merchant=${merchant.slug}` } } }
       : {}),
     locations: [{ latitude: 48.3715, longitude: 10.8985 }],
   };
@@ -90,7 +89,7 @@ export async function createLoyaltyClass(classId: string, merchantName: string) 
 /**
  * Generates the JWT link to "Add to Google Wallet"
  */
-export async function generateLoyaltyObjectJwt(classId: string, objectId: string, points: number) {
+export async function generateLoyaltyObjectJwt(classId: string, objectId: string, points: number, merchant: any) {
   let credentials;
   const serviceAccountVar = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   
@@ -125,7 +124,7 @@ export async function generateLoyaltyObjectJwt(classId: string, objectId: string
     ...(appUrl && !appUrl.includes('localhost')
       ? {
           heroImage: {
-            sourceUri: { uri: `${appUrl}/api/images/card/${points}?v=${IMAGE_VERSION}` },
+            sourceUri: { uri: `${appUrl}/api/images/card/${points}?v=${IMAGE_VERSION}&merchant=${merchant.slug}` },
           },
         }
       : {}),
@@ -133,12 +132,12 @@ export async function generateLoyaltyObjectJwt(classId: string, objectId: string
       {
         id: 'address',
         header: 'Adresse',
-        body: 'Steingasse 7, 86150 Augsburg',
+        body: merchant.address || 'Adresse unbekannt',
       },
       {
         id: 'status',
         header: 'Status',
-        body: 'Willkommen bei Restaurant Aroma! 👋',
+        body: `Willkommen bei ${merchant.name}! 👋`,
       },
     ],
     linksModuleData: {
@@ -163,7 +162,7 @@ export async function generateLoyaltyObjectJwt(classId: string, objectId: string
 /**
  * Updates an existing LoyaltyObject (e.g. after adding a stamp)
  */
-export async function updateLoyaltyObjectPoints(objectId: string, points: number, isRedeem: boolean = false) {
+export async function updateLoyaltyObjectPoints(objectId: string, points: number, isRedeem: boolean = false, merchant: any) {
   try {
     const issuerId = process.env.GOOGLE_ISSUER_ID;
     
@@ -171,8 +170,8 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
     const isPublicUrl = appUrl && !appUrl.includes('localhost');
 
     const heroImageUri = isRedeem
-      ? `${appUrl}/api/images/redeem?v=${IMAGE_VERSION}`
-      : `${appUrl}/api/images/card/${points}?v=${IMAGE_VERSION}`;
+      ? `${appUrl}/api/images/redeem?v=${IMAGE_VERSION}&merchant=${merchant?.slug}`
+      : `${appUrl}/api/images/card/${points}?v=${IMAGE_VERSION}&merchant=${merchant?.slug}`;
 
     const updatedObject: any = {
       loyaltyPoints: {
@@ -186,18 +185,18 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
         {
           id: 'address',
           header: 'Adresse',
-          body: 'Steingasse 7, 86150 Augsburg',
+          body: merchant?.address || 'Adresse unbekannt',
         },
         {
           id: 'status',
           header: 'Status',
           body: isRedeem
-            ? 'GRATIS KAFFEE ERHALTEN! ☕'
+            ? 'GRATIS BELOHNUNG ERHALTEN! 🎁'
             : points >= 9
             ? 'FAST GESCHAFFT! Nur noch 1 Stempel! 🎉'
             : points >= 5
             ? 'HALBZEIT! Du bist auf dem Weg! 🚀'
-            : 'Willkommen bei Restaurant Aroma! 👋',
+            : `Willkommen bei ${merchant?.name || 'uns'}! 👋`,
         },
       ]
     };
@@ -217,7 +216,7 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
       updatedObject.messages = [
         {
           header: 'Belohnung bereit! ✨',
-          body: 'Herzlichen Glückwunsch! Du hast deine Stempelkarte voll. Zeige sie beim nächsten Mal vor.',
+          body: merchant?.reward_text || 'Herzlichen Glückwunsch! Du hast deine Stempelkarte voll. Zeige sie beim nächsten Mal vor.',
           id: 'REDEEM_MESSAGE',
           messageType: 'TEXT_AND_NOTIFY'
         }

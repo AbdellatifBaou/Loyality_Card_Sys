@@ -7,6 +7,10 @@ import { CheckCircle2, XCircle, Loader2, Camera, LogOut } from 'lucide-react';
 export default function Home() {
   const [pin, setPin] = useState('');
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [authError, setAuthError] = useState('');
+  const [merchantConfig, setMerchantConfig] = useState<any>(null);
+  
   const [scanStatus, setScanStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [newPoints, setNewPoints] = useState<number | null>(null);
@@ -14,12 +18,28 @@ export default function Home() {
   const scannerRef = useRef<HTMLDivElement>(null);
 
   // Login handler
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     if (pin.length >= 4) {
-      // In a real app, you might want to verify the PIN with the backend first
-      // For this demo, we assume the backend will reject invalid PINs during the stamp request
-      setIsAuthenticated(true);
+      setIsAuthenticating(true);
+      setAuthError('');
+      try {
+        const res = await fetch('/api/auth/verify-pin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ pin })
+        });
+        const data = await res.json();
+        
+        if (!res.ok) throw new Error(data.error || 'Login fehlgeschlagen');
+        
+        setMerchantConfig(data.merchant);
+        setIsAuthenticated(true);
+      } catch (err: any) {
+        setAuthError(err.message);
+      } finally {
+        setIsAuthenticating(false);
+      }
     }
   };
 
@@ -92,13 +112,31 @@ export default function Home() {
     }
   };
 
+  const primaryColor = merchantConfig?.primary_color || '#D4AF37';
+
   if (!isAuthenticated) {
     return (
-      <main className="min-h-screen flex flex-col items-center justify-center p-4">
-        <div className="glass-panel p-8 rounded-2xl w-full max-w-md animate-fade-in">
+      <main 
+        className="min-h-screen flex flex-col items-center justify-center p-4 animate-fade-in"
+        style={{ 
+          background: '#050505',
+          backgroundImage: 'radial-gradient(circle at 50% 0%, #1a1608 0%, #050505 60%)'
+        }}
+      >
+        <div 
+          className="p-8 rounded-[40px] w-full max-w-md relative overflow-hidden"
+          style={{
+            background: 'linear-gradient(145deg, #0A0A0A 0%, #111111 100%)',
+            border: '1px solid rgba(212, 175, 55, 0.15)',
+            boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255,255,255,0.05)',
+          }}
+        >
+          {/* Glossy overlay */}
+          <div className="absolute top-0 left-0 right-0 h-[1px] bg-gradient-to-r from-transparent via-[#D4AF37]/30 to-transparent" />
+
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold tracking-tight mb-2">Marketif Scanner</h1>
-            <p className="text-white/60">Bitte PIN eingeben, um zu starten</p>
+            <h1 className="text-3xl font-extrabold tracking-tight mb-2 text-white">Scanner</h1>
+            <p className="text-[10px] font-bold tracking-[0.3em] uppercase opacity-40 text-white">Bitte PIN eingeben</p>
           </div>
           
           <form onSubmit={handleLogin} className="space-y-6">
@@ -110,17 +148,24 @@ export default function Home() {
                 maxLength={6}
                 value={pin}
                 onChange={(e) => setPin(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-4 text-center text-2xl tracking-widest outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                className="w-full bg-black/50 border border-[#D4AF37]/20 rounded-2xl px-4 py-5 text-center text-3xl tracking-[0.5em] text-[#D4AF37] outline-none focus:border-[#D4AF37] transition-all placeholder:text-[#D4AF37]/20"
                 placeholder="••••"
                 autoFocus
               />
             </div>
+            {authError && <p className="text-red-500 text-sm text-center font-medium">{authError}</p>}
             <button
               type="submit"
-              disabled={pin.length < 4}
-              className="w-full bg-white text-black font-semibold py-4 rounded-xl hover:bg-white/90 disabled:opacity-50 transition-all"
+              disabled={pin.length < 4 || isAuthenticating}
+              className="w-full font-black py-5 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
+              style={{
+                background: 'linear-gradient(135deg, #B8943B 0%, #E8C968 50%, #B8943B 100%)',
+                color: '#000',
+                textTransform: 'uppercase',
+                letterSpacing: '0.1em',
+              }}
             >
-              Scanner öffnen
+              {isAuthenticating ? <Loader2 className="animate-spin" /> : 'Öffnen'}
             </button>
           </form>
         </div>
@@ -129,18 +174,21 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center p-4 max-w-md mx-auto">
+    <main 
+      className="min-h-screen flex flex-col items-center p-4 max-w-md mx-auto"
+      style={{ background: '#050505' }}
+    >
       {/* Header */}
-      <header className="w-full flex justify-between items-center py-6 animate-fade-in">
+      <header className="w-full flex justify-between items-center py-6 animate-fade-in border-b border-white/5 mb-6">
         <div>
-          <h1 className="text-xl font-bold">Scanner</h1>
-          <p className="text-sm text-white/50 border border-white/10 px-2 py-1 rounded-md inline-block mt-1">Terminal aktiv</p>
+          <h1 className="text-xl font-bold text-white">{merchantConfig?.name || 'Scanner'}</h1>
+          <p className="text-[10px] font-bold tracking-[0.2em] uppercase" style={{ color: primaryColor }}>Terminal aktiv</p>
         </div>
         <button 
           onClick={() => { setIsAuthenticated(false); setPin(''); }}
           className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-colors"
         >
-          <LogOut size={20} />
+          <LogOut size={20} className="text-white/60" />
         </button>
       </header>
 
@@ -148,11 +196,14 @@ export default function Home() {
       <div className="flex-1 w-full flex flex-col items-center justify-center">
         {scanStatus === 'idle' && (
           <div className="w-full animate-fade-in">
-            <div className="glass-panel rounded-3xl overflow-hidden p-2 scanning-active">
+            <div 
+              className="p-2 rounded-3xl"
+              style={{ background: `linear-gradient(145deg, ${primaryColor}20 0%, #111111 100%)`, border: `1px solid ${primaryColor}40` }}
+            >
               <div id="reader" className="w-full bg-black rounded-2xl overflow-hidden min-h-[300px]" ref={scannerRef}></div>
             </div>
-            <p className="text-center text-white/60 mt-6 flex items-center justify-center gap-2">
-              <Camera size={18} /> Halte den QR-Code des Kunden in die Kamera
+            <p className="text-center text-white/40 mt-6 flex items-center justify-center gap-2 text-sm font-medium">
+              <Camera size={18} /> Halte den QR-Code in die Kamera
             </p>
           </div>
         )}

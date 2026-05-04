@@ -11,17 +11,29 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing merchantName or classId' }, { status: 400 });
     }
 
-    // 1. Ensure LoyaltyClass exists in Google Wallet
-    await createLoyaltyClass(classId, merchantName);
+    // 1. Get Merchant from Supabase
+    const slug = classId.replace('marketif_loyalty_', '');
+    const { data: merchant, error: merchantError } = await supabase
+      .from('merchants')
+      .select('*')
+      .eq('slug', slug)
+      .single();
 
-    // 2. Generate new Customer ID
+    if (merchantError || !merchant) {
+      return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
+    }
+
+    // 2. Ensure LoyaltyClass exists in Google Wallet
+    await createLoyaltyClass(classId, merchant);
+
+    // 3. Generate new Customer ID
     const customerId = uuidv4();
 
-    // 3. Save customer in Supabase
+    // 4. Save customer in Supabase
     const { error: dbError } = await supabase
       .from('customers')
       .insert([
-        { id: customerId, wallet_object_id: customerId, points: 0 }
+        { id: customerId, wallet_object_id: customerId, points: 0, merchant_id: merchant.id }
       ]);
 
     if (dbError) {
@@ -29,8 +41,8 @@ export async function POST(req: Request) {
       throw new Error('Database error');
     }
 
-    // 4. Generate Google Wallet Add URL
-    const saveUrl = await generateLoyaltyObjectJwt(classId, customerId, 0);
+    // 5. Generate Google Wallet Add URL
+    const saveUrl = await generateLoyaltyObjectJwt(classId, customerId, 0, merchant);
 
     return NextResponse.json({ url: saveUrl, customerId });
   } catch (error: any) {
