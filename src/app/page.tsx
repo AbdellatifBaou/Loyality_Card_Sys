@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { Html5QrcodeScanner, Html5QrcodeScanType } from 'html5-qrcode';
-import { CheckCircle2, XCircle, Loader2, Camera, LogOut } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, Camera, LogOut, Download, Smartphone } from 'lucide-react';
 
 export default function Home() {
   const [pin, setPin] = useState('');
@@ -16,6 +16,32 @@ export default function Home() {
   const [newPoints, setNewPoints] = useState<number | null>(null);
   
   const scannerRef = useRef<HTMLDivElement>(null);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isIOS, setIsIOS] = useState(false);
+  const [showIOSHint, setShowIOSHint] = useState(false);
+
+  // Capture the PWA install prompt event (Android Chrome)
+  useEffect(() => {
+    const isIOSDevice = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
+    setIsIOS(isIOSDevice);
+
+    const handler = (e: any) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstall = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      if (outcome === 'accepted') setDeferredPrompt(null);
+    } else if (isIOS) {
+      setShowIOSHint(true);
+    }
+  };
 
   // Login handler
   const handleLogin = async (e: React.FormEvent) => {
@@ -167,6 +193,51 @@ export default function Home() {
               {isAuthenticating ? <Loader2 className="animate-spin" /> : 'Öffnen'}
             </button>
           </form>
+
+          {/* PWA Install Button */}
+          {(deferredPrompt || isIOS) && (
+            <div className="mt-6">
+              <button
+                onClick={handleInstall}
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl border border-white/10 text-white/50 hover:text-white/80 hover:border-white/20 transition-all text-sm font-medium"
+              >
+                <Download size={16} />
+                App installieren
+              </button>
+            </div>
+          )}
+
+          {/* iOS Install Hint Modal */}
+          {showIOSHint && (
+            <div
+              className="fixed inset-0 z-50 flex items-end justify-center p-4"
+              style={{ background: 'rgba(0,0,0,0.7)' }}
+              onClick={() => setShowIOSHint(false)}
+            >
+              <div
+                className="w-full max-w-md p-6 rounded-3xl space-y-4"
+                style={{ background: '#111', border: '1px solid rgba(212,175,55,0.2)' }}
+                onClick={(e) => e.stopPropagation()}
+              >
+                <div className="flex items-center gap-3 mb-2">
+                  <Smartphone size={20} style={{ color: '#D4AF37' }} />
+                  <h3 className="text-white font-bold">App installieren (iPhone/iPad)</h3>
+                </div>
+                <ol className="space-y-3 text-sm text-white/70">
+                  <li className="flex items-start gap-2"><span style={{ color: '#D4AF37' }} className="font-bold shrink-0">1.</span> Tippe auf das <strong className="text-white">Teilen-Symbol</strong> in der Safari-Menüleiste (Quadrat mit Pfeil nach oben)</li>
+                  <li className="flex items-start gap-2"><span style={{ color: '#D4AF37' }} className="font-bold shrink-0">2.</span> Scrolle nach unten und tippe auf <strong className="text-white">„Zum Home-Bildschirm"</strong></li>
+                  <li className="flex items-start gap-2"><span style={{ color: '#D4AF37' }} className="font-bold shrink-0">3.</span> Tippe oben rechts auf <strong className="text-white">„Hinzufügen"</strong></li>
+                </ol>
+                <button
+                  onClick={() => setShowIOSHint(false)}
+                  className="w-full py-3 rounded-2xl text-black font-bold text-sm"
+                  style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}
+                >
+                  Verstanden
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </main>
     );

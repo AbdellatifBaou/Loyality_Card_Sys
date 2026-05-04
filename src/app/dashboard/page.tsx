@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw } from 'lucide-react';
+import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export default function DashboardPage() {
@@ -11,6 +11,8 @@ export default function DashboardPage() {
   const [redeemCount, setRedeemCount] = useState(0);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
+  const [confirmDelete, setConfirmDelete] = useState<any>(null);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -39,6 +41,20 @@ export default function DashboardPage() {
   };
 
   useEffect(() => { fetchData(); }, []);
+
+  const deleteCustomer = async (customer: any) => {
+    setDeleting(true);
+    try {
+      // Must delete stamps first (FK constraint)
+      await supabase.from('stamps').delete().eq('customer_id', customer.id);
+      await supabase.from('customers').delete().eq('id', customer.id);
+      setCustomers(prev => prev.filter(c => c.id !== customer.id));
+      setCustomerCount(prev => prev - 1);
+      setConfirmDelete(null);
+    } finally {
+      setDeleting(false);
+    }
+  };
 
   return (
     <main className="min-h-screen p-6 md:p-8" style={{ background: '#050505' }}>
@@ -109,6 +125,7 @@ export default function DashboardPage() {
                       <th className="p-4 font-medium">Stempel</th>
                       <th className="p-4 font-medium">Fortschritt</th>
                       <th className="p-4 font-medium">Registriert</th>
+                      <th className="p-4 font-medium"></th>
                     </tr>
                   </thead>
                   <tbody>
@@ -142,11 +159,20 @@ export default function DashboardPage() {
                           <td className="p-4 text-white/50 text-xs">
                             {new Date(customer.created_at).toLocaleDateString('de-DE')}
                           </td>
+                          <td className="p-4">
+                            <button
+                              onClick={() => setConfirmDelete(customer)}
+                              className="p-2 rounded-xl text-white/20 hover:text-red-500 hover:bg-red-500/10 transition-all"
+                              title="Kunden löschen"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          </td>
                         </tr>
                       );
                     })}
                     {customers.length === 0 && (
-                      <tr><td colSpan={5} className="p-8 text-center text-white/30">Noch keine Kunden.</td></tr>
+                      <tr><td colSpan={6} className="p-8 text-center text-white/30">Noch keine Kunden.</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -196,6 +222,52 @@ export default function DashboardPage() {
           </>
         )}
       </div>
+
+      {/* Delete Confirmation Modal */}
+      {confirmDelete && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0,0,0,0.8)' }}
+          onClick={() => !deleting && setConfirmDelete(null)}
+        >
+          <div
+            className="w-full max-w-sm p-6 rounded-3xl space-y-4"
+            style={{ background: '#111', border: '1px solid rgba(255,255,255,0.08)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-red-500/10 rounded-2xl border border-red-500/20">
+                <AlertTriangle size={20} className="text-red-500" />
+              </div>
+              <h3 className="text-white font-bold text-lg">Kunden löschen?</h3>
+            </div>
+            <p className="text-white/60 text-sm">
+              Alle Stempel und Daten für Karte{' '}
+              <span className="font-mono text-white/80 bg-white/5 px-1 rounded">
+                {confirmDelete.wallet_object_id?.substring(0, 12)}...
+              </span>{' '}
+              werden dauerhaft gelöscht. Das kann nicht rückgängig gemacht werden.
+            </p>
+            <div className="flex gap-3 pt-2">
+              <button
+                onClick={() => setConfirmDelete(null)}
+                disabled={deleting}
+                className="flex-1 py-3 rounded-2xl border border-white/10 text-white/60 hover:bg-white/5 transition-colors text-sm font-medium"
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={() => deleteCustomer(confirmDelete)}
+                disabled={deleting}
+                className="flex-1 py-3 rounded-2xl bg-red-500 hover:bg-red-600 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2 disabled:opacity-50"
+              >
+                {deleting ? <RefreshCw size={16} className="animate-spin" /> : <Trash2 size={16} />}
+                Löschen
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
