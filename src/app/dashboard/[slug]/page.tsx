@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, ChevronRight, UserPlus, Settings } from 'lucide-react';
+import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export default function MerchantDashboardPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -25,6 +25,12 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   const [showStaffModal, setShowStaffModal] = useState(false);
   const [newStaffName, setNewStaffName] = useState('');
   const [newStaffPin, setNewStaffPin] = useState('');
+  // Customer detail panel
+  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [stampHistory, setStampHistory] = useState<any[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [editPoints, setEditPoints] = useState<number | null>(null);
+  const [savingPoints, setSavingPoints] = useState(false);
 
   // Handle Login
   const handleLogin = (e: React.FormEvent) => {
@@ -130,9 +136,49 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
 
   const deleteStaff = async (id: string) => {
     const { error } = await supabase.from('staff').delete().eq('id', id);
+    if (!error) setStaff(prev => prev.filter(s => s.id !== id));
+  };
+
+  const openCustomer = async (customer: any) => {
+    setSelectedCustomer(customer);
+    setEditPoints(customer.points);
+    setHistoryLoading(true);
+    const { data } = await supabase
+      .from('stamps')
+      .select('*')
+      .eq('customer_id', customer.id)
+      .order('created_at', { ascending: false });
+    setStampHistory(data || []);
+    setHistoryLoading(false);
+  };
+
+  const savePoints = async () => {
+    if (editPoints === null || !selectedCustomer) return;
+    setSavingPoints(true);
+    const { error } = await supabase
+      .from('customers')
+      .update({ points: editPoints })
+      .eq('id', selectedCustomer.id);
     if (!error) {
-      setStaff(prev => prev.filter(s => s.id !== id));
+      setCustomers(prev => prev.map(c => c.id === selectedCustomer.id ? { ...c, points: editPoints } : c));
+      setSelectedCustomer((prev: any) => ({ ...prev, points: editPoints }));
     }
+    setSavingPoints(false);
+  };
+
+  const exportCSV = () => {
+    const header = 'Kunden-ID,Stempel,Registriert';
+    const rows = customers.map((c: any) =>
+      `"${c.wallet_object_id}",${c.points},"${new Date(c.created_at).toLocaleDateString('de-DE')}"`
+    );
+    const csv = [header, ...rows].join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `kunden_${slug}_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   if (!isAuthorized) {
@@ -180,6 +226,9 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             </p>
           </div>
           <div className="flex gap-3">
+            <button onClick={exportCSV} className="p-3 rounded-xl border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 transition-all" title="CSV Export">
+              <Download size={20} />
+            </button>
             <button onClick={fetchData} disabled={loading} className="p-3 rounded-xl border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 transition-all">
               <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
             </button>
@@ -243,10 +292,10 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         {customers.map((customer: any) => {
                           const pct = Math.round((customer.points / 10) * 100);
                           return (
-                            <tr key={customer.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
+                            <tr key={customer.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors cursor-pointer" onClick={() => openCustomer(customer)}>
                               <td className="p-4">
                                 <span className="font-mono text-xs text-white/70 bg-white/5 px-2 py-1 rounded-lg">
-                                  {customer.wallet_object_id?.substring(0, 12)}...
+                                  {customer.wallet_object_id?.substring(0, 14)}...
                                 </span>
                               </td>
                               <td className="p-4 text-white font-bold">{customer.points} <span className="text-white/20">/ 10</span></td>
@@ -258,7 +307,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                                   <span className="text-[10px] text-white/30">{pct}%</span>
                                 </div>
                               </td>
-                              <td className="p-4 text-right">
+                              <td className="p-4 text-right" onClick={e => e.stopPropagation()}>
                                 <button onClick={() => setConfirmDelete(customer)} className="p-2 rounded-lg text-white/10 hover:text-red-500 hover:bg-red-500/10 transition-all">
                                   <Trash2 size={16} />
                                 </button>
@@ -362,6 +411,90 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
               <button onClick={() => deleteCustomer(confirmDelete)} disabled={deleting} className="flex-1 py-4 rounded-2xl bg-red-500 text-white font-bold flex items-center justify-center gap-2">
                 {deleting ? <RefreshCw size={16} className="animate-spin" /> : 'Löschen'}
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Customer Detail Drawer */}
+      {selectedCustomer && (
+        <div className="fixed inset-0 z-50 flex" onClick={() => setSelectedCustomer(null)}>
+          {/* Backdrop */}
+          <div className="flex-1 bg-black/60 backdrop-blur-sm" />
+          {/* Drawer */}
+          <div
+            className="w-full max-w-md h-full overflow-y-auto flex flex-col"
+            style={{ background: '#0E0E0E', borderLeft: '1px solid rgba(255,255,255,0.08)' }}
+            onClick={e => e.stopPropagation()}
+          >
+            {/* Drawer Header */}
+            <div className="p-6 border-b border-white/5 flex items-center justify-between sticky top-0 bg-[#0E0E0E] z-10">
+              <div>
+                <h3 className="text-white font-bold text-lg">Kunden-Detail</h3>
+                <p className="font-mono text-xs text-white/30 mt-0.5">{selectedCustomer.wallet_object_id?.substring(0, 20)}...</p>
+              </div>
+              <button onClick={() => setSelectedCustomer(null)} className="p-2 rounded-xl bg-white/5 text-white/40 hover:text-white transition-colors">
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Manual Point Editor */}
+            <div className="p-6 border-b border-white/5">
+              <div className="flex items-center gap-2 mb-4">
+                <Edit3 size={16} style={{ color: primaryColor }} />
+                <h4 className="text-sm font-bold text-white">Stempel korrigieren</h4>
+              </div>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setEditPoints(p => Math.max(0, (p ?? 0) - 1))}
+                  className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white flex items-center justify-center hover:bg-white/10 transition-all"
+                ><Minus size={18} /></button>
+                <div className="flex-1 text-center">
+                  <span className="text-4xl font-black text-white">{editPoints}</span>
+                  <span className="text-white/20 text-xl"> / 10</span>
+                </div>
+                <button
+                  onClick={() => setEditPoints(p => Math.min(10, (p ?? 0) + 1))}
+                  className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white flex items-center justify-center hover:bg-white/10 transition-all"
+                ><Plus size={18} /></button>
+              </div>
+              {editPoints !== selectedCustomer.points && (
+                <button
+                  onClick={savePoints}
+                  disabled={savingPoints}
+                  className="w-full mt-4 py-3 rounded-2xl font-bold text-black text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                  style={{ background: `linear-gradient(135deg, #B8943B, #E8C968)` }}
+                >
+                  {savingPoints ? <RefreshCw size={16} className="animate-spin" /> : 'Speichern'}
+                </button>
+              )}
+            </div>
+
+            {/* Stamp History */}
+            <div className="p-6 flex-1">
+              <div className="flex items-center gap-2 mb-4">
+                <Clock size={16} className="text-white/40" />
+                <h4 className="text-sm font-bold text-white">Stempel-Verlauf</h4>
+              </div>
+              {historyLoading ? (
+                <div className="flex justify-center py-8"><RefreshCw size={24} className="animate-spin text-white/20" /></div>
+              ) : stampHistory.length === 0 ? (
+                <p className="text-center text-white/20 text-sm py-8 italic">Keine Aktivität gefunden.</p>
+              ) : (
+                <div className="space-y-3">
+                  {stampHistory.map((s: any) => (
+                    <div key={s.id} className="flex items-center gap-4 p-4 rounded-2xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
+                      <div className={`w-2 h-2 rounded-full shrink-0 ${s.type === 'earn' ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                      <div className="flex-1">
+                        <p className={`text-sm font-bold ${s.type === 'earn' ? 'text-green-400' : 'text-yellow-400'}`}>
+                          {s.type === 'earn' ? `+${s.amount} Stempel` : '🎁 Prämie eingelöst'}
+                        </p>
+                        <p className="text-[10px] text-white/30 mt-0.5">{new Date(s.created_at).toLocaleString('de-DE')}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
