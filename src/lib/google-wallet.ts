@@ -3,14 +3,33 @@ import path from 'path';
 import jwt from 'jsonwebtoken';
 import fs from 'fs';
 
-const keyFilePath = path.resolve(process.cwd(), process.env.GOOGLE_APPLICATION_CREDENTIALS || '');
+// Initialize Google Auth
+const getAuth = () => {
+  const serviceAccountVar = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  
+  if (serviceAccountVar) {
+    try {
+      const credentials = JSON.parse(serviceAccountVar);
+      return new google.auth.GoogleAuth({
+        credentials,
+        scopes: ['https://www.googleapis.com/auth/wallet_object.issuer'],
+      });
+    } catch (e) {
+      console.error('Failed to parse GOOGLE_SERVICE_ACCOUNT_KEY:', e);
+    }
+  }
+
+  const keyFilePath = path.resolve(process.cwd(), process.env.GOOGLE_APPLICATION_CREDENTIALS || 'marketif-loyalty-db92eeb98711.json');
+  
+  return new google.auth.GoogleAuth({
+    keyFile: keyFilePath,
+    scopes: ['https://www.googleapis.com/auth/wallet_object.issuer'],
+  });
+};
+
+const auth = getAuth();
 const issuerId = process.env.GOOGLE_ISSUER_ID || '';
 
-// Initialize Google Auth
-const auth = new google.auth.GoogleAuth({
-  keyFile: keyFilePath,
-  scopes: ['https://www.googleapis.com/auth/wallet_object.issuer'],
-});
 
 export const walletClient = google.walletobjects({
   version: 'v1',
@@ -79,7 +98,16 @@ export async function createLoyaltyClass(classId: string, merchantName: string) 
  * Generates the JWT link to "Add to Google Wallet"
  */
 export async function generateLoyaltyObjectJwt(classId: string, objectId: string, points: number) {
-  const credentials = JSON.parse(fs.readFileSync(keyFilePath, 'utf8'));
+  let credentials;
+  const serviceAccountVar = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  
+  if (serviceAccountVar) {
+    credentials = JSON.parse(serviceAccountVar);
+  } else {
+    const keyFilePath = path.resolve(process.cwd(), process.env.GOOGLE_APPLICATION_CREDENTIALS || 'marketif-loyalty-db92eeb98711.json');
+    credentials = JSON.parse(fs.readFileSync(keyFilePath, 'utf8'));
+  }
+
   const privateKey = credentials.private_key;
   const clientEmail = credentials.client_email;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
