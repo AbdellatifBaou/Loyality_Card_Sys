@@ -201,23 +201,33 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
       ]
     };
 
-    // Add Review Link only if they just redeemed or have many points
+    // Always add a notify message to force Google Wallet to refresh the pass on the device
     if (isRedeem || points >= 10) {
       updatedObject.linksModuleData = {
         uris: [
           {
-            uri: 'https://search.google.com/local/writereview?placeid=PLACEHOLDER', // Placeholder
+            uri: 'https://search.google.com/local/writereview?placeid=PLACEHOLDER',
             description: 'Jetzt bewerten & Feedback geben ⭐',
           }
         ]
       };
-      
-      // Trigger a notification message
       updatedObject.messages = [
         {
           header: 'Belohnung bereit! ✨',
           body: merchant?.reward_text || 'Herzlichen Glückwunsch! Du hast deine Stempelkarte voll. Zeige sie beim nächsten Mal vor.',
-          id: 'REDEEM_MESSAGE',
+          id: `REDEEM_MESSAGE_${Date.now()}`,
+          messageType: 'TEXT_AND_NOTIFY'
+        }
+      ];
+    } else {
+      // For regular stamps: send a silent notify to force the pass to refresh
+      updatedObject.messages = [
+        {
+          header: `${points} von 10 Stempeln ☕`,
+          body: points >= 9
+            ? 'Nur noch 1 Stempel bis zu deiner Gratisbelohnung! 🎉'
+            : `Du hast ${points} Stempel gesammelt. Weiter so!`,
+          id: `STAMP_MESSAGE_${Date.now()}`,
           messageType: 'TEXT_AND_NOTIFY'
         }
       ];

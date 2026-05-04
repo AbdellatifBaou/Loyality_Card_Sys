@@ -168,7 +168,7 @@ export default function DynamicJoinPage({ params }: { params: Promise<{ slug: st
         </div>
 
         {/* CTA Button */}
-        <div className="w-full max-w-md px-6 pb-12 mt-auto">
+        <div className="w-full max-w-md px-6 pb-12 mt-6">
           {error && (
             <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-2xl mb-4 text-xs">
               {error}
