@@ -119,8 +119,7 @@ export default function Home() {
       <main 
         className="min-h-screen flex flex-col items-center justify-center p-4 animate-fade-in"
         style={{ 
-          background: '#050505',
-          backgroundImage: 'radial-gradient(circle at 50% 0%, #1a1608 0%, #050505 60%)'
+          background: 'radial-gradient(circle at 50% 0%, #1a1608 0%, #050505 60%)'
         }}
       >
         <div 
