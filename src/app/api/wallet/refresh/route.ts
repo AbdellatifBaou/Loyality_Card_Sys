@@ -13,7 +13,7 @@ export async function POST(req: Request) {
 
     const { data: customer, error } = await supabase
       .from('customers')
-      .select('points')
+      .select('points, merchants(*)')
       .eq('wallet_object_id', objectId)
       .single();
 
@@ -21,7 +21,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
 
-    await updateLoyaltyObjectPoints(objectId, customer.points, false);
+    const merchant = customer.merchants;
+
+    await updateLoyaltyObjectPoints(objectId, customer.points, false, merchant);
 
     return NextResponse.json({ success: true, points: customer.points });
   } catch (err: any) {
