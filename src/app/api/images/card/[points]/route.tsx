@@ -12,40 +12,52 @@ export async function GET(
     const points = parseInt(pointsStr, 10);
     const validPoints = isNaN(points) ? 0 : Math.max(0, Math.min(10, points));
 
-    const stamps = Array.from({ length: 10 }).map((_, i) => {
-      const isStamped = i < validPoints;
-      return (
-        <div
-          key={i}
-          style={{
-            width: '62px',
-            height: '62px',
-            borderRadius: '50%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: '28px',
-            border: isStamped
-              ? '2px solid #D4AF37'
-              : '2px dashed rgba(212, 175, 55, 0.2)',
-            background: isStamped
-              ? 'linear-gradient(145deg, #FFD700 0%, #D4AF37 50%, #B8860B 100%)'
-              : 'rgba(255, 255, 255, 0.03)',
-            boxShadow: isStamped
-              ? '0 0 20px rgba(212, 175, 55, 0.4), inset 0 2px 4px rgba(255,255,255,0.3)'
-              : 'inset 0 2px 4px rgba(0,0,0,0.2)',
-          }}
-        >
-          {isStamped ? (
-            <div style={{ display: 'flex', color: '#000', filter: 'drop-shadow(0 1px 1px rgba(255,255,255,0.4))' }}>☕</div>
-          ) : (
-            <div style={{ color: 'rgba(212, 175, 55, 0.1)', fontSize: '14px', fontWeight: 'bold' }}>{i + 1}</div>
-          )}
-        </div>
-      );
-    });
-
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+
+    // Render 5 stamp circles for a given row (offset = 0 or 5)
+    const renderRow = (offset: number) =>
+      Array.from({ length: 5 }).map((_, i) => {
+        const idx = offset + i;
+        const stamped = idx < validPoints;
+        return (
+          <div
+            key={idx}
+            style={{
+              width: '54px',
+              height: '54px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '26px',
+              flexShrink: 0,
+              border: stamped
+                ? '2px solid #D4AF37'
+                : '1.5px dashed rgba(212, 175, 55, 0.22)',
+              background: stamped
+                ? 'radial-gradient(circle at 38% 32%, #FFD966, #D4AF37, #8B6914)'
+                : 'rgba(212, 175, 55, 0.03)',
+              boxShadow: stamped
+                ? '0 0 18px rgba(212, 175, 55, 0.55), inset 0 1px 0 rgba(255,255,255,0.3)'
+                : 'inset 0 2px 4px rgba(0,0,0,0.3)',
+            }}
+          >
+            {stamped ? (
+              <span style={{ filter: 'drop-shadow(0 1px 2px rgba(0,0,0,0.4))' }}>☕</span>
+            ) : (
+              <span
+                style={{
+                  color: 'rgba(212,175,55,0.18)',
+                  fontSize: '13px',
+                  fontWeight: 'bold',
+                }}
+              >
+                {idx + 1}
+              </span>
+            )}
+          </div>
+        );
+      });
 
     return new ImageResponse(
       (
@@ -54,114 +66,217 @@ export async function GET(
             width: '100%',
             height: '100%',
             display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
+            flexDirection: 'row',
             backgroundColor: '#050505',
-            backgroundImage: 'radial-gradient(circle at 0% 0%, #1a1608 0%, #050505 50%), radial-gradient(circle at 100% 100%, #121212 0%, #050505 50%)',
-            padding: '28px 40px',
+            backgroundImage:
+              'linear-gradient(135deg, #0D0B04 0%, #050505 50%, #0A0A0A 100%)',
             fontFamily: 'sans-serif',
             position: 'relative',
             overflow: 'hidden',
           }}
         >
-          {/* Decorative grain/noise pattern (subtle via gradient) */}
-          <div style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, opacity: 0.03, backgroundImage: 'url("https://www.transparenttextures.com/patterns/dark-matter.png")' }} />
+          {/* Background gold glow top-left */}
+          <div
+            style={{
+              position: 'absolute',
+              top: '-80px',
+              left: '-40px',
+              width: '320px',
+              height: '320px',
+              borderRadius: '50%',
+              background:
+                'radial-gradient(circle, rgba(212,175,55,0.1) 0%, transparent 65%)',
+            }}
+          />
 
-          {/* Gold accent bars */}
-          <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: 'linear-gradient(to bottom, transparent, #D4AF37, transparent)' }} />
-          <div style={{ position: 'absolute', top: 0, right: 0, width: '4px', height: '100%', background: 'linear-gradient(to bottom, transparent, #D4AF37, transparent)' }} />
+          {/* Gold top border line */}
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              right: 0,
+              height: '2px',
+              background:
+                'linear-gradient(90deg, transparent 0%, #D4AF37 20%, #FFD966 50%, #D4AF37 80%, transparent 100%)',
+            }}
+          />
 
-          {/* Header */}
+          {/* ── LEFT: Branding (270px) ── */}
           <div
             style={{
               display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              alignItems: 'flex-start',
+              width: '270px',
+              minWidth: '270px',
+              padding: '28px 24px 28px 32px',
+              borderRight: '1px solid rgba(212, 175, 55, 0.15)',
+              position: 'relative',
             }}
           >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-              <img
-                src={`${appUrl}/Aroma_logo.png`}
-                width="64"
-                height="64"
-                style={{ borderRadius: '12px', border: '1px solid rgba(212, 175, 55, 0.3)' }}
-              />
-              <div style={{ display: 'flex', flexDirection: 'column' }}>
-                <span
-                  style={{
-                    color: '#D4AF37',
-                    fontSize: '22px',
-                    fontWeight: '900',
-                    letterSpacing: '2px',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  Restaurant Aroma
-                </span>
-                <span
-                  style={{
-                    color: 'rgba(255,255,255,0.4)',
-                    fontSize: '12px',
-                    letterSpacing: '1px',
-                  }}
-                >
-                  Exklusives Treueprogramm
-                </span>
-              </div>
-            </div>
+            {/* Logo */}
+            <img
+              src={`${appUrl}/Aroma_logo.png`}
+              width={68}
+              height={68}
+              style={{
+                borderRadius: '14px',
+                border: '1px solid rgba(212,175,55,0.3)',
+                marginBottom: '14px',
+                objectFit: 'contain',
+              }}
+            />
 
+            {/* Restaurant name */}
+            <span
+              style={{
+                color: '#D4AF37',
+                fontSize: '17px',
+                fontWeight: 'bold',
+                letterSpacing: '2.5px',
+                textTransform: 'uppercase',
+                lineHeight: 1.2,
+                marginBottom: '5px',
+              }}
+            >
+              Restaurant{'\n'}Aroma
+            </span>
+
+            {/* Tagline */}
+            <span
+              style={{
+                color: 'rgba(255,255,255,0.32)',
+                fontSize: '10px',
+                letterSpacing: '1.5px',
+                textTransform: 'uppercase',
+                marginBottom: '14px',
+              }}
+            >
+              Treueprogramm
+            </span>
+
+            {/* Address */}
+            <span
+              style={{
+                color: 'rgba(255,255,255,0.25)',
+                fontSize: '10px',
+                letterSpacing: '0.5px',
+              }}
+            >
+              📍 Steingasse 7{'\n'}86150 Augsburg
+            </span>
+          </div>
+
+          {/* ── RIGHT: Stamps (730px) ── */}
+          <div
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              justifyContent: 'center',
+              flex: 1,
+              padding: '22px 28px 22px 28px',
+              gap: '0px',
+            }}
+          >
+            {/* Top row: label + badge */}
             <div
               style={{
                 display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'flex-end',
-                background: 'rgba(212, 175, 55, 0.08)',
-                padding: '8px 20px',
-                borderRadius: '16px',
-                border: '1px solid rgba(212, 175, 55, 0.2)',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginBottom: '14px',
               }}
             >
-              <span style={{ color: '#D4AF37', fontSize: '32px', fontWeight: 'bold' }}>
-                {validPoints} <span style={{ fontSize: '18px', opacity: 0.5 }}>/ 10</span>
+              <span
+                style={{
+                  color: 'rgba(255,255,255,0.4)',
+                  fontSize: '10px',
+                  letterSpacing: '2.5px',
+                  textTransform: 'uppercase',
+                }}
+              >
+                Deine Stempel
               </span>
-              <span style={{ color: 'rgba(255,255,255,0.3)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px' }}>Stempel gesammelt</span>
-            </div>
-          </div>
 
-          {/* Stamp Grid */}
-          <div
-            style={{
-              display: 'flex',
-              gap: '14px',
-              justifyContent: 'center',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              padding: '20px 0',
-            }}
-          >
-            {stamps}
-          </div>
-
-          {/* Footer Info */}
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'flex-end',
-              borderTop: '1px solid rgba(255,255,255,0.05)',
-              paddingTop: '16px',
-            }}
-          >
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
-              <span style={{ color: 'rgba(255,255,255,0.2)', fontSize: '11px' }}>📍 Steingasse 7 · 86150 Augsburg</span>
-              <span style={{ color: 'rgba(255,255,255,0.1)', fontSize: '9px' }}>Die Karte ist digital in deinem Google Wallet hinterlegt</span>
+              {/* Points badge */}
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '3px',
+                  background: 'rgba(212,175,55,0.1)',
+                  border: '1px solid rgba(212,175,55,0.3)',
+                  padding: '5px 14px',
+                  borderRadius: '20px',
+                }}
+              >
+                <span
+                  style={{
+                    color: '#D4AF37',
+                    fontSize: '20px',
+                    fontWeight: 'bold',
+                    lineHeight: 1,
+                  }}
+                >
+                  {validPoints}
+                </span>
+                <span
+                  style={{ color: 'rgba(255,255,255,0.25)', fontSize: '14px' }}
+                >
+                  &nbsp;/ 10
+                </span>
+              </div>
             </div>
+
+            {/* Row 1: stamps 1–5 */}
+            <div
+              style={{ display: 'flex', gap: '11px', marginBottom: '11px' }}
+            >
+              {renderRow(0)}
+            </div>
+
+            {/* Row 2: stamps 6–10 */}
+            <div style={{ display: 'flex', gap: '11px', marginBottom: '14px' }}>
+              {renderRow(5)}
+            </div>
+
+            {/* Footer text */}
             {validPoints >= 9 ? (
-              <div style={{ background: '#D4AF37', padding: '4px 12px', borderRadius: '8px' }}>
-                <span style={{ color: '#000', fontSize: '12px', fontWeight: 'bold' }}>NÄCHSTER KAFFEE GRATIS! 🎁</span>
+              <div
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  background: 'rgba(212,175,55,0.12)',
+                  border: '1px solid rgba(212,175,55,0.3)',
+                  padding: '6px 14px',
+                  borderRadius: '10px',
+                  alignSelf: 'flex-start',
+                }}
+              >
+                <span
+                  style={{
+                    color: '#D4AF37',
+                    fontSize: '12px',
+                    fontWeight: 'bold',
+                  }}
+                >
+                  🎉 Nächster Besuch: GRATIS Getränk!
+                </span>
               </div>
             ) : (
-              <span style={{ color: '#D4AF37', fontSize: '11px', opacity: 0.8 }}>Noch {10 - validPoints} Stempel bis zum Geschenk</span>
+              <span
+                style={{
+                  color: 'rgba(255,255,255,0.2)',
+                  fontSize: '11px',
+                }}
+              >
+                Noch {10 - validPoints}{' '}
+                {10 - validPoints === 1 ? 'Stempel' : 'Stempel'} bis zum
+                Gratis-Getränk ☕
+              </span>
             )}
           </div>
         </div>
