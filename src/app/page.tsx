@@ -176,7 +176,7 @@ export default function Home() {
             {newPoints !== null && (
               <div className="bg-white/5 border border-white/10 rounded-xl px-6 py-4 w-full">
                 <p className="text-sm text-white/50 mb-1">Neuer Punktestand</p>
-                <p className="text-3xl font-bold">{newPoints} / 12</p>
+                <p className="text-3xl font-bold">{newPoints} / 10</p>
               </div>
             )}
             <p className="text-sm text-white/40 mt-8">Scanner öffnet sich gleich wieder...</p>
