@@ -171,7 +171,7 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
     const isPublicUrl = appUrl && !appUrl.includes('localhost');
 
     const heroImageUri = isRedeem
-      ? 'https://images.unsplash.com/photo-1513151233558-d860c5398176?auto=format&fit=crop&w=1000&q=80'
+      ? `${appUrl}/api/images/redeem?v=${IMAGE_VERSION}`
       : `${appUrl}/api/images/card/${points}?v=${IMAGE_VERSION}`;
 
     const updatedObject: any = {
