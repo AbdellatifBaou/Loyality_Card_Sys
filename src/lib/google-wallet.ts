@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import fs from 'fs';
 
 // Increment this whenever the card image design changes — forces Google Wallet to re-fetch
-const IMAGE_VERSION = '7';
+const IMAGE_VERSION = '8';
 
 // Initialize Google Auth
 const getAuth = () => {
