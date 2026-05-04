@@ -211,5 +211,5 @@ export default function DynamicJoinPage({ params }: { params: Promise<{ slug: st
           </div>
         </div>
       </main>
-
+    );
 }
