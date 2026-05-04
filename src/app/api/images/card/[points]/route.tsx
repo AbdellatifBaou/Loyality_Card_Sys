@@ -5,10 +5,10 @@ export const runtime = 'edge';
 
 export async function GET(
   _req: NextRequest,
-  { params }: { params: { points: string } }
+  { params }: { params: Promise<{ points: string }> }
 ) {
   try {
-    const pointsStr = params.points;
+    const { points: pointsStr } = await params;
     const points = parseInt(pointsStr, 10);
     const validPoints = isNaN(points) ? 0 : Math.max(0, Math.min(10, points));
 
