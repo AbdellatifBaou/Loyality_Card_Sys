@@ -14,6 +14,7 @@ export default function Home() {
   const [scanStatus, setScanStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
   const [newPoints, setNewPoints] = useState<number | null>(null);
+  const [stampAmount, setStampAmount] = useState(1);
   
   const scannerRef = useRef<HTMLDivElement>(null);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -108,7 +109,7 @@ export default function Home() {
       const response = await fetch('/api/wallet/stamp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ objectId, pin, amount: 1 }),
+        body: JSON.stringify({ objectId, pin, amount: stampAmount }),
       });
 
       const data = await response.json();
@@ -264,14 +265,30 @@ export default function Home() {
         {/* Main View */}
         <div className="flex-1 w-full flex flex-col items-center justify-center">
           {scanStatus === 'idle' && (
-            <div className="w-full animate-fade-in">
+            <div className="w-full animate-fade-in space-y-6">
+              {/* Multi-Stamp Toggle */}
+              <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10">
+                <button 
+                  onClick={() => setStampAmount(1)}
+                  className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${stampAmount === 1 ? 'bg-[#D4AF37] text-black shadow-lg shadow-[#D4AF37]/20' : 'text-white/40 hover:text-white/60'}`}
+                >
+                  +1 Stempel
+                </button>
+                <button 
+                  onClick={() => setStampAmount(2)}
+                  className={`flex-1 py-3 rounded-xl text-sm font-bold transition-all ${stampAmount === 2 ? 'bg-[#D4AF37] text-black shadow-lg shadow-[#D4AF37]/20' : 'text-white/40 hover:text-white/60'}`}
+                >
+                  +2 Stempel
+                </button>
+              </div>
+
               <div 
                 className="p-2 rounded-3xl"
                 style={{ background: `linear-gradient(145deg, ${primaryColor}20 0%, #111111 100%)`, border: `1px solid ${primaryColor}40` }}
               >
                 <div id="reader" className="w-full bg-black rounded-2xl overflow-hidden min-h-[300px]" ref={scannerRef}></div>
               </div>
-              <p className="text-center text-white/40 mt-6 flex items-center justify-center gap-2 text-sm font-medium">
+              <p className="text-center text-white/40 flex items-center justify-center gap-2 text-sm font-medium">
                 <Camera size={18} /> Halte den QR-Code in die Kamera
               </p>
             </div>

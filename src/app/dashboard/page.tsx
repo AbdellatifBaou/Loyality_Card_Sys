@@ -1,10 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle } from 'lucide-react';
+import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export default function DashboardPage() {
+  const [password, setPassword] = useState('');
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [authError, setAuthError] = useState('');
+  
   const [loading, setLoading] = useState(true);
   const [customerCount, setCustomerCount] = useState(0);
   const [earnCount, setEarnCount] = useState(0);
@@ -14,7 +18,24 @@ export default function DashboardPage() {
   const [confirmDelete, setConfirmDelete] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
 
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password === '2025') {
+      setIsAuthorized(true);
+      localStorage.setItem('admin_auth', 'true');
+    } else {
+      setAuthError('Falsches Passwort');
+    }
+  };
+
+  useEffect(() => {
+    if (localStorage.getItem('admin_auth') === 'true') {
+      setIsAuthorized(true);
+    }
+  }, []);
+
   const fetchData = async () => {
+    if (!isAuthorized) return;
     setLoading(true);
     try {
       const [
@@ -40,7 +61,9 @@ export default function DashboardPage() {
     }
   };
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => {
+    fetchData();
+  }, [isAuthorized]);
 
   const deleteCustomer = async (customer: any) => {
     setDeleting(true);
@@ -56,9 +79,37 @@ export default function DashboardPage() {
     }
   };
 
+  if (!isAuthorized) {
+    return (
+      <main className="min-h-screen flex items-center justify-center p-4" style={{ background: '#050505' }}>
+        <div className="w-full max-w-md p-8 rounded-[40px] relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #0A0A0A 0%, #111111 100%)', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
+          <div className="text-center mb-8">
+            <Lock size={40} className="mx-auto mb-4 text-[#D4AF37] opacity-50" />
+            <h1 className="text-2xl font-bold text-white mb-2">Admin Login</h1>
+            <p className="text-white/40 text-sm">Bitte gib das Admin-Passwort ein.</p>
+          </div>
+          <form onSubmit={handleLogin} className="space-y-4">
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full bg-black/50 border border-[#D4AF37]/20 rounded-2xl px-6 py-4 text-center text-white outline-none focus:border-[#D4AF37] transition-all"
+              placeholder="Passwort"
+              autoFocus
+            />
+            {authError && <p className="text-red-500 text-xs text-center">{authError}</p>}
+            <button type="submit" className="w-full py-4 rounded-2xl font-bold uppercase tracking-widest text-black transition-all active:scale-95" style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}>
+              Anmelden
+            </button>
+          </form>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen p-6 md:p-8" style={{ background: '#050505' }}>
-      <div className="max-w-6xl mx-auto space-y-8">
+      <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
         
         {/* Header */}
         <header className="border-b border-white/10 pb-6 flex items-center justify-between">
@@ -66,16 +117,16 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-extrabold text-white tracking-tight">
               Marketif <span style={{ color: '#D4AF37' }}>Loyalty</span>
             </h1>
-            <p className="text-white/50 mt-1 font-medium text-sm">Dashboard & Kundenverwaltung</p>
+            <p className="text-white/50 mt-1 font-medium text-sm">Admin Dashboard</p>
           </div>
-          <button
-            onClick={fetchData}
-            disabled={loading}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 transition-colors text-sm font-medium"
-          >
-            <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
-            Aktualisieren
-          </button>
+          <div className="flex gap-3">
+            <button onClick={fetchData} disabled={loading} className="p-3 rounded-xl border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 transition-all">
+              <RefreshCw size={20} className={loading ? 'animate-spin' : ''} />
+            </button>
+            <button onClick={() => { localStorage.removeItem('admin_auth'); setIsAuthorized(false); }} className="p-3 rounded-xl border border-red-500/20 bg-red-500/5 text-red-500 hover:bg-red-500/10 transition-all">
+              <LogOut size={20} />
+            </button>
+          </div>
         </header>
 
         {loading ? (
