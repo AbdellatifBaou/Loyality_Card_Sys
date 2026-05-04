@@ -172,78 +172,78 @@ export default function Home() {
     );
   }
 
+  // Full-screen background wrapper, content centered inside
   return (
-    <main 
-      className="min-h-screen flex flex-col items-center p-4 max-w-md mx-auto"
-      style={{ background: '#050505' }}
-    >
-      {/* Header */}
-      <header className="w-full flex justify-between items-center py-6 animate-fade-in border-b border-white/5 mb-6">
-        <div>
-          <h1 className="text-xl font-bold text-white">{merchantConfig?.name || 'Scanner'}</h1>
-          <p className="text-[10px] font-bold tracking-[0.2em] uppercase" style={{ color: primaryColor }}>Terminal aktiv</p>
-        </div>
-        <button 
-          onClick={() => { setIsAuthenticated(false); setPin(''); }}
-          className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-colors"
-        >
-          <LogOut size={20} className="text-white/60" />
-        </button>
-      </header>
-
-      {/* Main View */}
-      <div className="flex-1 w-full flex flex-col items-center justify-center">
-        {scanStatus === 'idle' && (
-          <div className="w-full animate-fade-in">
-            <div 
-              className="p-2 rounded-3xl"
-              style={{ background: `linear-gradient(145deg, ${primaryColor}20 0%, #111111 100%)`, border: `1px solid ${primaryColor}40` }}
-            >
-              <div id="reader" className="w-full bg-black rounded-2xl overflow-hidden min-h-[300px]" ref={scannerRef}></div>
-            </div>
-            <p className="text-center text-white/40 mt-6 flex items-center justify-center gap-2 text-sm font-medium">
-              <Camera size={18} /> Halte den QR-Code in die Kamera
-            </p>
+    <div className="min-h-screen w-full" style={{ background: '#050505' }}>
+      <main className="flex flex-col items-center p-4 max-w-md mx-auto min-h-screen">
+        {/* Header */}
+        <header className="w-full flex justify-between items-center py-6 animate-fade-in border-b border-white/5 mb-6">
+          <div>
+            <h1 className="text-xl font-bold text-white">{merchantConfig?.name || 'Scanner'}</h1>
+            <p className="text-[10px] font-bold tracking-[0.2em] uppercase" style={{ color: primaryColor }}>Terminal aktiv</p>
           </div>
-        )}
+          <button 
+            onClick={() => { setIsAuthenticated(false); setPin(''); }}
+            className="p-3 bg-white/5 hover:bg-white/10 rounded-xl border border-white/10 transition-colors"
+          >
+            <LogOut size={20} className="text-white/60" />
+          </button>
+        </header>
 
-        {scanStatus === 'loading' && (
-          <div className="flex flex-col items-center justify-center animate-fade-in">
-            <div className="w-20 h-20 bg-blue-500/20 rounded-full flex items-center justify-center mb-6">
-              <Loader2 className="w-10 h-10 text-blue-500 animate-spin" />
-            </div>
-            <h2 className="text-xl font-medium">Verarbeite...</h2>
-          </div>
-        )}
-
-        {scanStatus === 'success' && (
-          <div className="flex flex-col items-center justify-center text-center animate-fade-in glass-panel p-8 rounded-3xl w-full">
-            <div className="w-20 h-20 bg-green-500/20 rounded-full flex items-center justify-center mb-6">
-              <CheckCircle2 className="w-12 h-12 text-green-500" />
-            </div>
-            <h2 className="text-2xl font-bold mb-2">Erfolgreich!</h2>
-            <p className="text-white/70 mb-6">{message}</p>
-            {newPoints !== null && (
-              <div className="bg-white/5 border border-white/10 rounded-xl px-6 py-4 w-full">
-                <p className="text-sm text-white/50 mb-1">Neuer Punktestand</p>
-                <p className="text-3xl font-bold">{newPoints} / 10</p>
+        {/* Main View */}
+        <div className="flex-1 w-full flex flex-col items-center justify-center">
+          {scanStatus === 'idle' && (
+            <div className="w-full animate-fade-in">
+              <div 
+                className="p-2 rounded-3xl"
+                style={{ background: `linear-gradient(145deg, ${primaryColor}20 0%, #111111 100%)`, border: `1px solid ${primaryColor}40` }}
+              >
+                <div id="reader" className="w-full bg-black rounded-2xl overflow-hidden min-h-[300px]" ref={scannerRef}></div>
               </div>
-            )}
-            <p className="text-sm text-white/40 mt-8">Scanner öffnet sich gleich wieder...</p>
-          </div>
-        )}
-
-        {scanStatus === 'error' && (
-          <div className="flex flex-col items-center justify-center text-center animate-fade-in glass-panel p-8 rounded-3xl w-full">
-            <div className="w-20 h-20 bg-red-500/20 rounded-full flex items-center justify-center mb-6">
-              <XCircle className="w-12 h-12 text-red-500" />
+              <p className="text-center text-white/40 mt-6 flex items-center justify-center gap-2 text-sm font-medium">
+                <Camera size={18} /> Halte den QR-Code in die Kamera
+              </p>
             </div>
-            <h2 className="text-2xl font-bold mb-2">Fehler</h2>
-            <p className="text-white/70">{message}</p>
-            <p className="text-sm text-white/40 mt-8">Scanner öffnet sich gleich wieder...</p>
-          </div>
-        )}
-      </div>
-    </main>
+          )}
+
+          {scanStatus === 'loading' && (
+            <div className="flex flex-col items-center justify-center animate-fade-in">
+              <div className="w-24 h-24 rounded-full flex items-center justify-center mb-6" style={{ background: `${primaryColor}20` }}>
+                <Loader2 className="w-12 h-12 animate-spin" style={{ color: primaryColor }} />
+              </div>
+              <h2 className="text-xl font-medium text-white">Verarbeite...</h2>
+            </div>
+          )}
+
+          {scanStatus === 'success' && (
+            <div className="flex flex-col items-center justify-center text-center animate-fade-in w-full">
+              <div className="w-24 h-24 bg-green-500/20 rounded-full flex items-center justify-center mb-6 border border-green-500/30">
+                <CheckCircle2 className="w-12 h-12 text-green-500" />
+              </div>
+              <h2 className="text-2xl font-bold mb-2 text-white">Erfolgreich!</h2>
+              <p className="text-white/70 mb-6">{message}</p>
+              {newPoints !== null && (
+                <div className="border border-white/10 rounded-2xl px-8 py-5 w-full text-center" style={{ background: `${primaryColor}10` }}>
+                  <p className="text-sm text-white/50 mb-1">Neuer Punktestand</p>
+                  <p className="text-4xl font-black" style={{ color: primaryColor }}>{newPoints} <span className="text-white/30 text-2xl">/ 10</span></p>
+                </div>
+              )}
+              <p className="text-sm text-white/30 mt-8">Scanner öffnet sich gleich wieder...</p>
+            </div>
+          )}
+
+          {scanStatus === 'error' && (
+            <div className="flex flex-col items-center justify-center text-center animate-fade-in w-full">
+              <div className="w-24 h-24 bg-red-500/20 rounded-full flex items-center justify-center mb-6 border border-red-500/30">
+                <XCircle className="w-12 h-12 text-red-500" />
+              </div>
+              <h2 className="text-2xl font-bold mb-2 text-white">Fehler</h2>
+              <p className="text-white/70">{message}</p>
+              <p className="text-sm text-white/30 mt-8">Scanner öffnet sich gleich wieder...</p>
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
   );
 }
