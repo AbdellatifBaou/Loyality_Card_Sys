@@ -15,7 +15,7 @@ export async function GET() {
       <div
         style={{
           width: '1000px',
-          height: '500px',
+          height: '700px',
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
@@ -24,123 +24,115 @@ export async function GET() {
           fontFamily: 'sans-serif',
           position: 'relative',
           overflow: 'hidden',
-          gap: '0px',
+          gap: '18px',
         }}
       >
         {/* Ambient gold glow */}
         <div style={{
           position: 'absolute',
-          top: '-80px', left: '100px',
-          width: '800px', height: '600px',
+          top: '-100px', left: '50px',
+          width: '900px', height: '800px',
           borderRadius: '50%',
-          background: 'radial-gradient(ellipse, rgba(212,175,55,0.13) 0%, transparent 65%)',
+          background: 'radial-gradient(ellipse, rgba(212,175,55,0.12) 0%, transparent 65%)',
         }} />
 
         {/* Gold top border */}
         <div style={{
-          position: 'absolute', top: 0, left: 0, right: 0, height: '3px',
+          position: 'absolute', top: 0, left: 0, right: 0, height: '4px',
           background: `linear-gradient(90deg, transparent, ${GOLD} 20%, ${GOLD_LIGHT} 50%, ${GOLD} 80%, transparent)`,
         }} />
 
         {/* Gold bottom border */}
         <div style={{
-          position: 'absolute', bottom: 0, left: 0, right: 0, height: '1px',
+          position: 'absolute', bottom: 0, left: 0, right: 0, height: '2px',
           background: `linear-gradient(90deg, transparent, ${GOLD_DIM} 50%, transparent)`,
         }} />
 
-        {/* Decorative corner lines top-left */}
-        <div style={{
-          position: 'absolute', top: '20px', left: '40px',
-          width: '60px', height: '2px',
-          background: GOLD_DIM,
-        }} />
-        <div style={{
-          position: 'absolute', top: '20px', left: '40px',
-          width: '2px', height: '60px',
-          background: GOLD_DIM,
-        }} />
+        {/* Corner top-left */}
+        <div style={{ position: 'absolute', top: '24px', left: '48px', width: '72px', height: '3px', background: GOLD_DIM }} />
+        <div style={{ position: 'absolute', top: '24px', left: '48px', width: '3px', height: '72px', background: GOLD_DIM }} />
 
-        {/* Decorative corner lines bottom-right */}
-        <div style={{
-          position: 'absolute', bottom: '20px', right: '40px',
-          width: '60px', height: '2px',
-          background: GOLD_DIM,
-        }} />
-        <div style={{
-          position: 'absolute', bottom: '20px', right: '40px',
-          width: '2px', height: '60px',
-          background: GOLD_DIM,
-        }} />
+        {/* Corner bottom-right */}
+        <div style={{ position: 'absolute', bottom: '24px', right: '48px', width: '72px', height: '3px', background: GOLD_DIM }} />
+        <div style={{ position: 'absolute', bottom: '24px', right: '48px', width: '3px', height: '72px', background: GOLD_DIM }} />
 
         {/* Aroma Logo */}
         <img
           src={`${appUrl}/Aroma_logo.png`}
-          width={130}
-          height={130}
+          width={160}
+          height={160}
           style={{
             objectFit: 'contain',
-            borderRadius: '26px',
-            border: `2px solid rgba(212,175,55,0.4)`,
-            marginBottom: '24px',
+            borderRadius: '32px',
+            border: `2.5px solid rgba(212,175,55,0.4)`,
+            boxShadow: '0 0 40px rgba(212,175,55,0.2)',
           }}
         />
 
-        {/* Main reward message */}
+        {/* Restaurant label */}
+        <span style={{
+          fontSize: '22px',
+          letterSpacing: '7px',
+          textTransform: 'uppercase',
+          color: GOLD,
+          fontWeight: 'bold',
+        }}>
+          Restaurant Aroma
+        </span>
+
+        {/* Main message */}
         <div style={{
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
-          gap: '14px',
+          gap: '12px',
         }}>
           <span style={{
-            fontSize: '20px',
-            letterSpacing: '6px',
-            textTransform: 'uppercase',
-            color: GOLD,
-            fontWeight: 'bold',
-          }}>
-            Restaurant Aroma
-          </span>
-
-          <span style={{
-            fontSize: '58px',
+            fontSize: '72px',
             fontWeight: 'bold',
             color: '#FFFFFF',
-            letterSpacing: '-1px',
-            lineHeight: 1.05,
+            lineHeight: 1,
             textAlign: 'center',
           }}>
-            Herzlichen Glückwunsch! 🎉
+            Herzlichen Glückwunsch!
           </span>
 
           <span style={{
-            fontSize: '26px',
-            color: 'rgba(255,255,255,0.65)',
-            textAlign: 'center',
-            marginTop: '2px',
+            fontSize: '72px',
+            lineHeight: 1,
           }}>
-            Dein Gratis-Getränk ist bereit
-          </span>
-
-          {/* Gold divider */}
-          <div style={{
-            width: '160px',
-            height: '2px',
-            background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)`,
-            margin: '6px 0',
-          }} />
-
-          <span style={{
-            fontSize: '17px',
-            color: 'rgba(255,255,255,0.3)',
-            letterSpacing: '1px',
-            textAlign: 'center',
-          }}>
-            Zeige diese Karte beim nächsten Besuch vor
+            🎉
           </span>
         </div>
+
+        {/* Subtitle */}
+        <span style={{
+          fontSize: '34px',
+          color: 'rgba(255,255,255,0.65)',
+          textAlign: 'center',
+          lineHeight: 1.2,
+        }}>
+          Dein Gratis-Getränk ist bereit
+        </span>
+
+        {/* Gold divider */}
+        <div style={{
+          width: '200px',
+          height: '2px',
+          background: `linear-gradient(90deg, transparent, ${GOLD}, transparent)`,
+        }} />
+
+        {/* Bottom hint */}
+        <span style={{
+          fontSize: '22px',
+          color: 'rgba(255,255,255,0.32)',
+          letterSpacing: '1px',
+          textAlign: 'center',
+        }}>
+          Zeige diese Karte beim nächsten Besuch vor
+        </span>
       </div>
     ),
-    { width: 1000, height: 500 }
+    { width: 1000, height: 700 }
   );
 }

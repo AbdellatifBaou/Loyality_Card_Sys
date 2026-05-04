@@ -64,7 +64,7 @@ export async function GET(
         <div
           style={{
             width: '1000px',
-            height: '500px',
+            height: '700px',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -103,7 +103,7 @@ export async function GET(
           </div>
         </div>
       ),
-      { width: 1000, height: 500 }
+      { width: 1000, height: 700 }
     );
   } catch (e: any) {
     console.error(e);
