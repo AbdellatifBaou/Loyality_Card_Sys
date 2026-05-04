@@ -21,6 +21,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   
   const [confirmDelete, setConfirmDelete] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
+  const [isAddingStaff, setIsAddingStaff] = useState(false);
   const [showStaffModal, setShowStaffModal] = useState(false);
   const [newStaffName, setNewStaffName] = useState('');
   const [newStaffPin, setNewStaffPin] = useState('');
@@ -108,19 +109,23 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
 
   const addStaff = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!newStaffName || !newStaffPin) return;
+    if (!newStaffName || !newStaffPin || !merchant) return;
     
+    setIsAddingStaff(true);
     const { data, error } = await supabase
       .from('staff')
       .insert([{ merchant_id: merchant.id, name: newStaffName, pin: newStaffPin }])
       .select();
       
-    if (!error && data) {
+    if (error) {
+      alert('Fehler beim Hinzufügen: ' + error.message);
+    } else if (data) {
       setStaff(prev => [...prev, data[0]]);
       setNewStaffName('');
       setNewStaffPin('');
       setShowStaffModal(false);
     }
+    setIsAddingStaff(false);
   };
 
   const deleteStaff = async (id: string) => {
@@ -330,7 +335,14 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             <form onSubmit={addStaff} className="space-y-4">
               <input value={newStaffName} onChange={e => setNewStaffName(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#D4AF37] transition-all" placeholder="Name (z.B. Latif)" />
               <input value={newStaffPin} onChange={e => setNewStaffPin(e.target.value)} maxLength={6} className="w-full bg-black/50 border border-white/10 rounded-2xl px-6 py-4 text-white font-mono tracking-[0.5em] text-center outline-none focus:border-[#D4AF37] transition-all" placeholder="PIN" />
-              <button type="submit" className="w-full py-4 rounded-2xl font-bold text-black" style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}>Hinzufügen</button>
+              <button 
+                type="submit" 
+                disabled={isAddingStaff}
+                className="w-full py-4 rounded-2xl font-bold text-black flex items-center justify-center gap-2 disabled:opacity-50" 
+                style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}
+              >
+                {isAddingStaff ? <RefreshCw size={20} className="animate-spin" /> : 'Hinzufügen'}
+              </button>
             </form>
           </div>
         </div>
