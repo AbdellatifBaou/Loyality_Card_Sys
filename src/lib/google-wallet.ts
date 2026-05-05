@@ -6,13 +6,25 @@ import fs from 'fs';
 // Increment this whenever the card image design changes — forces Google Wallet to re-fetch
 const IMAGE_VERSION = '10';
 
+// Safely parse service account JSON, fixing newline corruption from env vars
+function parseCredentials(raw: string) {
+  const creds = JSON.parse(raw);
+  // Normalize private key: replace literal newlines with \n if needed
+  if (creds.private_key) {
+    creds.private_key = creds.private_key
+      .replace(/\r\n/g, '\n')  // Windows CRLF -> LF
+      .replace(/\\n/g, '\n');   // Escaped \n -> real newline (double-escaped)
+  }
+  return creds;
+}
+
 // Initialize Google Auth
 const getAuth = () => {
   const serviceAccountVar = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   
   if (serviceAccountVar) {
     try {
-      const credentials = JSON.parse(serviceAccountVar);
+      const credentials = parseCredentials(serviceAccountVar);
       return new google.auth.GoogleAuth({
         credentials,
         scopes: ['https://www.googleapis.com/auth/wallet_object.issuer'],
@@ -22,7 +34,7 @@ const getAuth = () => {
     }
   }
 
-  const keyFilePath = path.resolve(process.cwd(), process.env.GOOGLE_APPLICATION_CREDENTIALS || 'marketif-loyalty-db92eeb98711.json');
+  const keyFilePath = path.resolve(process.cwd(), process.env.GOOGLE_APPLICATION_CREDENTIALS || 'marketif-loyality-47d0bbd14d9b.json');
   
   return new google.auth.GoogleAuth({
     keyFile: keyFilePath,
@@ -94,12 +106,13 @@ export async function generateLoyaltyObjectJwt(classId: string, objectId: string
   const serviceAccountVar = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
   
   if (serviceAccountVar) {
-    credentials = JSON.parse(serviceAccountVar);
+    credentials = parseCredentials(serviceAccountVar);
   } else {
-    const keyFilePath = path.resolve(process.cwd(), process.env.GOOGLE_APPLICATION_CREDENTIALS || 'marketif-loyalty-db92eeb98711.json');
+    const keyFilePath = path.resolve(process.cwd(), process.env.GOOGLE_APPLICATION_CREDENTIALS || 'marketif-loyality-47d0bbd14d9b.json');
     credentials = JSON.parse(fs.readFileSync(keyFilePath, 'utf8'));
   }
 
+  // Ensure private key has proper newlines for JWT signing
   const privateKey = credentials.private_key;
   const clientEmail = credentials.client_email;
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
