@@ -34,7 +34,7 @@ const getAuth = () => {
     }
   }
 
-  const keyFilePath = path.resolve(process.cwd(), process.env.GOOGLE_APPLICATION_CREDENTIALS || 'marketif-loyality-47d0bbd14d9b.json');
+  const keyFilePath = path.resolve(process.cwd(), process.env.GOOGLE_APPLICATION_CREDENTIALS || 'marketif-loyality-53d9fef6c323.json');
   
   return new google.auth.GoogleAuth({
     keyFile: keyFilePath,
@@ -108,7 +108,7 @@ export async function generateLoyaltyObjectJwt(classId: string, objectId: string
   if (serviceAccountVar) {
     credentials = parseCredentials(serviceAccountVar);
   } else {
-    const keyFilePath = path.resolve(process.cwd(), process.env.GOOGLE_APPLICATION_CREDENTIALS || 'marketif-loyality-47d0bbd14d9b.json');
+    const keyFilePath = path.resolve(process.cwd(), process.env.GOOGLE_APPLICATION_CREDENTIALS || 'marketif-loyality-53d9fef6c323.json');
     credentials = JSON.parse(fs.readFileSync(keyFilePath, 'utf8'));
   }
 
