@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock } from 'lucide-react';
+import { Users, Pizza, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export default function MerchantDashboardPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -256,7 +256,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
               </div>
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="p-3 bg-green-500/10 rounded-2xl border border-green-500/20"><Coffee size={22} className="text-green-500" /></div>
+                  <div className="p-3 bg-green-500/10 rounded-2xl border border-green-500/20"><Pizza size={22} className="text-green-500" /></div>
                   <h2 className="text-white/60 font-medium text-sm">Gesammelte Stempel</h2>
                 </div>
                 <p className="text-4xl font-black text-white">{earnCount}</p>

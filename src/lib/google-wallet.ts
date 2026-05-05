@@ -4,7 +4,7 @@ import jwt from 'jsonwebtoken';
 import fs from 'fs';
 
 // Increment this whenever the card image design changes — forces Google Wallet to re-fetch
-const IMAGE_VERSION = '9';
+const IMAGE_VERSION = '10';
 
 // Initialize Google Auth
 const getAuth = () => {
@@ -223,7 +223,7 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
       // For regular stamps: send a silent notify to force the pass to refresh
       updatedObject.messages = [
         {
-          header: `${points} von 10 Stempeln ☕`,
+          header: `${points} von 10 Stempeln 🍕`,
           body: points >= 9
             ? 'Nur noch 1 Stempel bis zu deiner Gratisbelohnung! 🎉'
             : `Du hast ${points} Stempel gesammelt. Weiter so!`,

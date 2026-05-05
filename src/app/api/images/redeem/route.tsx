@@ -112,7 +112,7 @@ export async function GET() {
           textAlign: 'center',
           lineHeight: 1.2,
         }}>
-          Dein Gratis-Getränk ist bereit
+          Dein Gratis-Lieblingsgericht ist bereit
         </span>
 
         {/* Gold divider */}

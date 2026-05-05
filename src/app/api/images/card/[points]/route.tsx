@@ -47,7 +47,7 @@ export async function GET(
           }}
         >
           {stamped ? (
-            <span style={{ fontSize: '72px', lineHeight: 1 }}>☕</span>
+            <span style={{ fontSize: '72px', lineHeight: 1 }}>🍕</span>
           ) : idx === 9 ? (
             <span style={{ fontSize: '72px', lineHeight: 1 }}>🎁</span>
           ) : (

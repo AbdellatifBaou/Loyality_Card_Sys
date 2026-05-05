@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Loader2, CheckCircle2, ArrowRight, MapPin, Coffee, Star } from 'lucide-react';
+import { Loader2, CheckCircle2, ArrowRight, MapPin, Pizza, Star } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { use } from 'react';
 
@@ -81,7 +81,7 @@ export default function DynamicJoinPage({ params }: { params: Promise<{ slug: st
   const address = merchant.address || null;
   const primaryColor = merchant.primary_color || '#3b82f6'; // Fallback blue
   const logoUrl = merchant.logo_url || '/Aroma_logo.png'; // Fallback
-  const rewardText = merchant.reward_text || '10 Stempel = 1 GRATIS Getränk';
+  const rewardText = merchant.reward_text || '10 Stempel = 1 GRATIS Lieblingsgericht';
 
   return (
     <main
@@ -144,7 +144,7 @@ export default function DynamicJoinPage({ params }: { params: Promise<{ slug: st
             }}
           >
             <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: `${primaryColor}1A`, border: `1px solid ${primaryColor}33` }}>
-              <Coffee size={20} style={{ color: primaryColor }} />
+              <Pizza size={20} style={{ color: primaryColor }} />
             </div>
             <div>
               <p className="font-bold text-white text-xs leading-snug">{rewardText}</p>
