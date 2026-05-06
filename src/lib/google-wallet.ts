@@ -73,7 +73,7 @@ export async function createLoyaltyClass(classId: string, merchant: any) {
   };
 
   // reviewStatus only for initial insert — cannot be patched on existing classes
-  const insertData = { id: `${issuerId}.${classId}`, ...sharedFields, reviewStatus: 'UNDER_REVIEW' };
+  const insertData = { id: `${issuerId}.${classId}`, ...sharedFields, reviewStatus: 'ACTIVE' };
 
   try {
     const response = await walletClient.loyaltyclass.insert({
