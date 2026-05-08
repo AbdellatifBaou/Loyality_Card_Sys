@@ -205,6 +205,8 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
           header: 'Status',
           body: isRedeem
             ? 'GRATIS BELOHNUNG ERHALTEN! 🎁'
+            : points >= 10
+            ? 'DEINE BELOHNUNG IST BEREIT! 🎁'
             : points >= 9
             ? 'FAST GESCHAFFT! Nur noch 1 Stempel! 🎉'
             : points >= 5

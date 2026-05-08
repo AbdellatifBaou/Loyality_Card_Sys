@@ -38,10 +38,16 @@ export async function POST(req: Request) {
     let newPoints = customer.points + amount;
     let type = 'earn';
 
-    // Reward logic (10 points max - 10th is free)
-    if (newPoints >= 10) {
-      newPoints = 0; // Reset after reaching 10 (or keep at 10 to show redeem state)
+    // Reward logic:
+    // 1. If they ALREADY had 10 points (card full) and add a stamp, it resets to 0 and counts as a redemption.
+    if (customer.points >= 10 && amount > 0) {
+      newPoints = 0;
       type = 'redeem';
+    } 
+    // 2. If they reach 10 points, they stay at 10 (card full state).
+    else if (newPoints >= 10) {
+      newPoints = 10;
+      type = 'earn';
     }
 
     // 4. Update Database (Customer & Stamps Log)
