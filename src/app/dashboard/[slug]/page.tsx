@@ -156,15 +156,30 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   const savePoints = async () => {
     if (editPoints === null || !selectedCustomer) return;
     setSavingPoints(true);
-    const { error } = await supabase
-      .from('customers')
-      .update({ points: editPoints })
-      .eq('id', selectedCustomer.id);
-    if (!error) {
-      setCustomers(prev => prev.map(c => c.id === selectedCustomer.id ? { ...c, points: editPoints } : c));
-      setSelectedCustomer((prev: any) => ({ ...prev, points: editPoints }));
+    
+    try {
+      const response = await fetch('/api/admin/update-points', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customerId: selectedCustomer.id,
+          newPoints: editPoints
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (response.ok && result.success) {
+        setCustomers(prev => prev.map(c => c.id === selectedCustomer.id ? { ...c, points: editPoints } : c));
+        setSelectedCustomer((prev: any) => ({ ...prev, points: editPoints }));
+      } else {
+        alert('Fehler beim Aktualisieren: ' + (result.error || 'Unbekannter Fehler'));
+      }
+    } catch (error) {
+      alert('Netzwerkfehler beim Aktualisieren');
+    } finally {
+      setSavingPoints(false);
     }
-    setSavingPoints(false);
   };
 
   const exportCSV = () => {
