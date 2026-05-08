@@ -514,10 +514,10 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                 <div className="space-y-3">
                   {stampHistory.map((s: any) => (
                     <div key={s.id} className="flex items-center gap-4 p-4 rounded-2xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.04)' }}>
-                      <div className={`w-2 h-2 rounded-full shrink-0 ${s.type === 'earn' ? 'bg-green-500' : 'bg-yellow-500'}`} />
+                      <div className={`w-2 h-2 rounded-full shrink-0 ${s.type === 'earn' ? 'bg-green-500' : s.type === 'correction' ? 'bg-blue-500' : 'bg-yellow-500'}`} />
                       <div className="flex-1">
-                        <p className={`text-sm font-bold ${s.type === 'earn' ? 'text-green-400' : 'text-yellow-400'}`}>
-                          {s.type === 'earn' ? `+${s.amount} Stempel` : '🎁 Prämie eingelöst'}
+                        <p className={`text-sm font-bold ${s.type === 'earn' ? 'text-green-400' : s.type === 'correction' ? 'text-blue-400' : 'text-yellow-400'}`}>
+                          {s.type === 'earn' ? `+${s.amount} Stempel` : s.type === 'correction' ? `Korrektur: ${s.amount > 0 ? '+' : ''}${s.amount} Stempel` : '🎁 Prämie eingelöst'}
                         </p>
                         <p className="text-[10px] text-white/30 mt-0.5">{new Date(s.created_at).toLocaleString('de-DE')}</p>
                       </div>

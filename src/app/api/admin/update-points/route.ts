@@ -34,6 +34,22 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Failed to update database' }, { status: 500 });
     }
 
+    // Insert correction record into stamps table to keep history consistent
+    // Since amount is delta, we calculate it
+    const amountDifference = newPoints - customer.points;
+    if (amountDifference !== 0) {
+      await supabase.from('stamps').insert([
+        { 
+          customer_id: customerId, 
+          // We can leave staff_id null or pass a default if required by schema. 
+          // Assuming staff_id can be null or we need to pass it from frontend.
+          // For now, type 'correction' helps identify it.
+          amount: amountDifference, 
+          type: 'correction' 
+        }
+      ]);
+    }
+
     // 3. Update Google Wallet
     if (customer.wallet_object_id) {
       await updateLoyaltyObjectPoints(customer.wallet_object_id, newPoints, isRedeem, merchant);
