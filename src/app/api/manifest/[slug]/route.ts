@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
+export const revalidate = 3600;
+
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ slug: string }> }
@@ -30,11 +32,11 @@ export async function GET(
     const startUrl = type === 'dashboard' ? `/dashboard/${slug}` : `/${slug}`;
 
     const manifest = {
+      id: `/${slug}-app`,
       name: appName,
       short_name: shortName,
       description: `Marketif Loyalty ${shortName} for ${merchant.name}`,
       start_url: startUrl,
-      scope: `/${slug}`, // Scope it strictly to the slug so it doesn't conflict with root
       display: 'standalone',
       background_color: '#050505',
       theme_color: merchant.primary_color || '#050505',
@@ -55,6 +57,7 @@ export async function GET(
     return new NextResponse(JSON.stringify(manifest), {
       headers: {
         'Content-Type': 'application/manifest+json',
+        'Cache-Control': 'public, max-age=3600, stale-while-revalidate=86400',
       },
     });
   } catch (error: any) {
