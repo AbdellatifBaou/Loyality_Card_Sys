@@ -163,6 +163,11 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
           }}
         >
           <div className="text-center mb-8">
+            <img 
+              src="/Marketif_LOGO.png" 
+              alt="Marketif Logo" 
+              className="h-16 mx-auto mb-6 object-contain"
+            />
             <h1 className="text-3xl font-extrabold tracking-tight mb-2 text-white">Scanner</h1>
             <p className="text-[10px] font-bold tracking-[0.3em] uppercase opacity-40 text-white">Terminal für {slug}</p>
           </div>
