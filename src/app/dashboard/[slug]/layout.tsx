@@ -24,7 +24,7 @@ export async function generateMetadata({
     return {
       title: `${merchant.name} Dashboard`,
       description: `Verwaltung für ${merchant.name}`,
-      manifest: `/api/manifest/${slug}?type=dashboard`,
+      manifest: `/dashboard/${slug}/manifest.json`,
       themeColor: merchant.primary_color || '#050505',
       appleWebApp: {
         capable: true,

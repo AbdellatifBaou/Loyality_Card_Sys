@@ -25,7 +25,7 @@ export async function generateMetadata({
     return {
       title: `${merchant.name} Scanner`,
       description: `Terminal für ${merchant.name}`,
-      manifest: `/api/manifest/${slug}?type=scanner`,
+      manifest: `/${slug}/manifest.json`,
       themeColor: merchant.primary_color || '#050505',
       appleWebApp: {
         capable: true,
