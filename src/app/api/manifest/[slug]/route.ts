@@ -34,6 +34,7 @@ export async function GET(
       short_name: shortName,
       description: `Marketif Loyalty ${shortName} for ${merchant.name}`,
       start_url: startUrl,
+      scope: '/',
       display: 'standalone',
       background_color: '#050505',
       theme_color: merchant.primary_color || '#050505',
