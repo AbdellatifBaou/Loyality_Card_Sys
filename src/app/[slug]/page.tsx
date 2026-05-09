@@ -21,11 +21,19 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isIOS, setIsIOS] = useState(false);
   const [showIOSHint, setShowIOSHint] = useState(false);
+  const [isStandalone, setIsStandalone] = useState(false);
 
   // Capture the PWA install prompt event
   useEffect(() => {
     const isIOSDevice = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
     setIsIOS(isIOSDevice);
+
+    const checkStandalone = () => {
+      const standalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
+      setIsStandalone(standalone);
+    };
+    
+    checkStandalone();
 
     const handler = (e: any) => {
       e.preventDefault();
@@ -42,6 +50,8 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
       if (outcome === 'accepted') setDeferredPrompt(null);
     } else if (isIOS) {
       setShowIOSHint(true);
+    } else {
+      alert('Um die App zu installieren, öffne das Browser-Menü (drei Punkte oder Teilen-Icon) und wähle "Zum Startbildschirm hinzufügen".');
     }
   };
 
@@ -179,9 +189,10 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
             </button>
           </form>
 
-          {(deferredPrompt || isIOS) && (
-            <button onClick={handleInstall} className="w-full mt-6 py-3 rounded-2xl border border-white/10 text-white/50 text-sm font-medium">
-              <Download size={16} className="inline mr-2" /> App installieren
+          {!isStandalone && (
+            <button onClick={handleInstall} className="w-full mt-6 py-3 rounded-2xl border border-white/10 text-white/50 text-sm font-medium flex items-center justify-center gap-2">
+              <Download size={16} /> 
+              {deferredPrompt || isIOS ? 'App installieren' : 'Über Browser installieren'}
             </button>
           )}
 
