@@ -44,8 +44,6 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
       deferredPrompt.prompt();
       const { outcome } = await deferredPrompt.userChoice;
       if (outcome === 'accepted') setDeferredPrompt(null);
-    } else if (isIOS) {
-      setShowIOSHint(true);
     } else {
       setShowIOSHint(true);
     }
@@ -185,23 +183,48 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
             </button>
           </form>
 
-          {(deferredPrompt || isIOS) && (
-            <button onClick={handleInstall} className="w-full mt-6 py-3 rounded-2xl border border-white/10 text-white/50 text-sm font-medium flex items-center justify-center gap-2">
+          {!isStandalone && (
+            <button onClick={handleInstall} className="w-full mt-6 py-3 rounded-2xl border border-white/10 text-white/50 text-sm font-medium flex items-center justify-center gap-2 hover:border-[#D4AF37]/30 hover:text-white/70 transition-all">
               <Download size={16} /> App installieren
             </button>
           )}
 
           {showIOSHint && (
-            <div className="fixed inset-0 z-50 flex items-end justify-center p-4 bg-black/70" onClick={() => setShowIOSHint(false)}>
-              <div className="w-full max-w-md p-6 rounded-3xl bg-[#111] border border-[#D4AF37]/20" onClick={e => e.stopPropagation()}>
-                <h3 className="text-white font-bold mb-4">App installieren</h3>
-                <p className="text-white/70 text-sm mb-2">
-                  {isIOS 
-                    ? 'Tippe auf das Teilen-Symbol (□↑) unten in Safari und dann auf "Zum Home-Bildschirm".'
-                    : 'Öffne das Browser-Menü (⋮ oben rechts) und tippe auf "App installieren" oder "Zum Startbildschirm hinzufügen".'
-                  }
-                </p>
-                <button onClick={() => setShowIOSHint(false)} className="w-full py-3 rounded-2xl bg-gradient-to-r from-[#B8943B] to-[#E8C968] text-black font-bold">Verstanden</button>
+            <div className="fixed inset-0 z-50 flex items-end justify-center p-4 bg-black/80" onClick={() => setShowIOSHint(false)}>
+              <div className="w-full max-w-md p-6 rounded-3xl bg-[#111] border border-[#D4AF37]/30" onClick={e => e.stopPropagation()}>
+                <h3 className="text-white font-bold text-lg mb-4">📲 App installieren</h3>
+                {isIOS ? (
+                  <div className="space-y-3 text-sm text-white/70">
+                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5">
+                      <span className="text-xl">1️⃣</span>
+                      <span>Tippe auf das <strong className="text-white">Teilen-Symbol</strong> (↑) unten in Safari</span>
+                    </div>
+                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5">
+                      <span className="text-xl">2️⃣</span>
+                      <span>Wähle <strong className="text-white">"Zum Home-Bildschirm"</strong></span>
+                    </div>
+                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5">
+                      <span className="text-xl">3️⃣</span>
+                      <span>Tippe auf <strong className="text-white">"Hinzufügen"</strong></span>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="space-y-3 text-sm text-white/70">
+                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5">
+                      <span className="text-xl">1️⃣</span>
+                      <span>Tippe auf die <strong className="text-white">3 Punkte (⋮)</strong> oben rechts in Chrome</span>
+                    </div>
+                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5">
+                      <span className="text-xl">2️⃣</span>
+                      <span>Wähle <strong className="text-white">"App installieren"</strong> oder <strong className="text-white">"Zum Startbildschirm"</strong></span>
+                    </div>
+                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5">
+                      <span className="text-xl">3️⃣</span>
+                      <span>Tippe auf <strong className="text-white">"Installieren"</strong></span>
+                    </div>
+                  </div>
+                )}
+                <button onClick={() => setShowIOSHint(false)} className="w-full mt-5 py-3 rounded-2xl bg-gradient-to-r from-[#B8943B] to-[#E8C968] text-black font-bold">Verstanden</button>
               </div>
             </div>
           )}
