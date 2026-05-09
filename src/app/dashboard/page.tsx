@@ -181,7 +181,7 @@ export default function DashboardPage() {
                   </thead>
                   <tbody>
                     {customers.map((customer: any) => {
-                      const pct = Math.round((customer.points / 10) * 100);
+                      const pct = Math.round((customer.points / 9) * 100);
                       const color = customer.merchants?.primary_color || '#D4AF37';
                       return (
                         <tr key={customer.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
@@ -197,7 +197,7 @@ export default function DashboardPage() {
                           </td>
                           <td className="p-4">
                             <span className="text-white font-bold">{customer.points}</span>
-                            <span className="text-white/40 text-xs"> / 10</span>
+                            <span className="text-white/40 text-xs"> / 9</span>
                           </td>
                           <td className="p-4 min-w-[120px]">
                             <div className="flex items-center gap-2">

@@ -320,7 +320,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                             !searchQuery || c.wallet_object_id?.toLowerCase().includes(searchQuery.toLowerCase())
                           )
                           .map((customer: any) => {
-                          const pct = Math.round((customer.points / 10) * 100);
+                          const pct = Math.round((customer.points / 9) * 100);
                           return (
                             <tr key={customer.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors cursor-pointer" onClick={() => openCustomer(customer)}>
                               <td className="p-4">
@@ -328,7 +328,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                                   {customer.wallet_object_id?.substring(0, 14)}...
                                 </span>
                               </td>
-                              <td className="p-4 text-white font-bold">{customer.points} <span className="text-white/20">/ 10</span></td>
+                              <td className="p-4 text-white font-bold">{customer.points} <span className="text-white/20">/ 9</span></td>
                               <td className="p-4">
                                 <div className="flex items-center gap-2">
                                   <div className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden min-w-[60px]">
