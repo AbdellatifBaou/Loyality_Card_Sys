@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, use } from 'react';
 import { Html5QrcodeScanner, Html5QrcodeScanType } from 'html5-qrcode';
-import { CheckCircle2, XCircle, Loader2, Camera, LogOut, Download, Smartphone } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, LogOut, Download } from 'lucide-react';
 
 export default function MerchantScannerPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -28,12 +28,8 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
     const isIOSDevice = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
     setIsIOS(isIOSDevice);
 
-    const checkStandalone = () => {
-      const standalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
-      setIsStandalone(standalone);
-    };
-    
-    checkStandalone();
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone === true;
+    setIsStandalone(standalone);
 
     const handler = (e: any) => {
       e.preventDefault();
@@ -51,7 +47,7 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
     } else if (isIOS) {
       setShowIOSHint(true);
     } else {
-      alert('Um die App zu installieren, öffne das Browser-Menü (drei Punkte oder Teilen-Icon) und wähle "Zum Startbildschirm hinzufügen".');
+      setShowIOSHint(true);
     }
   };
 
@@ -191,16 +187,20 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
 
           {!isStandalone && (
             <button onClick={handleInstall} className="w-full mt-6 py-3 rounded-2xl border border-white/10 text-white/50 text-sm font-medium flex items-center justify-center gap-2">
-              <Download size={16} /> 
-              {deferredPrompt || isIOS ? 'App installieren' : 'Über Browser installieren'}
+              <Download size={16} /> App installieren
             </button>
           )}
 
           {showIOSHint && (
             <div className="fixed inset-0 z-50 flex items-end justify-center p-4 bg-black/70" onClick={() => setShowIOSHint(false)}>
               <div className="w-full max-w-md p-6 rounded-3xl bg-[#111] border border-[#D4AF37]/20" onClick={e => e.stopPropagation()}>
-                <h3 className="text-white font-bold mb-4">iPhone Installation</h3>
-                <p className="text-white/70 text-sm mb-4">Tippe auf das Teilen-Symbol und dann auf "Zum Home-Bildschirm".</p>
+                <h3 className="text-white font-bold mb-4">App installieren</h3>
+                <p className="text-white/70 text-sm mb-2">
+                  {isIOS 
+                    ? 'Tippe auf das Teilen-Symbol (□↑) unten in Safari und dann auf "Zum Home-Bildschirm".'
+                    : 'Öffne das Browser-Menü (⋮ oben rechts) und tippe auf "App installieren" oder "Zum Startbildschirm hinzufügen".'
+                  }
+                </p>
                 <button onClick={() => setShowIOSHint(false)} className="w-full py-3 rounded-2xl bg-gradient-to-r from-[#B8943B] to-[#E8C968] text-black font-bold">Verstanden</button>
               </div>
             </div>
