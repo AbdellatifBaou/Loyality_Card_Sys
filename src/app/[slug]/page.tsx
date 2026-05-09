@@ -25,6 +25,11 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
 
   // Capture the PWA install prompt event
   useEffect(() => {
+    // Save current slug so the root page knows where to redirect
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('last_merchant_slug', slug);
+    }
+
     const isIOSDevice = /iphone|ipad|ipod/.test(window.navigator.userAgent.toLowerCase());
     setIsIOS(isIOSDevice);
     

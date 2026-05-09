@@ -2,8 +2,25 @@
 
 import { ArrowRight, CheckCircle, ShieldCheck, Sparkles, Smartphone, BarChart3, Users } from 'lucide-react';
 import Link from 'next/link';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function LandingPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    // If the user opens the PWA or is in standalone mode, redirect to their last used terminal
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone;
+    const isPwaSource = window.location.search.includes('source=pwa');
+    
+    if (isStandalone || isPwaSource) {
+      const lastSlug = localStorage.getItem('last_merchant_slug');
+      if (lastSlug) {
+        router.replace(`/${lastSlug}`);
+      }
+    }
+  }, [router]);
+
   return (
     <main className="min-h-screen bg-[#050505] text-white selection:bg-[#D4AF37] selection:text-black">
       {/* Hero Section */}
