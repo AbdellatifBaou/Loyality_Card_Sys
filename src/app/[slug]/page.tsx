@@ -232,7 +232,7 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
               <p className="text-white/70 mb-6">{message}</p>
               {newPoints !== null && (
                 <div className="p-5 rounded-2xl border border-white/10" style={{ background: `${primaryColor}10` }}>
-                  <p className="text-4xl font-black" style={{ color: primaryColor }}>{newPoints} / 10</p>
+                  <p className="text-4xl font-black" style={{ color: primaryColor }}>{newPoints} / 9</p>
                 </div>
               )}
             </div>

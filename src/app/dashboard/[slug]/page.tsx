@@ -481,7 +481,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                 ><Minus size={18} /></button>
                 <div className="flex-1 text-center">
                   <span className="text-4xl font-black text-white">{editPoints}</span>
-                  <span className="text-white/20 text-xl"> / 10</span>
+                  <span className="text-white/20 text-xl"> / 9</span>
                 </div>
                 <button
                   onClick={() => setEditPoints(p => {

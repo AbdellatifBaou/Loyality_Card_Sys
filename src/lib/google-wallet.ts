@@ -247,7 +247,7 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
       // For regular stamps: send a silent notify to force the pass to refresh
       updatedObject.messages = [
         {
-          header: `${points} von 10 Stempeln 🍕`,
+          header: `${points} von 9 Stempeln 🍕`,
           body: points >= 8
             ? 'Nur noch 1 Stempel bis zu deiner Gratisbelohnung! 🎉'
             : `Du hast ${points} Stempel gesammelt. Weiter so!`,
