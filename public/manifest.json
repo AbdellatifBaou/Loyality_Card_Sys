@@ -2,7 +2,7 @@
   "name": "Marketif Scanner",
   "short_name": "Scanner",
   "description": "Marketif Loyalty Scanner",
-  "start_url": "/aroma",
+  "start_url": "/",
   "display": "standalone",
   "background_color": "#050505",
   "theme_color": "#050505",
