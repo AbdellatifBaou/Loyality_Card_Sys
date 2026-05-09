@@ -182,7 +182,9 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
     const isPublicUrl = appUrl && !appUrl.includes('localhost');
 
-    const heroImageUri = `${appUrl}/api/images/card/${points}?v=${IMAGE_VERSION}&merchant=${merchant?.slug}`;
+    const heroImageUri = points >= 10
+      ? `${appUrl}/api/images/redeem?v=${IMAGE_VERSION}&merchant=${merchant?.slug}`
+      : `${appUrl}/api/images/card/${points}?v=${IMAGE_VERSION}&merchant=${merchant?.slug}`;
 
     const updatedObject: any = {
       loyaltyPoints: {
