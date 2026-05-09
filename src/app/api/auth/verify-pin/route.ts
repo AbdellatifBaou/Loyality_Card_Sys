@@ -11,8 +11,12 @@ export async function POST(req: Request) {
 
     let query = supabase
       .from('staff')
-      .select('id, merchant_id, merchants(primary_color, logo_url, name, slug)')
+      .select('id, merchant_id, merchants!inner(primary_color, logo_url, name, slug)')
       .eq('pin', pin);
+
+    if (slug) {
+      query = query.eq('merchants.slug', slug);
+    }
 
     const { data: staff, error } = await query.single();
 
