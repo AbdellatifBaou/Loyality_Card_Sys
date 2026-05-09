@@ -8,12 +8,12 @@
   "theme_color": "#050505",
   "icons": [
     {
-      "src": "/Marketif_LOGO.png",
+      "src": "/icon-192x192.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/Marketif_LOGO.png",
+      "src": "/icon-512x512.png",
       "sizes": "512x512",
       "type": "image/png"
     }
