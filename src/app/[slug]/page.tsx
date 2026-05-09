@@ -185,7 +185,7 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
             </button>
           </form>
 
-          {!isStandalone && (
+          {(deferredPrompt || isIOS) && (
             <button onClick={handleInstall} className="w-full mt-6 py-3 rounded-2xl border border-white/10 text-white/50 text-sm font-medium flex items-center justify-center gap-2">
               <Download size={16} /> App installieren
             </button>
