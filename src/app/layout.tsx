@@ -15,7 +15,6 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Marketif Scanner",
   description: "Loyalty Card Scanner App",
-  manifest: "/manifest.json",
   themeColor: "#050505",
   appleWebApp: {
     capable: true,
