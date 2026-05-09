@@ -182,16 +182,14 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
     const isPublicUrl = appUrl && !appUrl.includes('localhost');
 
-    const heroImageUri = isRedeem
-      ? `${appUrl}/api/images/redeem?v=${IMAGE_VERSION}&merchant=${merchant?.slug}`
-      : `${appUrl}/api/images/card/${points}?v=${IMAGE_VERSION}&merchant=${merchant?.slug}`;
+    const heroImageUri = `${appUrl}/api/images/card/${points}?v=${IMAGE_VERSION}&merchant=${merchant?.slug}`;
 
     const updatedObject: any = {
       loyaltyPoints: {
         balance: { int: points },
         label: 'Stempel',
       },
-      ...(isPublicUrl || isRedeem
+      ...(isPublicUrl
         ? { heroImage: { sourceUri: { uri: heroImageUri } } }
         : {}),
       textModulesData: [
@@ -204,7 +202,7 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
           id: 'status',
           header: 'Status',
           body: isRedeem
-            ? 'GRATIS BELOHNUNG ERHALTEN! 🎁'
+            ? 'Prämie erfolgreich eingelöst! 🎉'
             : points >= 10
             ? 'DEINE BELOHNUNG IST BEREIT! 🎁'
             : points >= 9
@@ -217,7 +215,16 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
     };
 
     // Always add a notify message to force Google Wallet to refresh the pass on the device
-    if (isRedeem || points >= 10) {
+    if (isRedeem) {
+      updatedObject.messages = [
+        {
+          header: 'Prämie eingelöst! 🍕',
+          body: 'Guten Appetit! Deine Karte wurde auf 0 zurückgesetzt, du kannst nun wieder neu sammeln.',
+          id: `REDEEM_MESSAGE_${Date.now()}`,
+          messageType: 'TEXT_AND_NOTIFY'
+        }
+      ];
+    } else if (points >= 10) {
       updatedObject.linksModuleData = {
         uris: [
           {
@@ -230,7 +237,7 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
         {
           header: 'Belohnung bereit! ✨',
           body: merchant?.reward_text || 'Herzlichen Glückwunsch! Du hast deine Stempelkarte voll. Zeige sie beim nächsten Mal vor.',
-          id: `REDEEM_MESSAGE_${Date.now()}`,
+          id: `REWARD_READY_MESSAGE_${Date.now()}`,
           messageType: 'TEXT_AND_NOTIFY'
         }
       ];
