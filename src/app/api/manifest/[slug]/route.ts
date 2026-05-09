@@ -53,7 +53,11 @@ export async function GET(
       ]
     };
 
-    return NextResponse.json(manifest);
+    return new NextResponse(JSON.stringify(manifest), {
+      headers: {
+        'Content-Type': 'application/manifest+json',
+      },
+    });
   } catch (error: any) {
     console.error('Manifest Error:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
