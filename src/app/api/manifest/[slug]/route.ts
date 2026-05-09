@@ -41,14 +41,12 @@ export async function GET(
         {
           src: merchant.logo_url || '/Aroma_logo.png',
           sizes: '192x192',
-          type: 'image/png',
-          purpose: 'any maskable'
+          type: 'image/png'
         },
         {
           src: merchant.logo_url || '/Aroma_logo.png',
           sizes: '512x512',
-          type: 'image/png',
-          purpose: 'any maskable'
+          type: 'image/png'
         }
       ]
     };
