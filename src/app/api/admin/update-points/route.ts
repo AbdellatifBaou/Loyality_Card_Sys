@@ -22,7 +22,7 @@ export async function POST(req: Request) {
     }
 
     const merchant = customer.merchants;
-    const isRedeem = (customer.points >= 10 && newPoints === 0);
+    const isRedeem = (customer.points >= 9 && newPoints === 0);
     const type = isRedeem ? 'redeem' : 'correction';
 
     // 2. Update Database (Customer points)

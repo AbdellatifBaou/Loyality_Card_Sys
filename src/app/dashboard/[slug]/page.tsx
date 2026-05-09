@@ -485,7 +485,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                 </div>
                 <button
                   onClick={() => setEditPoints(p => {
-                    if ((p ?? 0) >= 10) return 0;
+                    if ((p ?? 0) >= 9) return 0;
                     return (p ?? 0) + 1;
                   })}
                   className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white flex items-center justify-center hover:bg-white/10 transition-all"

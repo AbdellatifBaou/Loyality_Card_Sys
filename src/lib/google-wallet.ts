@@ -182,7 +182,7 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
     const isPublicUrl = appUrl && !appUrl.includes('localhost');
 
-    const heroImageUri = points >= 10
+    const heroImageUri = points >= 9
       ? `${appUrl}/api/images/redeem?v=${IMAGE_VERSION}&merchant=${merchant?.slug}`
       : `${appUrl}/api/images/card/${points}?v=${IMAGE_VERSION}&merchant=${merchant?.slug}`;
 
@@ -205,9 +205,9 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
           header: 'Status',
           body: isRedeem
             ? 'Prämie erfolgreich eingelöst! 🎉'
-            : points >= 10
-            ? 'DEINE BELOHNUNG IST BEREIT! 🎁'
             : points >= 9
+            ? 'DEINE BELOHNUNG IST BEREIT! 🎁'
+            : points >= 8
             ? 'FAST GESCHAFFT! Nur noch 1 Stempel! 🎉'
             : points >= 5
             ? 'HALBZEIT! Du bist auf dem Weg! 🚀'
@@ -226,7 +226,7 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
           messageType: 'TEXT_AND_NOTIFY'
         }
       ];
-    } else if (points >= 10) {
+    } else if (points >= 9) {
       updatedObject.linksModuleData = {
         uris: [
           {
@@ -248,7 +248,7 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
       updatedObject.messages = [
         {
           header: `${points} von 10 Stempeln 🍕`,
-          body: points >= 9
+          body: points >= 8
             ? 'Nur noch 1 Stempel bis zu deiner Gratisbelohnung! 🎉'
             : `Du hast ${points} Stempel gesammelt. Weiter so!`,
           id: `STAMP_MESSAGE_${Date.now()}`,

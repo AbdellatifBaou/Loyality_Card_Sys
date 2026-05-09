@@ -39,14 +39,14 @@ export async function POST(req: Request) {
     let type = 'earn';
 
     // Reward logic:
-    // 1. If they ALREADY had 10 points (card full) and add a stamp, it resets to 0 and counts as a redemption.
-    if (customer.points >= 10 && amount > 0) {
+    // 1. If they ALREADY had 9 points (card full) and add a stamp, it resets to 0 and counts as a redemption.
+    if (customer.points >= 9 && amount > 0) {
       newPoints = 0;
       type = 'redeem';
     } 
-    // 2. If they reach 10 points, they stay at 10 (card full state).
-    else if (newPoints >= 10) {
-      newPoints = 10;
+    // 2. If they reach 9 points, they stay at 9 (card full state).
+    else if (newPoints >= 9) {
+      newPoints = 9;
       type = 'earn';
     }
 
