@@ -436,6 +436,8 @@ export default function DashboardPage() {
           </div>
         )}
       </div>
+    )}
+  </div>
 
       {/* Delete Confirmation Modal */}
       {confirmDelete && (
