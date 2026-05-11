@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect, useRef, use } from 'react';
-import { Html5QrcodeScanner, Html5QrcodeScanType } from 'html5-qrcode';
-import { CheckCircle2, XCircle, Loader2, Camera, LogOut, Download, Smartphone } from 'lucide-react';
+import { Html5QrcodeScanner, Html5QrcodeScanType, Html5Qrcode } from 'html5-qrcode';
+import { CheckCircle2, XCircle, Loader2, Camera, LogOut, Download, Smartphone, Flashlight, Keyboard } from 'lucide-react';
 
 export default function MerchantScannerPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = use(params);
@@ -16,6 +16,10 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
   const [message, setMessage] = useState('');
   const [newPoints, setNewPoints] = useState<number | null>(null);
   const [stampAmount, setStampAmount] = useState(1);
+  
+  const [manualId, setManualId] = useState('');
+  const [showManualInput, setShowManualInput] = useState(false);
+  const [torchOn, setTorchOn] = useState(false);
   
   const scannerRef = useRef<HTMLDivElement>(null);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
@@ -137,12 +141,36 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
       setTimeout(() => {
         setScanStatus('idle');
         setNewPoints(null);
+        setManualId('');
         if (scannerInstance) {
           try {
             scannerInstance.resume();
           } catch(e) {}
         }
       }, 4000);
+    }
+  };
+
+  const toggleTorch = async () => {
+    try {
+      // Html5Qrcode doesn't expose a simple toggle for the Scanner wrapper easily, 
+      // but we can try to grab the video track
+      const video = document.querySelector('#reader video') as HTMLVideoElement;
+      if (video && video.srcObject) {
+        const stream = video.srcObject as MediaStream;
+        const track = stream.getVideoTracks()[0];
+        const imageCapture = new (window as any).ImageCapture(track);
+        const capabilities = await imageCapture.getPhotoCapabilities();
+        
+        if (capabilities.fillLightMode && capabilities.fillLightMode.includes('flash')) {
+          await track.applyConstraints({
+            advanced: [{ torch: !torchOn } as any]
+          });
+          setTorchOn(!torchOn);
+        }
+      }
+    } catch (err) {
+      console.log('Torch not supported', err);
     }
   };
 
@@ -255,11 +283,48 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
 
         <div className="flex-1 w-full flex flex-col items-center justify-center">
           {scanStatus === 'idle' && (
-            <div className="w-full space-y-6">
-              <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10">
-                <button onClick={() => setStampAmount(1)} className={`flex-1 py-3 rounded-xl text-sm font-bold ${stampAmount === 1 ? 'bg-[#D4AF37] text-black' : 'text-white/40'}`}>+1</button>
-                <button onClick={() => setStampAmount(2)} className={`flex-1 py-3 rounded-xl text-sm font-bold ${stampAmount === 2 ? 'bg-[#D4AF37] text-black' : 'text-white/40'}`}>+2</button>
+            <div className="w-full space-y-4">
+              {/* Controls */}
+              <div className="flex gap-2">
+                <div className="flex flex-1 bg-white/5 p-1 rounded-2xl border border-white/10">
+                  <button onClick={() => setStampAmount(1)} className={`flex-1 py-3 rounded-xl text-sm font-bold ${stampAmount === 1 ? 'bg-[#D4AF37] text-black' : 'text-white/40'}`}>+1</button>
+                  <button onClick={() => setStampAmount(2)} className={`flex-1 py-3 rounded-xl text-sm font-bold ${stampAmount === 2 ? 'bg-[#D4AF37] text-black' : 'text-white/40'}`}>+2</button>
+                </div>
+                <button 
+                  onClick={() => setShowManualInput(!showManualInput)}
+                  className={`p-3 rounded-2xl border transition-all flex items-center justify-center ${showManualInput ? 'bg-[#D4AF37] text-black border-[#D4AF37]' : 'bg-white/5 text-white/60 border-white/10'}`}
+                >
+                  <Keyboard size={20} />
+                </button>
+                <button 
+                  onClick={toggleTorch}
+                  className={`p-3 rounded-2xl border transition-all flex items-center justify-center ${torchOn ? 'bg-[#D4AF37] text-black border-[#D4AF37]' : 'bg-white/5 text-white/60 border-white/10'}`}
+                >
+                  <Flashlight size={20} />
+                </button>
               </div>
+
+              {/* Manual Input Field */}
+              {showManualInput && (
+                <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 animate-fade-in">
+                  <input
+                    type="text"
+                    placeholder="Kunden-ID eingeben..."
+                    value={manualId}
+                    onChange={(e) => setManualId(e.target.value)}
+                    className="flex-1 bg-transparent px-4 py-3 text-white outline-none font-mono text-sm placeholder:text-white/30"
+                    onKeyDown={(e) => { if (e.key === 'Enter' && manualId) processScan(manualId, null); }}
+                  />
+                  <button
+                    onClick={() => { if (manualId) processScan(manualId, null); }}
+                    className="bg-[#D4AF37] text-black px-6 py-3 rounded-xl font-bold active:scale-95 transition-all"
+                  >
+                    OK
+                  </button>
+                </div>
+              )}
+
+              {/* Scanner */}
               <div className="p-2 rounded-3xl" style={{ background: `linear-gradient(145deg, ${primaryColor}20 0%, #111111 100%)`, border: `1px solid ${primaryColor}40` }}>
                 <div id="reader" className="w-full bg-black rounded-2xl overflow-hidden min-h-[300px]" ref={scannerRef}></div>
               </div>

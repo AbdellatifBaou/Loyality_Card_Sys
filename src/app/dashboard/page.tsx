@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut } from 'lucide-react';
+import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, BarChart2, Megaphone, Send } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 export default function DashboardPage() {
   const [password, setPassword] = useState('');
@@ -15,8 +16,15 @@ export default function DashboardPage() {
   const [redeemCount, setRedeemCount] = useState(0);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
+  const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [confirmDelete, setConfirmDelete] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
+  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'marketing'>('overview');
+  
+  const [msgTitle, setMsgTitle] = useState('');
+  const [msgBody, setMsgBody] = useState('');
+  const [sendingMsg, setSendingMsg] = useState(false);
+  const [msgSuccess, setMsgSuccess] = useState('');
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,13 +57,35 @@ export default function DashboardPage() {
         supabase.from('stamps').select('*', { count: 'exact', head: true }).eq('type', 'earn'),
         supabase.from('stamps').select('*', { count: 'exact', head: true }).eq('type', 'redeem'),
         supabase.from('stamps').select('*, customers(wallet_object_id)').order('created_at', { ascending: false }).limit(10),
-        supabase.from('customers').select('id, wallet_object_id, points, created_at, merchant_id, merchants(name, primary_color)').order('created_at', { ascending: false }),
+        supabase.from('customers').select('id, wallet_object_id, points, created_at, merchant_id, merchants(name, primary_color, slug)').order('created_at', { ascending: false }),
       ]);
       setCustomerCount(cc || 0);
       setEarnCount(ec || 0);
       setRedeemCount(rc || 0);
       setRecentActivity(activity || []);
       setCustomers(cust || []);
+
+      // Aggregate monthly data for new customers
+      const monthMap = new Map();
+      const months = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
+      
+      const today = new Date();
+      for (let i = 5; i >= 0; i--) {
+        const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+        monthMap.set(`${months[d.getMonth()]} ${d.getFullYear()}`, 0);
+      }
+
+      if (cust) {
+        cust.forEach((c: any) => {
+          const date = new Date(c.created_at);
+          const key = `${months[date.getMonth()]} ${date.getFullYear()}`;
+          if (monthMap.has(key)) {
+            monthMap.set(key, monthMap.get(key) + 1);
+          }
+        });
+      }
+      setMonthlyData(Array.from(monthMap, ([name, count]) => ({ name, count })));
+
     } finally {
       setLoading(false);
     }
@@ -76,6 +106,33 @@ export default function DashboardPage() {
       setConfirmDelete(null);
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!msgTitle || !msgBody) return;
+    setSendingMsg(true);
+    setMsgSuccess('');
+    
+    try {
+      const merchantSlugs = [...new Set(customers.filter(c => c.merchants?.slug).map(c => c.merchants.slug))];
+      
+      for (const slug of merchantSlugs) {
+          await fetch('/api/wallet/message', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ slug, header: msgTitle, body: msgBody })
+          });
+      }
+      setMsgSuccess('Nachricht erfolgreich an alle Kunden gesendet!');
+      setMsgTitle('');
+      setMsgBody('');
+    } catch (err) {
+      console.error(err);
+      setMsgSuccess('Fehler beim Senden.');
+    } finally {
+      setSendingMsg(false);
     }
   };
 
@@ -129,14 +186,39 @@ export default function DashboardPage() {
           </div>
         </header>
 
+        {/* Navigation Tabs */}
+        <div className="flex gap-4 border-b border-white/5 pb-1">
+          <button 
+            onClick={() => setActiveTab('overview')}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${activeTab === 'overview' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
+          >
+            <div className="flex items-center gap-2"><Activity size={16}/> Übersicht</div>
+          </button>
+          <button 
+            onClick={() => setActiveTab('analytics')}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${activeTab === 'analytics' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
+          >
+            <div className="flex items-center gap-2"><BarChart2 size={16}/> Analytics</div>
+          </button>
+          <button 
+            onClick={() => setActiveTab('marketing')}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${activeTab === 'marketing' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
+          >
+            <div className="flex items-center gap-2"><Megaphone size={16}/> Marketing</div>
+          </button>
+        </div>
+
         {loading ? (
           <div className="flex items-center justify-center py-20">
             <RefreshCw size={32} className="animate-spin text-white/30" />
           </div>
         ) : (
-          <>
-            {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="space-y-8 animate-fade-in">
+            {/* OVERVIEW TAB */}
+            {activeTab === 'overview' && (
+              <>
+                {/* KPI Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20"><Users size={22} className="text-blue-500" /></div>
@@ -271,6 +353,87 @@ export default function DashboardPage() {
               </div>
             </div>
           </>
+        )}
+
+        {/* ANALYTICS TAB */}
+        {activeTab === 'analytics' && (
+          <div className="space-y-6">
+            <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div className="flex items-center gap-3 mb-6">
+                <BarChart2 size={20} className="text-white/60" />
+                <h2 className="text-lg font-bold text-white">Neue Kunden pro Monat</h2>
+              </div>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                    <XAxis dataKey="name" stroke="rgba(255,255,255,0.4)" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis stroke="rgba(255,255,255,0.4)" fontSize={12} tickLine={false} axisLine={false} />
+                    <Tooltip 
+                      contentStyle={{ background: '#111', border: '1px solid rgba(212, 175, 55, 0.3)', borderRadius: '12px' }}
+                      itemStyle={{ color: '#D4AF37' }}
+                    />
+                    <Line type="monotone" dataKey="count" name="Neue Kunden" stroke="#D4AF37" strokeWidth={3} dot={{ r: 4, fill: '#D4AF37', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* MARKETING TAB */}
+        {activeTab === 'marketing' && (
+          <div className="space-y-6 max-w-2xl">
+            <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div className="flex items-center gap-3 mb-6">
+                <Megaphone size={20} className="text-[#D4AF37]" />
+                <h2 className="text-lg font-bold text-white">Nachricht an alle Kunden</h2>
+              </div>
+              <p className="text-sm text-white/50 mb-6">
+                Sende eine Push-Benachrichtigung an alle Kunden, die ihre Karte im Google Wallet gespeichert haben. Ideal für Aktionen, Specials oder Ankündigungen.
+              </p>
+              
+              <form onSubmit={handleSendMessage} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-white/60 mb-2">Titel der Nachricht</label>
+                  <input
+                    type="text"
+                    value={msgTitle}
+                    onChange={e => setMsgTitle(e.target.value)}
+                    placeholder="z.B. Wochenend-Special! 🍕"
+                    required
+                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#D4AF37] transition-all text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-white/60 mb-2">Inhalt</label>
+                  <textarea
+                    value={msgBody}
+                    onChange={e => setMsgBody(e.target.value)}
+                    placeholder="z.B. Komm dieses Wochenende vorbei und erhalte doppelte Stempel!"
+                    required
+                    rows={4}
+                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#D4AF37] transition-all text-sm resize-none"
+                  />
+                </div>
+                
+                {msgSuccess && (
+                  <div className={`p-3 rounded-xl text-sm text-center ${msgSuccess.includes('Fehler') ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-green-500/10 text-green-500 border border-green-500/20'}`}>
+                    {msgSuccess}
+                  </div>
+                )}
+
+                <button 
+                  type="submit" 
+                  disabled={sendingMsg}
+                  className="w-full mt-2 py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-black disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95"
+                  style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}
+                >
+                  {sendingMsg ? <RefreshCw className="animate-spin" size={20} /> : <><Send size={20} /> Nachricht Senden</>}
+                </button>
+              </form>
+            </div>
+          </div>
         )}
       </div>
 

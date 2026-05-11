@@ -267,3 +267,32 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
     throw error;
   }
 }
+
+/**
+ * Sends a push notification message to all objects associated with a LoyaltyClass.
+ */
+export async function sendClassMessage(classId: string, header: string, body: string) {
+  try {
+    const issuerId = process.env.GOOGLE_ISSUER_ID;
+    
+    // We add a new message to the class. Google Wallet handles distributing it to all associated objects.
+    const message = {
+      header: header,
+      body: body,
+      id: `MARKETING_MESSAGE_${Date.now()}`,
+      messageType: 'TEXT_AND_NOTIFY'
+    };
+
+    const response = await walletClient.loyaltyclass.addmessage({
+      resourceId: `${issuerId}.${classId}`,
+      requestBody: {
+        message: message
+      }
+    });
+    
+    return response.data;
+  } catch (error: any) {
+    console.error('API Error sending class message:', error.response?.data || error.message);
+    throw error;
+  }
+}

@@ -21,11 +21,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Invalid PIN' }, { status: 401 });
     }
 
-    // 2. Get customer and their merchant
+    // 2. Get customer and their merchant (Support both full UUID and short 8-char ID from manual input)
     const { data: customer, error: customerError } = await supabase
       .from('customers')
-      .select('id, points, merchants(*)')
-      .eq('wallet_object_id', objectId)
+      .select('id, wallet_object_id, points, merchants(*)')
+      .ilike('wallet_object_id', `${objectId}%`)
       .single();
 
     if (customerError || !customer) {
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     ]);
 
     // 5. Update Google Wallet
-    await updateLoyaltyObjectPoints(objectId, newPoints, type === 'redeem', merchant);
+    await updateLoyaltyObjectPoints(customer.wallet_object_id, newPoints, type === 'redeem', merchant);
 
     return NextResponse.json({ success: true, newPoints, type });
   } catch (error: any) {
