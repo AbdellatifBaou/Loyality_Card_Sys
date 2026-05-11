@@ -34,6 +34,10 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   const [savingPoints, setSavingPoints] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   
+  // New Analytics State
+  const [currentMonthCustomers, setCurrentMonthCustomers] = useState(0);
+  const [weekdayData, setWeekdayData] = useState<any[]>([]);
+  
   const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'marketing'>('overview');
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [msgTitle, setMsgTitle] = useState('');
@@ -78,8 +82,8 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       // 2. Fetch specific data for this merchant
       const [
         { count: cc },
-        { count: ec },
-        { count: rc },
+        { data: earnStamps },
+        { data: redeemStamps },
         { data: activity },
         { data: cust },
         { data: staffData }
@@ -93,11 +97,45 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       ]);
 
       setCustomerCount(cc || 0);
-      setEarnCount(ec || 0);
-      setRedeemCount(rc || 0);
+      setEarnCount(earnStamps?.length || 0);
+      setRedeemCount(redeemStamps?.length || 0);
       setRecentActivity(activity || []);
       setCustomers(cust || []);
-      setStaff(staffData || []);
+
+      // 3. New Advanced Analytics
+      const now = new Date();
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      
+      // Kunden pro aktuellen Monat
+      const newThisMonth = cust ? cust.filter((c: any) => new Date(c.created_at) >= firstDayOfMonth).length : 0;
+      setCurrentMonthCustomers(newThisMonth);
+
+      // Wochentag & Mitarbeiter Analyse
+      const weekdays = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
+      const weekMap = new Map([['Mo', 0], ['Di', 0], ['Mi', 0], ['Do', 0], ['Fr', 0], ['Sa', 0], ['So', 0]]);
+      
+      const staffMap = new Map();
+      if (staffData) staffData.forEach((s: any) => staffMap.set(s.id, { ...s, stampsGiven: 0 }));
+
+      if (earnStamps) {
+        earnStamps.forEach((stamp: any) => {
+          // Weekday
+          const d = new Date(stamp.created_at);
+          const dayName = weekdays[d.getDay()];
+          weekMap.set(dayName, weekMap.get(dayName) + stamp.amount);
+
+          // Staff Ranking
+          if (stamp.staff_id && staffMap.has(stamp.staff_id)) {
+             staffMap.get(stamp.staff_id).stampsGiven += stamp.amount;
+          }
+        });
+      }
+
+      setWeekdayData(Array.from(weekMap, ([name, count]) => ({ name, count })));
+      
+      // Sort staff by stamps given
+      const sortedStaff = Array.from(staffMap.values()).sort((a, b) => b.stampsGiven - a.stampsGiven);
+      setStaff(sortedStaff);
 
       // Aggregate monthly data for new customers
       const monthMap = new Map();
@@ -339,13 +377,20 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             {activeTab === 'overview' && (
               <>
                 {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20"><Users size={22} className="text-blue-500" /></div>
                   <h2 className="text-white/60 font-medium text-sm">Aktive Karten</h2>
                 </div>
                 <p className="text-4xl font-black text-white">{customerCount}</p>
+              </div>
+              <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="p-3 bg-purple-500/10 rounded-2xl border border-purple-500/20"><UserPlus size={22} className="text-purple-500" /></div>
+                  <h2 className="text-white/60 font-medium text-sm">Kunden (Dieser Monat)</h2>
+                </div>
+                <p className="text-4xl font-black text-white">{currentMonthCustomers}</p>
               </div>
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-4 mb-4">
@@ -443,15 +488,25 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                     </button>
                   </div>
                   <div className="p-4 space-y-3">
-                    {staff.map((s: any) => (
-                      <div key={s.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/3 border border-white/5">
-                        <div>
-                          <p className="text-sm font-bold text-white">{s.name}</p>
-                          <p className="text-xs font-mono text-[#D4AF37] tracking-[0.2em]">{s.pin}</p>
+                    {staff.map((s: any, idx: number) => (
+                      <div key={s.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/3 border border-white/5 relative overflow-hidden">
+                        {idx === 0 && s.stampsGiven > 0 && <div className="absolute top-0 right-0 w-8 h-8 bg-gradient-to-bl from-yellow-500 to-transparent opacity-20" />}
+                        <div className="flex items-center gap-3">
+                          {idx === 0 && s.stampsGiven > 0 ? <span className="text-xl">🏆</span> : <span className="text-xl text-white/20">{idx + 1}.</span>}
+                          <div>
+                            <p className="text-sm font-bold text-white flex items-center gap-2">{s.name}</p>
+                            <p className="text-xs font-mono text-[#D4AF37] tracking-[0.2em]">{s.pin}</p>
+                          </div>
                         </div>
-                        <button onClick={() => deleteStaff(s.id)} className="text-white/10 hover:text-red-500 transition-colors">
-                          <Trash2 size={14} />
-                        </button>
+                        <div className="flex items-center gap-3">
+                          <div className="text-right">
+                            <p className="text-sm font-bold text-white">{s.stampsGiven || 0}</p>
+                            <p className="text-[10px] text-white/40 uppercase tracking-widest">Stempel</p>
+                          </div>
+                          <button onClick={() => deleteStaff(s.id)} className="text-white/10 hover:text-red-500 transition-colors p-2">
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </div>
                     ))}
                     {staff.length === 0 && <p className="text-center py-4 text-white/20 text-sm italic">Keine Mitarbeiter angelegt.</p>}
@@ -485,10 +540,31 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
 
         {/* ANALYTICS TAB */}
         {activeTab === 'analytics' && (
-          <div className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="flex items-center gap-3 mb-6">
-                <BarChart2 size={20} className="text-white/60" />
+                <BarChart2 size={20} className="text-[#D4AF37]" />
+                <h2 className="text-lg font-bold text-white">Stempel nach Wochentag</h2>
+              </div>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={weekdayData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                    <XAxis dataKey="name" stroke="rgba(255,255,255,0.4)" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis stroke="rgba(255,255,255,0.4)" fontSize={12} tickLine={false} axisLine={false} />
+                    <Tooltip 
+                      contentStyle={{ background: '#111', border: '1px solid rgba(212, 175, 55, 0.3)', borderRadius: '12px' }}
+                      itemStyle={{ color: '#D4AF37' }}
+                    />
+                    <Line type="monotone" dataKey="count" name="Vergebene Stempel" stroke="#D4AF37" strokeWidth={3} dot={{ r: 4, fill: '#D4AF37', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div className="flex items-center gap-3 mb-6">
+                <Activity size={20} className="text-blue-500" />
                 <h2 className="text-lg font-bold text-white">Neue Kunden pro Monat</h2>
               </div>
               <div className="h-[300px] w-full">
@@ -498,10 +574,10 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                     <XAxis dataKey="name" stroke="rgba(255,255,255,0.4)" fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis stroke="rgba(255,255,255,0.4)" fontSize={12} tickLine={false} axisLine={false} />
                     <Tooltip 
-                      contentStyle={{ background: '#111', border: '1px solid rgba(212, 175, 55, 0.3)', borderRadius: '12px' }}
-                      itemStyle={{ color: '#D4AF37' }}
+                      contentStyle={{ background: '#111', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '12px' }}
+                      itemStyle={{ color: '#3b82f6' }}
                     />
-                    <Line type="monotone" dataKey="count" name="Neue Kunden" stroke="#D4AF37" strokeWidth={3} dot={{ r: 4, fill: '#D4AF37', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                    <Line type="monotone" dataKey="count" name="Neue Kunden" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }} activeDot={{ r: 6 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, BarChart2, Megaphone, Send } from 'lucide-react';
+import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, BarChart2, Store } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
@@ -16,15 +16,16 @@ export default function DashboardPage() {
   const [redeemCount, setRedeemCount] = useState(0);
   const [recentActivity, setRecentActivity] = useState<any[]>([]);
   const [customers, setCustomers] = useState<any[]>([]);
-  const [monthlyData, setMonthlyData] = useState<any[]>([]);
+  
+  // B2B State
+  const [merchantCount, setMerchantCount] = useState(0);
+  const [merchantGrowthData, setMerchantGrowthData] = useState<any[]>([]);
+  const [topMerchants, setTopMerchants] = useState<any[]>([]);
+  const [inactiveMerchants, setInactiveMerchants] = useState<any[]>([]);
+
   const [confirmDelete, setConfirmDelete] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'marketing'>('overview');
-  
-  const [msgTitle, setMsgTitle] = useState('');
-  const [msgBody, setMsgBody] = useState('');
-  const [sendingMsg, setSendingMsg] = useState(false);
-  const [msgSuccess, setMsgSuccess] = useState('');
+  const [activeTab, setActiveTab] = useState<'overview' | 'analytics'>('overview');
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -51,21 +52,26 @@ export default function DashboardPage() {
         { count: ec },
         { count: rc },
         { data: activity },
-        { data: cust }
+        { data: cust },
+        { data: merchants },
+        { data: recentStamps }
       ] = await Promise.all([
         supabase.from('customers').select('*', { count: 'exact', head: true }),
         supabase.from('stamps').select('*', { count: 'exact', head: true }).eq('type', 'earn'),
         supabase.from('stamps').select('*', { count: 'exact', head: true }).eq('type', 'redeem'),
         supabase.from('stamps').select('*, customers(wallet_object_id)').order('created_at', { ascending: false }).limit(10),
         supabase.from('customers').select('id, wallet_object_id, points, created_at, merchant_id, merchants(name, primary_color, slug)').order('created_at', { ascending: false }),
+        supabase.from('merchants').select('*'),
+        supabase.from('stamps').select('*, customers!inner(merchant_id)').gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
       ]);
       setCustomerCount(cc || 0);
       setEarnCount(ec || 0);
       setRedeemCount(rc || 0);
       setRecentActivity(activity || []);
       setCustomers(cust || []);
+      setMerchantCount(merchants?.length || 0);
 
-      // Aggregate monthly data for new customers
+      // Merchant Growth Data
       const monthMap = new Map();
       const months = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
       
@@ -75,16 +81,47 @@ export default function DashboardPage() {
         monthMap.set(`${months[d.getMonth()]} ${d.getFullYear()}`, 0);
       }
 
-      if (cust) {
-        cust.forEach((c: any) => {
-          const date = new Date(c.created_at);
+      if (merchants) {
+        merchants.forEach((m: any) => {
+          const date = new Date(m.created_at);
           const key = `${months[date.getMonth()]} ${date.getFullYear()}`;
           if (monthMap.has(key)) {
             monthMap.set(key, monthMap.get(key) + 1);
           }
         });
       }
-      setMonthlyData(Array.from(monthMap, ([name, count]) => ({ name, count })));
+      setMerchantGrowthData(Array.from(monthMap, ([name, count]) => ({ name, count })));
+
+      // Top Merchants & Inactive Partners
+      if (merchants) {
+        const merchantActivity = new Map();
+        merchants.forEach((m: any) => merchantActivity.set(m.id, { ...m, recentStamps: 0, lastActivity: null }));
+
+        if (recentStamps) {
+          recentStamps.forEach((stamp: any) => {
+            const mId = stamp.customers?.merchant_id;
+            if (mId && merchantActivity.has(mId)) {
+              const m = merchantActivity.get(mId);
+              m.recentStamps += stamp.amount || 1;
+              const stampDate = new Date(stamp.created_at);
+              if (!m.lastActivity || stampDate > m.lastActivity) {
+                m.lastActivity = stampDate;
+              }
+            }
+          });
+        }
+
+        const allMapped = Array.from(merchantActivity.values());
+        
+        // Top Merchants
+        const top = [...allMapped].sort((a, b) => b.recentStamps - a.recentStamps).filter(m => m.recentStamps > 0);
+        setTopMerchants(top);
+
+        // Inactive (no activity in last 7 days)
+        const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+        const inactive = allMapped.filter(m => !m.lastActivity || m.lastActivity < sevenDaysAgo);
+        setInactiveMerchants(inactive);
+      }
 
     } finally {
       setLoading(false);
@@ -106,33 +143,6 @@ export default function DashboardPage() {
       setConfirmDelete(null);
     } finally {
       setDeleting(false);
-    }
-  };
-
-  const handleSendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!msgTitle || !msgBody) return;
-    setSendingMsg(true);
-    setMsgSuccess('');
-    
-    try {
-      const merchantSlugs = [...new Set(customers.filter(c => c.merchants?.slug).map(c => c.merchants.slug))];
-      
-      for (const slug of merchantSlugs) {
-          await fetch('/api/wallet/message', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ slug, header: msgTitle, body: msgBody })
-          });
-      }
-      setMsgSuccess('Nachricht erfolgreich an alle Kunden gesendet!');
-      setMsgTitle('');
-      setMsgBody('');
-    } catch (err) {
-      console.error(err);
-      setMsgSuccess('Fehler beim Senden.');
-    } finally {
-      setSendingMsg(false);
     }
   };
 
@@ -198,13 +208,7 @@ export default function DashboardPage() {
             onClick={() => setActiveTab('analytics')}
             className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${activeTab === 'analytics' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
           >
-            <div className="flex items-center gap-2"><BarChart2 size={16}/> Analytics</div>
-          </button>
-          <button 
-            onClick={() => setActiveTab('marketing')}
-            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${activeTab === 'marketing' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
-          >
-            <div className="flex items-center gap-2"><Megaphone size={16}/> Marketing</div>
+            <div className="flex items-center gap-2"><BarChart2 size={16}/> B2B Analytics</div>
           </button>
         </div>
 
@@ -218,11 +222,18 @@ export default function DashboardPage() {
             {activeTab === 'overview' && (
               <>
                 {/* KPI Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="p-3 bg-purple-500/10 rounded-2xl border border-purple-500/20"><Store size={22} className="text-purple-500" /></div>
+                  <h2 className="text-white/60 font-medium text-sm">Händler</h2>
+                </div>
+                <p className="text-4xl font-black text-white">{merchantCount}</p>
+              </div>
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20"><Users size={22} className="text-blue-500" /></div>
-                  <h2 className="text-white/60 font-medium text-sm">Aktive Karten</h2>
+                  <h2 className="text-white/60 font-medium text-sm">Nutzer</h2>
                 </div>
                 <p className="text-4xl font-black text-white">{customerCount}</p>
               </div>
@@ -357,81 +368,83 @@ export default function DashboardPage() {
 
         {/* ANALYTICS TAB */}
         {activeTab === 'analytics' && (
-          <div className="space-y-6">
-            <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div className="flex items-center gap-3 mb-6">
-                <BarChart2 size={20} className="text-white/60" />
-                <h2 className="text-lg font-bold text-white">Neue Kunden pro Monat</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="space-y-8">
+              <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div className="flex items-center gap-3 mb-6">
+                  <BarChart2 size={20} className="text-purple-500" />
+                  <h2 className="text-lg font-bold text-white">Merchant-Wachstum</h2>
+                </div>
+                <div className="h-[300px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={merchantGrowthData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                      <XAxis dataKey="name" stroke="rgba(255,255,255,0.4)" fontSize={12} tickLine={false} axisLine={false} />
+                      <YAxis stroke="rgba(255,255,255,0.4)" fontSize={12} tickLine={false} axisLine={false} />
+                      <Tooltip 
+                        contentStyle={{ background: '#111', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '12px' }}
+                        itemStyle={{ color: '#a855f7' }}
+                      />
+                      <Line type="monotone" dataKey="count" name="Neue Partner" stroke="#a855f7" strokeWidth={3} dot={{ r: 4, fill: '#a855f7', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
               </div>
-              <div className="h-[300px] w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
-                    <XAxis dataKey="name" stroke="rgba(255,255,255,0.4)" fontSize={12} tickLine={false} axisLine={false} />
-                    <YAxis stroke="rgba(255,255,255,0.4)" fontSize={12} tickLine={false} axisLine={false} />
-                    <Tooltip 
-                      contentStyle={{ background: '#111', border: '1px solid rgba(212, 175, 55, 0.3)', borderRadius: '12px' }}
-                      itemStyle={{ color: '#D4AF37' }}
-                    />
-                    <Line type="monotone" dataKey="count" name="Neue Kunden" stroke="#D4AF37" strokeWidth={3} dot={{ r: 4, fill: '#D4AF37', strokeWidth: 0 }} activeDot={{ r: 6 }} />
-                  </LineChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          </div>
-        )}
 
-        {/* MARKETING TAB */}
-        {activeTab === 'marketing' && (
-          <div className="space-y-6 max-w-2xl">
-            <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div className="flex items-center gap-3 mb-6">
-                <Megaphone size={20} className="text-[#D4AF37]" />
-                <h2 className="text-lg font-bold text-white">Nachricht an alle Kunden</h2>
-              </div>
-              <p className="text-sm text-white/50 mb-6">
-                Sende eine Push-Benachrichtigung an alle Kunden, die ihre Karte im Google Wallet gespeichert haben. Ideal für Aktionen, Specials oder Ankündigungen.
-              </p>
-              
-              <form onSubmit={handleSendMessage} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-medium text-white/60 mb-2">Titel der Nachricht</label>
-                  <input
-                    type="text"
-                    value={msgTitle}
-                    onChange={e => setMsgTitle(e.target.value)}
-                    placeholder="z.B. Wochenend-Special! 🍕"
-                    required
-                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#D4AF37] transition-all text-sm"
-                  />
+              {/* Inactive Merchants */}
+              <div className="p-6 rounded-3xl" style={{ background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)' }}>
+                <div className="flex items-center gap-3 mb-6">
+                  <AlertTriangle size={20} className="text-red-500" />
+                  <h2 className="text-lg font-bold text-white">Inaktive Partner (&gt; 7 Tage)</h2>
                 </div>
-                <div>
-                  <label className="block text-xs font-medium text-white/60 mb-2">Inhalt</label>
-                  <textarea
-                    value={msgBody}
-                    onChange={e => setMsgBody(e.target.value)}
-                    placeholder="z.B. Komm dieses Wochenende vorbei und erhalte doppelte Stempel!"
-                    required
-                    rows={4}
-                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#D4AF37] transition-all text-sm resize-none"
-                  />
-                </div>
-                
-                {msgSuccess && (
-                  <div className={`p-3 rounded-xl text-sm text-center ${msgSuccess.includes('Fehler') ? 'bg-red-500/10 text-red-500 border border-red-500/20' : 'bg-green-500/10 text-green-500 border border-green-500/20'}`}>
-                    {msgSuccess}
+                {inactiveMerchants.length === 0 ? (
+                  <p className="text-white/40 text-sm">Alle Partner sind aktuell aktiv!</p>
+                ) : (
+                  <div className="space-y-3">
+                    {inactiveMerchants.map((m: any) => (
+                      <div key={m.id} className="flex justify-between items-center p-4 rounded-2xl bg-black/40 border border-red-500/10">
+                        <div>
+                          <p className="text-sm font-bold text-white">{m.name}</p>
+                          <p className="text-xs text-white/40">Zuletzt aktiv: {m.lastActivity ? m.lastActivity.toLocaleDateString('de-DE') : 'Nie'}</p>
+                        </div>
+                        <span className="px-3 py-1 bg-red-500/20 text-red-500 text-xs font-bold rounded-lg uppercase tracking-wider">Inaktiv</span>
+                      </div>
+                    ))}
                   </div>
                 )}
+              </div>
+            </div>
 
-                <button 
-                  type="submit" 
-                  disabled={sendingMsg}
-                  className="w-full mt-2 py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-black disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95"
-                  style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}
-                >
-                  {sendingMsg ? <RefreshCw className="animate-spin" size={20} /> : <><Send size={20} /> Nachricht Senden</>}
-                </button>
-              </form>
+            <div className="space-y-8">
+              {/* Top Merchants (Activity Heatmap) */}
+              <div className="p-6 rounded-3xl h-full" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div className="flex items-center gap-3 mb-6">
+                  <Activity size={20} className="text-green-500" />
+                  <h2 className="text-lg font-bold text-white">Aktivitäts-Heatmap (Top Partner, 30 Tage)</h2>
+                </div>
+                {topMerchants.length === 0 ? (
+                  <p className="text-white/40 text-sm">Keine Aktivität in den letzten 30 Tagen.</p>
+                ) : (
+                  <div className="space-y-3">
+                    {topMerchants.map((m: any, idx: number) => {
+                      const maxStamps = topMerchants[0].recentStamps;
+                      const pct = Math.max(10, Math.round((m.recentStamps / maxStamps) * 100));
+                      return (
+                        <div key={m.id} className="p-4 rounded-2xl bg-white/5 border border-white/5 relative overflow-hidden">
+                          <div className="absolute inset-0 bg-green-500/10" style={{ width: `${pct}%`, transition: 'width 1s ease-out' }} />
+                          <div className="relative flex justify-between items-center">
+                            <div className="flex items-center gap-3">
+                              <span className="text-white/30 font-mono text-xs">{idx + 1}.</span>
+                              <p className="text-sm font-bold text-white">{m.name}</p>
+                            </div>
+                            <p className="text-sm font-bold text-green-400">+{m.recentStamps} <span className="text-[10px] text-white/30 uppercase">Stempel</span></p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
