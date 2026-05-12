@@ -15,7 +15,8 @@ export async function POST(req: Request) {
       .eq('pin', pin);
 
     if (slug) {
-      query = query.eq('merchants_loyality.slug', slug);
+      const normalizedSlug = decodeURIComponent(slug).toLowerCase();
+      query = query.eq('merchants_loyality.slug', normalizedSlug);
     }
 
     const { data: staff, error } = await query.single();
@@ -25,8 +26,11 @@ export async function POST(req: Request) {
     }
 
     // If slug is provided, verify it matches
-    if (slug && (staff.merchants_loyality as any).slug !== slug) {
-      return NextResponse.json({ error: 'PIN gehört nicht zu diesem Händler' }, { status: 401 });
+    if (slug) {
+      const normalizedSlug = decodeURIComponent(slug).toLowerCase();
+      if ((staff.merchants_loyality as any).slug !== normalizedSlug) {
+        return NextResponse.json({ error: 'PIN gehört nicht zu diesem Händler' }, { status: 401 });
+      }
     }
 
     return NextResponse.json({ 
