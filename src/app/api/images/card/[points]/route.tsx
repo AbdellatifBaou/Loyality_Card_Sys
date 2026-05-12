@@ -103,7 +103,13 @@ export async function GET(
           </div>
         </div>
       ),
-      { width: 1000, height: 700 }
+      { 
+        width: 1000, 
+        height: 700,
+        headers: {
+          'Cache-Control': 'public, max-age=31536000, immutable'
+        }
+      }
     );
   } catch (e: any) {
     console.error(e);

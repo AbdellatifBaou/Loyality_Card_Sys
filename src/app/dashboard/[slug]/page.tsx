@@ -67,36 +67,30 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     if (!isAuthorized) return;
     setLoading(true);
     try {
-      // 1. Get Merchant info
-      const { data: merchantData, error: mError } = await supabase
-        .from('merchants_loyality')
-        .select('*')
-        .eq('slug', slug)
-        .single();
-
-      if (mError || !merchantData) {
-        setAuthError('Händler nicht gefunden');
+      const response = await fetch('/api/admin/dashboard', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, password: '2025' })
+      });
+      
+      const resData = await response.json();
+      
+      if (!response.ok || !resData.success) {
+        setAuthError(resData.error || 'Fehler beim Laden');
         return;
       }
+      
+      const { 
+        merchant: merchantData, 
+        customerCount: cc, 
+        earnStamps, 
+        redeemStamps, 
+        recentActivity: activity, 
+        customers: cust, 
+        staff: staffData 
+      } = resData.data;
+
       setMerchant(merchantData);
-
-      // 2. Fetch specific data for this merchant
-      const [
-        { count: cc },
-        { data: earnStamps },
-        { data: redeemStamps },
-        { data: activity },
-        { data: cust },
-        { data: staffData }
-      ] = await Promise.all([
-        supabase.from('customers_loyality').select('*', { count: 'exact', head: true }).eq('merchant_id', merchantData.id),
-        supabase.from('stamps_loyality').select('*, customers_loyality!inner(*)').eq('customers_loyality.merchant_id', merchantData.id).eq('type', 'earn'),
-        supabase.from('stamps_loyality').select('*, customers_loyality!inner(*)').eq('customers_loyality.merchant_id', merchantData.id).eq('type', 'redeem'),
-        supabase.from('stamps_loyality').select('*, customers_loyality!inner(wallet_object_id)').eq('customers_loyality.merchant_id', merchantData.id).order('created_at', { ascending: false }).limit(10),
-        supabase.from('customers_loyality').select('*').eq('merchant_id', merchantData.id).order('created_at', { ascending: false }),
-        supabase.from('staff_loyality').select('*').eq('merchant_id', merchantData.id),
-      ]);
-
       setCustomerCount(cc || 0);
       setEarnCount(earnStamps?.length || 0);
       setRedeemCount(redeemStamps?.length || 0);
@@ -169,6 +163,27 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   useEffect(() => {
     fetchData();
   }, [isAuthorized, slug]);
+
+  const exportToCSV = () => {
+    if (customers.length === 0) return;
+    const header = ['Kunden-ID', 'Stempel', 'Registriert am', 'Wallet ID'];
+    const csvContent = [
+      header.join(','),
+      ...customers.map(c => [
+        c.id, 
+        c.points, 
+        new Date(c.created_at).toLocaleString('de-DE'), 
+        c.wallet_object_id || ''
+      ].join(','))
+    ].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `kunden_export_${merchant?.name || slug}_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   const deleteCustomer = async (customer: any) => {
     setDeleting(true);
@@ -418,15 +433,21 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                     <h2 className="text-lg font-bold text-white">Kundenkarten</h2>
                     <span className="ml-auto text-xs text-white/40 font-medium">{customerCount} Gesamt</span>
                   </div>
-                  {/* Search */}
-                  <div className="px-6 py-4 border-b border-white/5">
+                  {/* Search & Export */}
+                  <div className="px-6 py-4 border-b border-white/5 flex gap-3">
                     <input
                       type="text"
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
                       placeholder="Kunden-ID suchen…"
-                      className="w-full bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none focus:border-white/20 transition-all font-mono"
+                      className="flex-1 bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none focus:border-white/20 transition-all font-mono"
                     />
+                    <button
+                      onClick={exportToCSV}
+                      className="px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white/80 text-sm font-medium hover:bg-white/10 transition-colors flex items-center gap-2"
+                    >
+                      <Download size={16} /> Export CSV
+                    </button>
                   </div>
                   <div className="overflow-x-auto">
                     <table className="w-full text-left border-collapse">
