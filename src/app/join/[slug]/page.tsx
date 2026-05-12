@@ -18,7 +18,7 @@ export default function DynamicJoinPage({ params }: { params: Promise<{ slug: st
   useEffect(() => {
     async function loadMerchant() {
       const { data, error } = await supabase
-        .from('merchants')
+        .from('merchants_loyality')
         .select('*')
         .eq('slug', slug)
         .single();

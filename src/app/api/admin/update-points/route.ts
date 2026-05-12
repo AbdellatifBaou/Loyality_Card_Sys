@@ -12,8 +12,8 @@ export async function POST(req: Request) {
 
     // 1. Get customer and their merchant
     const { data: customer, error: customerError } = await supabase
-      .from('customers')
-      .select('id, wallet_object_id, points, merchants(*)')
+      .from('customers_loyality')
+      .select('id, wallet_object_id, points, merchants_loyality(*)')
       .eq('id', customerId)
       .single();
 
@@ -21,13 +21,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
 
-    const merchant = customer.merchants;
+    const merchant = customer.merchants_loyality;
     const isRedeem = (customer.points >= 9 && newPoints === 0);
     const type = isRedeem ? 'redeem' : 'correction';
 
     // 2. Update Database (Customer points)
     const { error: updateError } = await supabase
-      .from('customers')
+      .from('customers_loyality')
       .update({ points: newPoints })
       .eq('id', customerId);
 
@@ -39,7 +39,7 @@ export async function POST(req: Request) {
     // Since amount is delta, we calculate it
     const amountDifference = newPoints - customer.points;
     if (amountDifference !== 0) {
-      await supabase.from('stamps').insert([
+      await supabase.from('stamps_loyality').insert([
         { 
           customer_id: customerId, 
           // We can leave staff_id null or pass a default if required by schema. 

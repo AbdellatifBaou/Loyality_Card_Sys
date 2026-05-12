@@ -12,7 +12,7 @@ export async function POST(req: Request) {
 
     // 1. Validate PIN and get staff ID
     const { data: staff, error: staffError } = await supabase
-      .from('staff')
+      .from('staff_loyality')
       .select('id, merchant_id')
       .eq('pin', pin)
       .single();
@@ -23,8 +23,8 @@ export async function POST(req: Request) {
 
     // 2. Get customer and their merchant (Support both full UUID and short 8-char ID from manual input)
     const { data: customer, error: customerError } = await supabase
-      .from('customers')
-      .select('id, wallet_object_id, points, merchants(*)')
+      .from('customers_loyality')
+      .select('id, wallet_object_id, points, merchants_loyality(*)')
       .ilike('wallet_object_id', `${objectId}%`)
       .single();
 
@@ -32,7 +32,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
     }
 
-    const merchant = customer.merchants;
+    const merchant = customer.merchants_loyality;
 
     // 3. Calculate new points
     let newPoints = customer.points + amount;
@@ -51,8 +51,8 @@ export async function POST(req: Request) {
     }
 
     // 4. Update Database (Customer & Stamps Log)
-    await supabase.from('customers').update({ points: newPoints }).eq('id', customer.id);
-    await supabase.from('stamps').insert([
+    await supabase.from('customers_loyality').update({ points: newPoints }).eq('id', customer.id);
+    await supabase.from('stamps_loyality').insert([
       { customer_id: customer.id, staff_id: staff.id, amount, type }
     ]);
 

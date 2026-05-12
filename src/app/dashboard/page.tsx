@@ -56,13 +56,13 @@ export default function DashboardPage() {
         { data: merchants },
         { data: recentStamps }
       ] = await Promise.all([
-        supabase.from('customers').select('*', { count: 'exact', head: true }),
-        supabase.from('stamps').select('*', { count: 'exact', head: true }).eq('type', 'earn'),
-        supabase.from('stamps').select('*', { count: 'exact', head: true }).eq('type', 'redeem'),
-        supabase.from('stamps').select('*, customers(wallet_object_id)').order('created_at', { ascending: false }).limit(10),
-        supabase.from('customers').select('id, wallet_object_id, points, created_at, merchant_id, merchants(name, primary_color, slug)').order('created_at', { ascending: false }),
-        supabase.from('merchants').select('*'),
-        supabase.from('stamps').select('*, customers!inner(merchant_id)').gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
+        supabase.from('customers_loyality').select('*', { count: 'exact', head: true }),
+        supabase.from('stamps_loyality').select('*', { count: 'exact', head: true }).eq('type', 'earn'),
+        supabase.from('stamps_loyality').select('*', { count: 'exact', head: true }).eq('type', 'redeem'),
+        supabase.from('stamps_loyality').select('*, customers_loyality(wallet_object_id)').order('created_at', { ascending: false }).limit(10),
+        supabase.from('customers_loyality').select('id, wallet_object_id, points, created_at, merchant_id, merchants_loyality(name, primary_color, slug)').order('created_at', { ascending: false }),
+        supabase.from('merchants_loyality').select('*'),
+        supabase.from('stamps_loyality').select('*, customers_loyality!inner(merchant_id)').gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
       ]);
       setCustomerCount(cc || 0);
       setEarnCount(ec || 0);
@@ -136,8 +136,8 @@ export default function DashboardPage() {
     setDeleting(true);
     try {
       // Must delete stamps first (FK constraint)
-      await supabase.from('stamps').delete().eq('customer_id', customer.id);
-      await supabase.from('customers').delete().eq('id', customer.id);
+      await supabase.from('stamps_loyality').delete().eq('customer_id', customer.id);
+      await supabase.from('customers_loyality').delete().eq('id', customer.id);
       setCustomers(prev => prev.filter(c => c.id !== customer.id));
       setCustomerCount(prev => prev - 1);
       setConfirmDelete(null);
@@ -275,7 +275,7 @@ export default function DashboardPage() {
                   <tbody>
                     {customers.map((customer: any) => {
                       const pct = Math.round((customer.points / 9) * 100);
-                      const color = customer.merchants?.primary_color || '#D4AF37';
+                      const color = customer.merchants_loyality?.primary_color || '#D4AF37';
                       return (
                         <tr key={customer.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
                           <td className="p-4">
@@ -285,7 +285,7 @@ export default function DashboardPage() {
                           </td>
                           <td className="p-4">
                             <span className="text-xs font-bold px-2 py-1 rounded-full" style={{ background: `${color}20`, color, border: `1px solid ${color}40` }}>
-                              {customer.merchants?.name || '—'}
+                              {customer.merchants_loyality?.name || '—'}
                             </span>
                           </td>
                           <td className="p-4">
@@ -342,7 +342,7 @@ export default function DashboardPage() {
                     {recentActivity.map((activity: any) => (
                       <tr key={activity.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
                         <td className="p-4 text-white/70 text-sm">{new Date(activity.created_at).toLocaleString('de-DE')}</td>
-                        <td className="p-4"><span className="font-mono text-xs text-white/70">{activity.customers?.wallet_object_id?.substring(0, 8)}...</span></td>
+                        <td className="p-4"><span className="font-mono text-xs text-white/70">{activity.customers_loyality?.wallet_object_id?.substring(0, 8)}...</span></td>
                         <td className="p-4">
                           {activity.type === 'earn' ? (
                             <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/10 text-green-500 text-xs font-bold uppercase tracking-widest border border-green-500/20">

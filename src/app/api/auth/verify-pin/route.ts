@@ -10,7 +10,7 @@ export async function POST(req: Request) {
     }
 
     let query = supabase
-      .from('staff')
+      .from('staff_loyality')
       .select('id, merchant_id, merchants!inner(primary_color, logo_url, name, slug)')
       .eq('pin', pin);
 

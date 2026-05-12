@@ -14,7 +14,7 @@ export async function POST(req: Request) {
     // 1. Get Merchant from Supabase
     const slug = classId.replace('marketif_loyalty_', '');
     const { data: merchant, error: merchantError } = await supabase
-      .from('merchants')
+      .from('merchants_loyality')
       .select('*')
       .eq('slug', slug)
       .single();
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
 
     // 4. Save customer in Supabase
     const { error: dbError } = await supabase
-      .from('customers')
+      .from('customers_loyality')
       .insert([
         { id: customerId, wallet_object_id: customerId, points: 0, merchant_id: merchant.id }
       ]);

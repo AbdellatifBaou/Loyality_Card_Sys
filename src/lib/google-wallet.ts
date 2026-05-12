@@ -69,7 +69,9 @@ export async function createLoyaltyClass(classId: string, merchant: any) {
     ...(appUrl && !appUrl.includes('localhost')
       ? { heroImage: { sourceUri: { uri: `${appUrl}/api/images/card/0?v=${IMAGE_VERSION}&merchant=${merchant.slug}` } } }
       : {}),
-    locations: [{ latitude: 48.3715, longitude: 10.8985 }],
+    locations: merchant.latitude && merchant.longitude 
+      ? [{ latitude: merchant.latitude, longitude: merchant.longitude }]
+      : [{ latitude: 48.3715, longitude: 10.8985 }],
   };
 
   // reviewStatus only for initial insert — cannot be patched on existing classes

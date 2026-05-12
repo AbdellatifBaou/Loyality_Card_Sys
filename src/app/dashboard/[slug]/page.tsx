@@ -68,7 +68,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     try {
       // 1. Get Merchant info
       const { data: merchantData, error: mError } = await supabase
-        .from('merchants')
+        .from('merchants_loyality')
         .select('*')
         .eq('slug', slug)
         .single();
@@ -88,12 +88,12 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         { data: cust },
         { data: staffData }
       ] = await Promise.all([
-        supabase.from('customers').select('*', { count: 'exact', head: true }).eq('merchant_id', merchantData.id),
-        supabase.from('stamps').select('*, customers!inner(*)').eq('customers.merchant_id', merchantData.id).eq('type', 'earn'),
-        supabase.from('stamps').select('*, customers!inner(*)').eq('customers.merchant_id', merchantData.id).eq('type', 'redeem'),
-        supabase.from('stamps').select('*, customers!inner(wallet_object_id)').eq('customers.merchant_id', merchantData.id).order('created_at', { ascending: false }).limit(10),
-        supabase.from('customers').select('*').eq('merchant_id', merchantData.id).order('created_at', { ascending: false }),
-        supabase.from('staff').select('*').eq('merchant_id', merchantData.id),
+        supabase.from('customers_loyality').select('*', { count: 'exact', head: true }).eq('merchant_id', merchantData.id),
+        supabase.from('stamps_loyality').select('*, customers_loyality!inner(*)').eq('customers.merchant_id', merchantData.id).eq('type', 'earn'),
+        supabase.from('stamps_loyality').select('*, customers_loyality!inner(*)').eq('customers.merchant_id', merchantData.id).eq('type', 'redeem'),
+        supabase.from('stamps_loyality').select('*, customers_loyality!inner(wallet_object_id)').eq('customers.merchant_id', merchantData.id).order('created_at', { ascending: false }).limit(10),
+        supabase.from('customers_loyality').select('*').eq('merchant_id', merchantData.id).order('created_at', { ascending: false }),
+        supabase.from('staff_loyality').select('*').eq('merchant_id', merchantData.id),
       ]);
 
       setCustomerCount(cc || 0);
@@ -172,8 +172,8 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   const deleteCustomer = async (customer: any) => {
     setDeleting(true);
     try {
-      await supabase.from('stamps').delete().eq('customer_id', customer.id);
-      await supabase.from('customers').delete().eq('id', customer.id);
+      await supabase.from('stamps_loyality').delete().eq('customer_id', customer.id);
+      await supabase.from('customers_loyality').delete().eq('id', customer.id);
       setCustomers(prev => prev.filter(c => c.id !== customer.id));
       setCustomerCount(prev => prev - 1);
       setConfirmDelete(null);
@@ -211,7 +211,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     
     setIsAddingStaff(true);
     const { data, error } = await supabase
-      .from('staff')
+      .from('staff_loyality')
       .insert([{ merchant_id: merchant.id, name: newStaffName, pin: newStaffPin }])
       .select();
       
@@ -227,7 +227,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   };
 
   const deleteStaff = async (id: string) => {
-    const { error } = await supabase.from('staff').delete().eq('id', id);
+    const { error } = await supabase.from('staff_loyality').delete().eq('id', id);
     if (!error) setStaff(prev => prev.filter(s => s.id !== id));
   };
 
@@ -236,7 +236,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     setEditPoints(customer.points);
     setHistoryLoading(true);
     const { data } = await supabase
-      .from('stamps')
+      .from('stamps_loyality')
       .select('*')
       .eq('customer_id', customer.id)
       .order('created_at', { ascending: false });
