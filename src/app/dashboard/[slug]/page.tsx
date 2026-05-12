@@ -6,7 +6,8 @@ import { supabase } from '@/lib/supabase';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 export default function MerchantDashboardPage({ params }: { params: Promise<{ slug: string }> }) {
-  const { slug } = use(params);
+  const { slug: rawSlug } = use(params);
+  const slug = decodeURIComponent(rawSlug).toLowerCase();
   const [password, setPassword] = useState('');
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [authError, setAuthError] = useState('');
@@ -89,9 +90,9 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         { data: staffData }
       ] = await Promise.all([
         supabase.from('customers_loyality').select('*', { count: 'exact', head: true }).eq('merchant_id', merchantData.id),
-        supabase.from('stamps_loyality').select('*, customers_loyality!inner(*)').eq('customers.merchant_id', merchantData.id).eq('type', 'earn'),
-        supabase.from('stamps_loyality').select('*, customers_loyality!inner(*)').eq('customers.merchant_id', merchantData.id).eq('type', 'redeem'),
-        supabase.from('stamps_loyality').select('*, customers_loyality!inner(wallet_object_id)').eq('customers.merchant_id', merchantData.id).order('created_at', { ascending: false }).limit(10),
+        supabase.from('stamps_loyality').select('*, customers_loyality!inner(*)').eq('customers_loyality.merchant_id', merchantData.id).eq('type', 'earn'),
+        supabase.from('stamps_loyality').select('*, customers_loyality!inner(*)').eq('customers_loyality.merchant_id', merchantData.id).eq('type', 'redeem'),
+        supabase.from('stamps_loyality').select('*, customers_loyality!inner(wallet_object_id)').eq('customers_loyality.merchant_id', merchantData.id).order('created_at', { ascending: false }).limit(10),
         supabase.from('customers_loyality').select('*').eq('merchant_id', merchantData.id).order('created_at', { ascending: false }),
         supabase.from('staff_loyality').select('*').eq('merchant_id', merchantData.id),
       ]);
