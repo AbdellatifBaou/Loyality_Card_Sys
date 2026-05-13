@@ -422,48 +422,34 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             {activeTab === 'overview' && (
               <>
                 {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20"><Users size={22} className="text-blue-500" /></div>
-                  <h2 className="text-white/60 font-medium text-xs leading-tight">Aktive Karten</h2>
+                  <h2 className="text-white/60 font-medium text-sm">Aktive Karten</h2>
                 </div>
-                <p className="text-3xl font-black text-white">{customerCount}</p>
+                <p className="text-4xl font-black text-white">{customerCount}</p>
               </div>
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 bg-purple-500/10 rounded-2xl border border-purple-500/20"><UserPlus size={22} className="text-purple-500" /></div>
-                  <h2 className="text-white/60 font-medium text-xs leading-tight">Neue Kunden (Monat)</h2>
+                  <h2 className="text-white/60 font-medium text-sm">Kunden (Dieser Monat)</h2>
                 </div>
-                <p className="text-3xl font-black text-white">{currentMonthCustomers}</p>
+                <p className="text-4xl font-black text-white">{currentMonthCustomers}</p>
               </div>
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 bg-green-500/10 rounded-2xl border border-green-500/20"><Pizza size={22} className="text-green-500" /></div>
-                  <h2 className="text-white/60 font-medium text-xs leading-tight">Gesammelte Stempel</h2>
+                  <h2 className="text-white/60 font-medium text-sm">Gesammelte Stempel</h2>
                 </div>
-                <p className="text-3xl font-black text-white">{earnCount}</p>
+                <p className="text-4xl font-black text-white">{earnCount}</p>
               </div>
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 rounded-2xl" style={{ background: `${primaryColor}1A`, border: `1px solid ${primaryColor}33` }}><Gift size={22} style={{ color: primaryColor }} /></div>
-                  <h2 className="text-white/60 font-medium text-xs leading-tight">Prämien ausgegeben</h2>
+                  <h2 className="text-white/60 font-medium text-sm">Prämien ausgegeben</h2>
                 </div>
-                <p className="text-3xl font-black text-white">{redeemCount}</p>
-              </div>
-              <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="p-3 bg-red-500/10 rounded-2xl border border-red-500/20"><AlertTriangle size={22} className="text-red-500" /></div>
-                  <h2 className="text-white/60 font-medium text-xs leading-tight">Offene Punkte</h2>
-                </div>
-                <p className="text-3xl font-black text-white">{totalLiability}</p>
-              </div>
-              <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="p-3 bg-teal-500/10 rounded-2xl border border-teal-500/20"><RefreshCw size={22} className="text-teal-500" /></div>
-                  <h2 className="text-white/60 font-medium text-xs leading-tight">Stammkunden Rate</h2>
-                </div>
-                <p className="text-3xl font-black text-white">{retentionRate}%</p>
+                <p className="text-4xl font-black text-white">{redeemCount}</p>
               </div>
             </div>
 
@@ -605,8 +591,27 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
 
         {/* ANALYTICS TAB */}
         {activeTab === 'analytics' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <div className="space-y-8">
+            {/* Analytics KPIs */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="p-3 bg-red-500/10 rounded-2xl border border-red-500/20"><AlertTriangle size={22} className="text-red-500" /></div>
+                  <h2 className="text-white/60 font-medium text-sm">Offene Punkte (Verbindlichkeiten)</h2>
+                </div>
+                <p className="text-4xl font-black text-white">{totalLiability}</p>
+              </div>
+              <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="p-3 bg-teal-500/10 rounded-2xl border border-teal-500/20"><RefreshCw size={22} className="text-teal-500" /></div>
+                  <h2 className="text-white/60 font-medium text-sm">Stammkunden Rate (Retention)</h2>
+                </div>
+                <p className="text-4xl font-black text-white">{retentionRate}%</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="flex items-center gap-3 mb-6">
                 <BarChart2 size={20} className="text-[#D4AF37]" />
                 <h2 className="text-lg font-bold text-white">Stempel nach Wochentag</h2>
