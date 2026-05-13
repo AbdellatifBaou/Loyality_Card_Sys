@@ -9,7 +9,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'PIN is required' }, { status: 400 });
     }
 
-    let query = supabase
+    const { createClient } = require('@supabase/supabase-js');
+    const adminSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    let query = adminSupabase
       .from('staff_loyality')
       .select('id, merchant_id, merchants_loyality!inner(primary_color, logo_url, name, slug)')
       .eq('pin', pin);

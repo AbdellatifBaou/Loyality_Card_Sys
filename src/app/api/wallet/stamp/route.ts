@@ -10,8 +10,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing objectId or pin' }, { status: 400 });
     }
 
+    const { createClient } = require('@supabase/supabase-js');
+    const adminSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
     // 1. Validate PIN and get staff ID
-    const { data: staff, error: staffError } = await supabase
+    const { data: staff, error: staffError } = await adminSupabase
       .from('staff_loyality')
       .select('id, merchant_id')
       .eq('pin', pin)
@@ -22,7 +28,7 @@ export async function POST(req: Request) {
     }
 
     // 2. Get customer and their merchant (Support both full UUID and short 8-char ID from manual input)
-    const { data: customer, error: customerError } = await supabase
+    const { data: customer, error: customerError } = await adminSupabase
       .from('customers_loyality')
       .select('id, wallet_object_id, points, merchants_loyality(*)')
       .ilike('wallet_object_id', `${objectId}%`)
@@ -51,8 +57,8 @@ export async function POST(req: Request) {
     }
 
     // 4. Update Database (Customer & Stamps Log)
-    await supabase.from('customers_loyality').update({ points: newPoints }).eq('id', customer.id);
-    await supabase.from('stamps_loyality').insert([
+    await adminSupabase.from('customers_loyality').update({ points: newPoints }).eq('id', customer.id);
+    await adminSupabase.from('stamps_loyality').insert([
       { customer_id: customer.id, staff_id: staff.id, amount, type }
     ]);
 

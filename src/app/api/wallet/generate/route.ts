@@ -29,8 +29,14 @@ export async function POST(req: Request) {
     // 3. Generate new Customer ID
     const customerId = uuidv4();
 
+    const { createClient } = require('@supabase/supabase-js');
+    const adminSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
     // 4. Save customer in Supabase
-    const { error: dbError } = await supabase
+    const { error: dbError } = await adminSupabase
       .from('customers_loyality')
       .insert([
         { id: customerId, wallet_object_id: customerId, points: 0, merchant_id: merchant.id }
