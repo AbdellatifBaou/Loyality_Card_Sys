@@ -3,7 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { Users, Pizza, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock, BarChart2, Megaphone, Send } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
-import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 export default function MerchantDashboardPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug: rawSlug } = use(params);
@@ -38,6 +38,9 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   // New Analytics State
   const [currentMonthCustomers, setCurrentMonthCustomers] = useState(0);
   const [weekdayData, setWeekdayData] = useState<any[]>([]);
+  const [hourlyData, setHourlyData] = useState<any[]>([]);
+  const [totalLiability, setTotalLiability] = useState(0);
+  const [retentionRate, setRetentionRate] = useState(0);
   
   const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'marketing'>('overview');
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
@@ -105,9 +108,14 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       const newThisMonth = cust ? cust.filter((c: any) => new Date(c.created_at) >= firstDayOfMonth).length : 0;
       setCurrentMonthCustomers(newThisMonth);
 
-      // Wochentag & Mitarbeiter Analyse
+      // Wochentag, Uhrzeit & Mitarbeiter Analyse
       const weekdays = ['So', 'Mo', 'Di', 'Mi', 'Do', 'Fr', 'Sa'];
       const weekMap = new Map([['Mo', 0], ['Di', 0], ['Mi', 0], ['Do', 0], ['Fr', 0], ['Sa', 0], ['So', 0]]);
+      
+      const hourMap = new Map();
+      for (let i = 8; i <= 22; i++) {
+        hourMap.set(`${i}:00`, 0);
+      }
       
       const staffMap = new Map();
       if (staffData) staffData.forEach((s: any) => staffMap.set(s.id, { ...s, stampsGiven: 0 }));
@@ -119,6 +127,13 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           const dayName = weekdays[d.getDay()];
           weekMap.set(dayName, weekMap.get(dayName) + stamp.amount);
 
+          // Hour
+          const hour = d.getHours();
+          if (hour >= 8 && hour <= 22) {
+            const hKey = `${hour}:00`;
+            hourMap.set(hKey, hourMap.get(hKey) + stamp.amount);
+          }
+
           // Staff Ranking
           if (stamp.staff_id && staffMap.has(stamp.staff_id)) {
              staffMap.get(stamp.staff_id).stampsGiven += stamp.amount;
@@ -127,10 +142,24 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       }
 
       setWeekdayData(Array.from(weekMap, ([name, count]) => ({ name, count })));
+      setHourlyData(Array.from(hourMap, ([name, count]) => ({ name, count })));
       
       // Sort staff by stamps given
       const sortedStaff = Array.from(staffMap.values()).sort((a, b) => b.stampsGiven - a.stampsGiven);
       setStaff(sortedStaff);
+
+      // Liability & Retention
+      if (cust && cust.length > 0) {
+        const totalPoints = cust.reduce((sum: number, c: any) => sum + (c.points || 0), 0);
+        setTotalLiability(totalPoints);
+        
+        // Customers with points > 0 OR who have redeemed points are considered returning
+        const returningCount = cust.filter((c: any) => c.points > 1).length; // simple logic: points > 1 means they came back
+        setRetentionRate(Math.round((returningCount / cust.length) * 100));
+      } else {
+        setTotalLiability(0);
+        setRetentionRate(0);
+      }
 
       // Aggregate monthly data for new customers
       const monthMap = new Map();
@@ -393,34 +422,48 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             {activeTab === 'overview' && (
               <>
                 {/* KPI Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20"><Users size={22} className="text-blue-500" /></div>
-                  <h2 className="text-white/60 font-medium text-sm">Aktive Karten</h2>
+                  <h2 className="text-white/60 font-medium text-xs leading-tight">Aktive Karten</h2>
                 </div>
-                <p className="text-4xl font-black text-white">{customerCount}</p>
+                <p className="text-3xl font-black text-white">{customerCount}</p>
               </div>
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 bg-purple-500/10 rounded-2xl border border-purple-500/20"><UserPlus size={22} className="text-purple-500" /></div>
-                  <h2 className="text-white/60 font-medium text-sm">Kunden (Dieser Monat)</h2>
+                  <h2 className="text-white/60 font-medium text-xs leading-tight">Neue Kunden (Monat)</h2>
                 </div>
-                <p className="text-4xl font-black text-white">{currentMonthCustomers}</p>
+                <p className="text-3xl font-black text-white">{currentMonthCustomers}</p>
               </div>
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 bg-green-500/10 rounded-2xl border border-green-500/20"><Pizza size={22} className="text-green-500" /></div>
-                  <h2 className="text-white/60 font-medium text-sm">Gesammelte Stempel</h2>
+                  <h2 className="text-white/60 font-medium text-xs leading-tight">Gesammelte Stempel</h2>
                 </div>
-                <p className="text-4xl font-black text-white">{earnCount}</p>
+                <p className="text-3xl font-black text-white">{earnCount}</p>
               </div>
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 rounded-2xl" style={{ background: `${primaryColor}1A`, border: `1px solid ${primaryColor}33` }}><Gift size={22} style={{ color: primaryColor }} /></div>
-                  <h2 className="text-white/60 font-medium text-sm">Prämien ausgegeben</h2>
+                  <h2 className="text-white/60 font-medium text-xs leading-tight">Prämien ausgegeben</h2>
                 </div>
-                <p className="text-4xl font-black text-white">{redeemCount}</p>
+                <p className="text-3xl font-black text-white">{redeemCount}</p>
+              </div>
+              <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="p-3 bg-red-500/10 rounded-2xl border border-red-500/20"><AlertTriangle size={22} className="text-red-500" /></div>
+                  <h2 className="text-white/60 font-medium text-xs leading-tight">Offene Punkte</h2>
+                </div>
+                <p className="text-3xl font-black text-white">{totalLiability}</p>
+              </div>
+              <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="p-3 bg-teal-500/10 rounded-2xl border border-teal-500/20"><RefreshCw size={22} className="text-teal-500" /></div>
+                  <h2 className="text-white/60 font-medium text-xs leading-tight">Stammkunden Rate</h2>
+                </div>
+                <p className="text-3xl font-black text-white">{retentionRate}%</p>
               </div>
             </div>
 
@@ -580,6 +623,28 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                     />
                     <Line type="monotone" dataKey="count" name="Vergebene Stempel" stroke="#D4AF37" strokeWidth={3} dot={{ r: 4, fill: '#D4AF37', strokeWidth: 0 }} activeDot={{ r: 6 }} />
                   </LineChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div className="flex items-center gap-3 mb-6">
+                <Clock size={20} className="text-purple-500" />
+                <h2 className="text-lg font-bold text-white">Peak Hours (Uhrzeiten)</h2>
+              </div>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={hourlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                    <XAxis dataKey="name" stroke="rgba(255,255,255,0.4)" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis stroke="rgba(255,255,255,0.4)" fontSize={12} tickLine={false} axisLine={false} />
+                    <Tooltip 
+                      contentStyle={{ background: '#111', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '12px' }}
+                      itemStyle={{ color: '#a855f7' }}
+                      cursor={{ fill: 'rgba(255,255,255,0.05)' }}
+                    />
+                    <Bar dataKey="count" name="Stempel" fill="#a855f7" radius={[4, 4, 0, 0]} />
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             </div>
