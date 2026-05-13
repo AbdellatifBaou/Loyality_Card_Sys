@@ -138,19 +138,6 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
       if (typeof window !== 'undefined' && navigator.vibrate) {
         navigator.vibrate([200]);
       }
-      // Feedback: Sound
-      try {
-        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
-        if (AudioContextClass) {
-          const ctx = new AudioContextClass();
-          const osc = ctx.createOscillator();
-          osc.type = 'sine';
-          osc.frequency.setValueAtTime(800, ctx.currentTime);
-          osc.connect(ctx.destination);
-          osc.start();
-          osc.stop(ctx.currentTime + 0.15);
-        }
-      } catch(e) {}
 
     } catch (err: any) {
       setMessage(err.message);
