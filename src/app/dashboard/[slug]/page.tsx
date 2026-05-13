@@ -675,6 +675,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
               </div>
             </div>
           </div>
+          </div>
         )}
 
         {/* MARKETING TAB */}
