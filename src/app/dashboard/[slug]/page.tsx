@@ -591,27 +591,8 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
 
         {/* ANALYTICS TAB */}
         {activeTab === 'analytics' && (
-          <div className="space-y-8">
-            {/* Analytics KPIs */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="p-3 bg-red-500/10 rounded-2xl border border-red-500/20"><AlertTriangle size={22} className="text-red-500" /></div>
-                  <h2 className="text-white/60 font-medium text-sm">Offene Punkte (Verbindlichkeiten)</h2>
-                </div>
-                <p className="text-4xl font-black text-white">{totalLiability}</p>
-              </div>
-              <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="p-3 bg-teal-500/10 rounded-2xl border border-teal-500/20"><RefreshCw size={22} className="text-teal-500" /></div>
-                  <h2 className="text-white/60 font-medium text-sm">Stammkunden Rate (Retention)</h2>
-                </div>
-                <p className="text-4xl font-black text-white">{retentionRate}%</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-              <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="flex items-center gap-3 mb-6">
                 <BarChart2 size={20} className="text-[#D4AF37]" />
                 <h2 className="text-lg font-bold text-white">Stempel nach Wochentag</h2>
@@ -674,7 +655,6 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                 </ResponsiveContainer>
               </div>
             </div>
-          </div>
           </div>
         )}
 
