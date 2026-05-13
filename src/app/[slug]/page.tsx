@@ -139,6 +139,31 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
         navigator.vibrate([200]);
       }
 
+      // Feedback: Soft "Pling" Sound (iOS compatible)
+      try {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        if (AudioContextClass) {
+          const ctx = new AudioContextClass();
+          const osc = ctx.createOscillator();
+          const gainNode = ctx.createGain();
+          
+          osc.type = 'sine';
+          // Higher frequency for a "pling"
+          osc.frequency.setValueAtTime(1200, ctx.currentTime);
+          
+          // Envelope: Quick attack, exponential decay for bell-like sound
+          gainNode.gain.setValueAtTime(0, ctx.currentTime);
+          gainNode.gain.linearRampToValueAtTime(0.5, ctx.currentTime + 0.02);
+          gainNode.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
+          
+          osc.connect(gainNode);
+          gainNode.connect(ctx.destination);
+          
+          osc.start(ctx.currentTime);
+          osc.stop(ctx.currentTime + 0.3);
+        }
+      } catch(e) {}
+
     } catch (err: any) {
       setMessage(err.message);
       setScanStatus('error');
