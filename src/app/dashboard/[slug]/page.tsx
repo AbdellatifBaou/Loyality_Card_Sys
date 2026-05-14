@@ -48,6 +48,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   const [msgBody, setMsgBody] = useState('');
   const [sendingMsg, setSendingMsg] = useState(false);
   const [msgSuccess, setMsgSuccess] = useState('');
+  const [messages, setMessages] = useState<any[]>([]);
 
   // Handle Login
   const handleLogin = (e: React.FormEvent) => {
@@ -90,7 +91,8 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         redeemStamps, 
         recentActivity: activity, 
         customers: cust, 
-        staff: staffData 
+        staff: staffData,
+        messages: fetchedMessages
       } = resData.data;
 
       setMerchant(merchantData);
@@ -99,6 +101,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       setRedeemCount(redeemStamps?.length || 0);
       setRecentActivity(activity || []);
       setCustomers(cust || []);
+      setMessages(fetchedMessages || []);
 
       // 3. New Advanced Analytics
       const now = new Date();
@@ -242,6 +245,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       setMsgSuccess('Nachricht erfolgreich an alle Kunden gesendet!');
       setMsgTitle('');
       setMsgBody('');
+      fetchData(); // Refresh to get the new message
     } catch (err) {
       console.error(err);
       setMsgSuccess('Fehler beim Senden.');
@@ -709,6 +713,29 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   {sendingMsg ? <RefreshCw className="animate-spin" size={20} /> : <><Send size={20} /> Nachricht Senden</>}
                 </button>
               </form>
+            </div>
+
+            {/* Sent Messages History */}
+            <div className="p-6 rounded-3xl mt-8" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div className="flex items-center gap-3 mb-6">
+                <Clock size={20} className="text-white/60" />
+                <h2 className="text-lg font-bold text-white">Gesendete Nachrichten</h2>
+              </div>
+              <div className="space-y-4">
+                {messages.length === 0 ? (
+                  <p className="text-sm text-white/40 italic">Noch keine Nachrichten gesendet.</p>
+                ) : (
+                  messages.map((msg: any) => (
+                    <div key={msg.id} className="p-4 rounded-2xl bg-white/5 border border-white/10">
+                      <div className="flex justify-between items-start mb-2">
+                        <h3 className="font-bold text-white text-sm">{msg.header}</h3>
+                        <span className="text-[10px] text-white/40">{new Date(msg.created_at).toLocaleString('de-DE')}</span>
+                      </div>
+                      <p className="text-sm text-white/70 whitespace-pre-wrap">{msg.body}</p>
+                    </div>
+                  ))
+                )}
+              </div>
             </div>
           </div>
         )}

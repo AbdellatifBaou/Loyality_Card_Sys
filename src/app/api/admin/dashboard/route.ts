@@ -38,7 +38,8 @@ export async function POST(req: Request) {
       { data: redeemStamps },
       { data: activity },
       { data: cust },
-      { data: staffData }
+      { data: staffData },
+      { data: messagesData }
     ] = await Promise.all([
       adminSupabase.from('customers_loyality').select('*', { count: 'exact', head: true }).eq('merchant_id', merchantData.id),
       adminSupabase.from('stamps_loyality').select('*, customers_loyality!inner(*)').eq('customers_loyality.merchant_id', merchantData.id).eq('type', 'earn'),
@@ -46,6 +47,7 @@ export async function POST(req: Request) {
       adminSupabase.from('stamps_loyality').select('*, customers_loyality!inner(wallet_object_id)').eq('customers_loyality.merchant_id', merchantData.id).order('created_at', { ascending: false }).limit(10),
       adminSupabase.from('customers_loyality').select('*').eq('merchant_id', merchantData.id).order('created_at', { ascending: false }),
       adminSupabase.from('staff_loyality').select('*').eq('merchant_id', merchantData.id),
+      adminSupabase.from('messages_loyality').select('*').eq('merchant_id', merchantData.id).order('created_at', { ascending: false }),
     ]);
 
     return NextResponse.json({
@@ -58,6 +60,7 @@ export async function POST(req: Request) {
         recentActivity: activity || [],
         customers: cust || [],
         staff: staffData || [],
+        messages: messagesData || [],
       }
     });
   } catch (error: any) {
