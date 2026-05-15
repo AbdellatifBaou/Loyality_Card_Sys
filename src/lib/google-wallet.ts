@@ -67,7 +67,7 @@ function getCredentials() {
     return parseCredentials(serviceAccountVar);
   }
 
-  const keyFilePath = path.resolve(process.cwd(), process.env.GOOGLE_APPLICATION_CREDENTIALS || 'marketif-loyalty-db92eeb98711.json');
+  const keyFilePath = path.resolve(process.cwd(), process.env.GOOGLE_APPLICATION_CREDENTIALS || 'marketif-loyalty-af5fae2803a0.json');
   
   if (!fs.existsSync(keyFilePath)) {
     throw new Error(`Service account key file not found at: ${keyFilePath}. Please set GOOGLE_SERVICE_ACCOUNT_KEY env var with JSON content.`);
