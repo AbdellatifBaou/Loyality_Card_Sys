@@ -2,6 +2,7 @@ import { google } from 'googleapis';
 import path from 'path';
 import jwt from 'jsonwebtoken';
 import fs from 'fs';
+import crypto from 'crypto';
 
 // Increment this whenever the card image design changes — forces Google Wallet to re-fetch
 const IMAGE_VERSION = '10';
@@ -25,11 +26,11 @@ function normalizePrivateKey(key: string): string {
     .replace(/\s+/g, '');
 
   // Step 3: Reconstruct the PEM format properly with 64-character line breaks
-  // Some Node.js versions/OpenSSL are extremely strict and require this format
+  // This is the most compatible format for Node.js/OpenSSL
   const matches = base64.match(/.{1,64}/g);
   const formattedBase64 = matches ? matches.join('\n') : base64;
 
-  return `-----BEGIN PRIVATE KEY-----\n${formattedBase64}\n-----END PRIVATE KEY-----\n`;
+  return `-----BEGIN PRIVATE KEY-----\n${formattedBase64}\n-----END PRIVATE KEY-----`;
 }
 
 function parseCredentials(raw: string) {
@@ -70,6 +71,18 @@ function parseCredentials(raw: string) {
 export function getWalletDiagnostics() {
   try {
     const credentials = getCredentials();
+    let nodeCanDecodeKey = false;
+    let decodeError = null;
+
+    try {
+      if (credentials.private_key) {
+        crypto.createPrivateKey(credentials.private_key);
+        nodeCanDecodeKey = true;
+      }
+    } catch (e: any) {
+      decodeError = e.message;
+    }
+
     return {
       source: process.env.GOOGLE_SERVICE_ACCOUNT_KEY ? 'env' : 'file',
       projectId: credentials.project_id,
@@ -77,6 +90,8 @@ export function getWalletDiagnostics() {
       hasPrivateKey: !!credentials.private_key,
       privateKeyLength: credentials.private_key?.length || 0,
       privateKeyStart: credentials.private_key?.substring(0, 30),
+      nodeCanDecodeKey,
+      decodeError,
       issuerId: process.env.GOOGLE_ISSUER_ID || 'missing',
       appUrl: process.env.NEXT_PUBLIC_APP_URL || 'missing'
     };
