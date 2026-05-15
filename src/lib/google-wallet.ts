@@ -11,22 +11,24 @@ const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '');
 
 // Safely parse service account JSON, fixing newline corruption from env vars
 function normalizePrivateKey(key: string): string {
-  // Step 1: Handle triple-escaped \\\\n -> \\n -> \n (some platforms escape multiple times)
-  let normalized = key;
+  if (!key) return key;
 
-  // If the key does NOT contain actual newlines (i.e., the PEM is all on one line),
-  // we need to reconstruct it from whatever escaped form we received.
-  if (!normalized.includes('\n')) {
-    // Handle literal \n sequences (backslash + n as two characters)
-    normalized = normalized.replace(/\\n/g, '\n');
-  }
+  // Step 1: Remove potential surrounding quotes that might have been added by env var managers
+  let normalized = key.trim().replace(/^["']|["']$/g, '');
 
-  // Also fix CRLF from Windows
+  // Step 2: Handle literal \n sequences (backslash + n as two characters)
+  // We do this even if actual newlines exist, as mixed formats can occur
+  normalized = normalized.replace(/\\n/g, '\n');
+
+  // Step 3: Fix CRLF from Windows if present
   normalized = normalized.replace(/\r\n/g, '\n');
 
-  // Final check: if still no newlines after BEGIN marker, force-replace \n literals
-  if (normalized.includes('-----BEGIN PRIVATE KEY-----') && !normalized.includes('\n')) {
-    normalized = normalized.split('\\n').join('\n');
+  // Step 4: Ensure it has the correct PEM headers/footers if they got lost
+  if (normalized.includes('PRIVATE KEY') && !normalized.includes('-----BEGIN PRIVATE KEY-----')) {
+    normalized = `-----BEGIN PRIVATE KEY-----\n${normalized}`;
+  }
+  if (normalized.includes('PRIVATE KEY') && !normalized.includes('-----END PRIVATE KEY-----')) {
+    normalized = `${normalized}\n-----END PRIVATE KEY-----`;
   }
 
   return normalized;
@@ -62,22 +64,35 @@ function parseCredentials(raw: string) {
 // Get Credentials from env var (string) or file path
 function getCredentials() {
   const serviceAccountVar = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  let credentials;
   
   if (serviceAccountVar && serviceAccountVar.trim()) {
-    return parseCredentials(serviceAccountVar);
+    console.log('Google Wallet: Using credentials from GOOGLE_SERVICE_ACCOUNT_KEY environment variable.');
+    credentials = parseCredentials(serviceAccountVar);
+  } else {
+    const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS || 'marketif-loyalty-af5fae2803a0.json';
+    const keyFilePath = path.resolve(process.cwd(), keyFile);
+    
+    if (!fs.existsSync(keyFilePath)) {
+      console.error(`Google Wallet: Service account key file NOT found at: ${keyFilePath}`);
+      throw new Error(`Service account key file not found at: ${keyFilePath}. Please set GOOGLE_SERVICE_ACCOUNT_KEY env var with JSON content.`);
+    }
+
+    try {
+      console.log(`Google Wallet: Using credentials from file: ${keyFile}`);
+      credentials = JSON.parse(fs.readFileSync(keyFilePath, 'utf8'));
+    } catch (e) {
+      throw new Error(`Failed to read/parse key file at ${keyFilePath}: ${e instanceof Error ? e.message : String(e)}`);
+    }
   }
 
-  const keyFilePath = path.resolve(process.cwd(), process.env.GOOGLE_APPLICATION_CREDENTIALS || 'marketif-loyalty-af5fae2803a0.json');
-  
-  if (!fs.existsSync(keyFilePath)) {
-    throw new Error(`Service account key file not found at: ${keyFilePath}. Please set GOOGLE_SERVICE_ACCOUNT_KEY env var with JSON content.`);
+  // Crucial: Always ensure the private key is normalized for JWT signing,
+  // regardless of where it was loaded from.
+  if (credentials && credentials.private_key) {
+    credentials.private_key = normalizePrivateKey(credentials.private_key);
   }
 
-  try {
-    return JSON.parse(fs.readFileSync(keyFilePath, 'utf8'));
-  } catch (e) {
-    throw new Error(`Failed to read/parse key file at ${keyFilePath}: ${e instanceof Error ? e.message : String(e)}`);
-  }
+  return credentials;
 }
 
 // Initialize Google Auth
