@@ -47,23 +47,28 @@ export default function DashboardPage() {
     if (!isAuthorized) return;
     setLoading(true);
     try {
-      const [
-        { count: cc },
-        { count: ec },
-        { count: rc },
-        { data: activity },
-        { data: cust },
-        { data: merchants },
-        { data: recentStamps }
-      ] = await Promise.all([
-        supabase.from('customers_loyality').select('*', { count: 'exact', head: true }),
-        supabase.from('stamps_loyality').select('*', { count: 'exact', head: true }).eq('type', 'earn'),
-        supabase.from('stamps_loyality').select('*', { count: 'exact', head: true }).eq('type', 'redeem'),
-        supabase.from('stamps_loyality').select('*, customers_loyality(wallet_object_id)').order('created_at', { ascending: false }).limit(10),
-        supabase.from('customers_loyality').select('id, wallet_object_id, points, created_at, merchant_id, merchants_loyality(name, primary_color, slug)').order('created_at', { ascending: false }),
-        supabase.from('merchants_loyality').select('*'),
-        supabase.from('stamps_loyality').select('*, customers_loyality!inner(merchant_id)').gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
-      ]);
+      const response = await fetch('/api/admin/global', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: '2025' })
+      });
+      
+      const res = await response.json();
+      if (!response.ok || !res.success) {
+        setAuthError(res.error || 'Fehler beim Laden');
+        return;
+      }
+
+      const {
+        customerCount: cc,
+        earnCount: ec,
+        redeemCount: rc,
+        recentActivity: activity,
+        customers: cust,
+        merchants,
+        recentStamps
+      } = res.data;
+
       setCustomerCount(cc || 0);
       setEarnCount(ec || 0);
       setRedeemCount(rc || 0);
@@ -99,7 +104,7 @@ export default function DashboardPage() {
 
         if (recentStamps) {
           recentStamps.forEach((stamp: any) => {
-            const mId = stamp.customers?.merchant_id;
+            const mId = stamp.customers_loyality?.merchant_id;
             if (mId && merchantActivity.has(mId)) {
               const m = merchantActivity.get(mId);
               m.recentStamps += stamp.amount || 1;
@@ -123,6 +128,9 @@ export default function DashboardPage() {
         setInactiveMerchants(inactive);
       }
 
+    } catch (err) {
+      console.error(err);
+      setAuthError('Netzwerkfehler');
     } finally {
       setLoading(false);
     }
