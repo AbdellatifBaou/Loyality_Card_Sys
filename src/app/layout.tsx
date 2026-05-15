@@ -17,6 +17,15 @@ export const metadata: Metadata = {
   description: "Loyalty Card Scanner App",
   manifest: "/manifest.json",
   themeColor: "#050505",
+  icons: {
+    icon: [
+      { url: "/Marketif_LOGO.png", type: "image/png" },
+    ],
+    apple: [
+      { url: "/Marketif_LOGO.png", type: "image/png" },
+    ],
+    shortcut: "/Marketif_LOGO.png",
+  },
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",

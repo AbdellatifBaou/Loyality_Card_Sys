@@ -342,7 +342,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       <main className="min-h-screen flex items-center justify-center p-4" style={{ background: '#050505' }}>
         <div className="w-full max-w-md p-8 rounded-[40px] relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #0A0A0A 0%, #111111 100%)', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
           <div className="text-center mb-8">
-            <Lock size={40} className="mx-auto mb-4 text-[#D4AF37] opacity-50" />
+            <img src="/Marketif_LOGO.png" alt="Marketif" className="h-14 w-auto mx-auto mb-6 opacity-90" style={{ filter: 'brightness(0) invert(1)' }} />
             <h1 className="text-2xl font-bold text-white mb-2">Dashboard Login</h1>
             <p className="text-white/40 text-sm">Bitte gib das Passwort für <span className="text-[#D4AF37]">{slug}</span> ein.</p>
           </div>
@@ -373,13 +373,16 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         
         {/* Header */}
         <header className="border-b border-white/10 pb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-extrabold text-white tracking-tight">
-              {merchant?.name || 'Händler'} <span style={{ color: primaryColor }}>Dashboard</span>
-            </h1>
-            <p className="text-white/50 mt-1 font-medium text-sm flex items-center gap-2">
-              <Settings size={14} /> Verwaltung & Statistiken
-            </p>
+          <div className="flex items-center gap-4">
+            <img src="/Marketif_LOGO.png" alt="Marketif" className="h-9 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
+            <div>
+              <h1 className="text-2xl font-extrabold text-white tracking-tight">
+                {merchant?.name || 'Händler'} <span style={{ color: primaryColor }}>Dashboard</span>
+              </h1>
+              <p className="text-white/50 mt-0.5 font-medium text-sm flex items-center gap-2">
+                <Settings size={14} /> Verwaltung & Statistiken
+              </p>
+            </div>
           </div>
           <div className="flex gap-3">
             <button onClick={exportCSV} className="p-3 rounded-xl border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 transition-all" title="CSV Export">
