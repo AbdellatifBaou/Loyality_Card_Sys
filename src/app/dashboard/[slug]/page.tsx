@@ -51,13 +51,33 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   const [messages, setMessages] = useState<any[]>([]);
 
   // Handle Login
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setAuthError('');
+    
+    // Support global admin PIN
     if (password === '2025') {
       setIsAuthorized(true);
       localStorage.setItem(`auth_${slug}`, 'true');
-    } else {
-      setAuthError('Falsches Passwort');
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/auth/verify-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: password, slug })
+      });
+      
+      const data = await response.json();
+      if (response.ok && data.success) {
+        setIsAuthorized(true);
+        localStorage.setItem(`auth_${slug}`, 'true');
+      } else {
+        setAuthError(data.error || 'Ungültige PIN');
+      }
+    } catch (err) {
+      setAuthError('Verbindungsfehler');
     }
   };
 
