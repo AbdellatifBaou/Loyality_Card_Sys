@@ -36,28 +36,54 @@ function normalizePrivateKey(key: string): string {
 
 function parseCredentials(raw: string) {
   try {
-    // First, try a direct JSON.parse
-    const creds = JSON.parse(raw);
-    if (creds.private_key) {
-      creds.private_key = normalizePrivateKey(creds.private_key);
+    // Handle double-stringified JSON (happens on some platforms)
+    let parsed = JSON.parse(raw);
+    if (typeof parsed === 'string') {
+      parsed = JSON.parse(parsed);
     }
-    return creds;
+    
+    if (parsed.private_key) {
+      parsed.private_key = normalizePrivateKey(parsed.private_key);
+    }
+    return parsed;
   } catch (e) {
     // If JSON.parse fails, the env var might have unescaped newlines in the private key
-    // Try to fix it by escaping actual newlines within the key value
+    // or it might be wrapped in quotes that JSON.parse doesn't like as a root
     try {
-      const fixed = raw.replace(
+      const cleaned = raw.trim().replace(/^["']|["']$/g, '');
+      const fixed = cleaned.replace(
         /"private_key"\s*:\s*"([\s\S]+?)(?=",\s*"client_email|",\s*"client_id)"/,
         (_match, key) => `"private_key": "${key.replace(/\n/g, '\\n')}"`
       );
-      const creds = JSON.parse(fixed);
-      if (creds.private_key) {
-        creds.private_key = normalizePrivateKey(creds.private_key);
+      const parsed = JSON.parse(fixed);
+      if (parsed.private_key) {
+        parsed.private_key = normalizePrivateKey(parsed.private_key);
       }
-      return creds;
+      return parsed;
     } catch (e2) {
       throw new Error(`Failed to parse service account JSON: ${e instanceof Error ? e.message : String(e)}`);
     }
+  }
+}
+
+/**
+ * Diagnostic helper to check auth state without exposing secrets
+ */
+export function getWalletDiagnostics() {
+  try {
+    const credentials = getCredentials();
+    return {
+      source: process.env.GOOGLE_SERVICE_ACCOUNT_KEY ? 'env' : 'file',
+      projectId: credentials.project_id,
+      clientEmail: credentials.client_email,
+      hasPrivateKey: !!credentials.private_key,
+      privateKeyLength: credentials.private_key?.length || 0,
+      privateKeyStart: credentials.private_key?.substring(0, 30),
+      issuerId: process.env.GOOGLE_ISSUER_ID || 'missing',
+      appUrl: process.env.NEXT_PUBLIC_APP_URL || 'missing'
+    };
+  } catch (e: any) {
+    return { error: e.message };
   }
 }
 
