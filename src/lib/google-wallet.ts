@@ -249,7 +249,7 @@ export async function generateLoyaltyObjectJwt(classId: string, objectId: string
   const claims = {
     iss: clientEmail,
     aud: 'google',
-    origins: [],
+    origins: [appUrl],
     typ: 'savetowallet',
     iat: Math.floor(Date.now() / 1000),
     payload: {
