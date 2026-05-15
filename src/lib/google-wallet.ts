@@ -13,25 +13,20 @@ const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '');
 function normalizePrivateKey(key: string): string {
   if (!key) return key;
 
-  // Step 1: Remove potential surrounding quotes that might have been added by env var managers
-  let normalized = key.trim().replace(/^["']|["']$/g, '');
+  // Step 1: Remove potential surrounding quotes and cleanup whitespace
+  let cleaned = key.trim().replace(/^["']|["']$/g, '');
 
-  // Step 2: Handle literal \n sequences (backslash + n as two characters)
-  // We do this even if actual newlines exist, as mixed formats can occur
-  normalized = normalized.replace(/\\n/g, '\n');
+  // Step 2: Extract the raw base64 data by removing headers, footers and any newline characters
+  // This handles keys that were flattened into a single line or mangled by env var managers
+  let base64 = cleaned
+    .replace(/-----BEGIN (RSA )?PRIVATE KEY-----/g, '')
+    .replace(/-----END (RSA )?PRIVATE KEY-----/g, '')
+    .replace(/\\n/g, '')
+    .replace(/\s+/g, '');
 
-  // Step 3: Fix CRLF from Windows if present
-  normalized = normalized.replace(/\r\n/g, '\n');
-
-  // Step 4: Ensure it has the correct PEM headers/footers if they got lost
-  if (normalized.includes('PRIVATE KEY') && !normalized.includes('-----BEGIN PRIVATE KEY-----')) {
-    normalized = `-----BEGIN PRIVATE KEY-----\n${normalized}`;
-  }
-  if (normalized.includes('PRIVATE KEY') && !normalized.includes('-----END PRIVATE KEY-----')) {
-    normalized = `${normalized}\n-----END PRIVATE KEY-----`;
-  }
-
-  return normalized;
+  // Step 3: Reconstruct the PEM format properly
+  // Node.js crypto/OpenSSL is very picky about the structure
+  return `-----BEGIN PRIVATE KEY-----\n${base64}\n-----END PRIVATE KEY-----\n`;
 }
 
 function parseCredentials(raw: string) {
