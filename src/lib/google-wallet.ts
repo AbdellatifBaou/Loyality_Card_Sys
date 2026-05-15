@@ -24,9 +24,12 @@ function normalizePrivateKey(key: string): string {
     .replace(/\\n/g, '')
     .replace(/\s+/g, '');
 
-  // Step 3: Reconstruct the PEM format properly
-  // Node.js crypto/OpenSSL is very picky about the structure
-  return `-----BEGIN PRIVATE KEY-----\n${base64}\n-----END PRIVATE KEY-----\n`;
+  // Step 3: Reconstruct the PEM format properly with 64-character line breaks
+  // Some Node.js versions/OpenSSL are extremely strict and require this format
+  const matches = base64.match(/.{1,64}/g);
+  const formattedBase64 = matches ? matches.join('\n') : base64;
+
+  return `-----BEGIN PRIVATE KEY-----\n${formattedBase64}\n-----END PRIVATE KEY-----\n`;
 }
 
 function parseCredentials(raw: string) {
