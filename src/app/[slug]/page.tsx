@@ -366,11 +366,12 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
               <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
               <h2 className="text-2xl font-bold text-white mb-2">Erfolgreich!</h2>
               <p className="text-white/70 mb-6">{message}</p>
-              {newPoints !== null && (
-                <div className="p-5 rounded-2xl border border-white/10" style={{ background: `${primaryColor}10` }}>
-                  <p className="text-4xl font-black" style={{ color: primaryColor }}>{newPoints} / 9</p>
+                <div className="p-6 rounded-[32px] border border-white/10" style={{ background: `${primaryColor}15` }}>
+                  <p className="text-5xl font-black mb-1" style={{ color: primaryColor }}>
+                    {newPoints} <span className="text-2xl opacity-40">/ 9</span>
+                  </p>
+                  <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-white/40">Aktueller Punktestand</p>
                 </div>
-              )}
             </div>
           )}
           {scanStatus === 'error' && (

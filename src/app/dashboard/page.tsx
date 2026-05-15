@@ -288,7 +288,9 @@ export default function DashboardPage() {
                           </td>
                           <td className="p-4">
                             <span className="text-xs font-bold px-2 py-1 rounded-full" style={{ background: `${color}20`, color, border: `1px solid ${color}40` }}>
-                              {customer.merchants_loyality?.name || '—'}
+                              {Array.isArray(customer.merchants_loyality) 
+                                ? customer.merchants_loyality[0]?.name 
+                                : customer.merchants_loyality?.name || '—'}
                             </span>
                           </td>
                           <td className="p-4">
