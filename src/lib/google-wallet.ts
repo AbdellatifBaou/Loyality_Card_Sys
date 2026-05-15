@@ -10,18 +10,52 @@ const IMAGE_VERSION = '10';
 const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '');
 
 // Safely parse service account JSON, fixing newline corruption from env vars
+function normalizePrivateKey(key: string): string {
+  // Step 1: Handle triple-escaped \\\\n -> \\n -> \n (some platforms escape multiple times)
+  let normalized = key;
+
+  // If the key does NOT contain actual newlines (i.e., the PEM is all on one line),
+  // we need to reconstruct it from whatever escaped form we received.
+  if (!normalized.includes('\n')) {
+    // Handle literal \n sequences (backslash + n as two characters)
+    normalized = normalized.replace(/\\n/g, '\n');
+  }
+
+  // Also fix CRLF from Windows
+  normalized = normalized.replace(/\r\n/g, '\n');
+
+  // Final check: if still no newlines after BEGIN marker, force-replace \n literals
+  if (normalized.includes('-----BEGIN PRIVATE KEY-----') && !normalized.includes('\n')) {
+    normalized = normalized.split('\\n').join('\n');
+  }
+
+  return normalized;
+}
+
 function parseCredentials(raw: string) {
   try {
+    // First, try a direct JSON.parse
     const creds = JSON.parse(raw);
-    // Normalize private key: replace literal newlines with \n if needed
     if (creds.private_key) {
-      creds.private_key = creds.private_key
-        .replace(/\r\n/g, '\n')  // Windows CRLF -> LF
-        .replace(/\\n/g, '\n');   // Escaped \n -> real newline (double-escaped)
+      creds.private_key = normalizePrivateKey(creds.private_key);
     }
     return creds;
   } catch (e) {
-    throw new Error(`Failed to parse service account JSON: ${e instanceof Error ? e.message : String(e)}`);
+    // If JSON.parse fails, the env var might have unescaped newlines in the private key
+    // Try to fix it by escaping actual newlines within the key value
+    try {
+      const fixed = raw.replace(
+        /"private_key"\s*:\s*"([\s\S]+?)(?=",\s*"client_email|",\s*"client_id)"/,
+        (_match, key) => `"private_key": "${key.replace(/\n/g, '\\n')}"`
+      );
+      const creds = JSON.parse(fixed);
+      if (creds.private_key) {
+        creds.private_key = normalizePrivateKey(creds.private_key);
+      }
+      return creds;
+    } catch (e2) {
+      throw new Error(`Failed to parse service account JSON: ${e instanceof Error ? e.message : String(e)}`);
+    }
   }
 }
 
