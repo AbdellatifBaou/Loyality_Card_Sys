@@ -17,7 +17,7 @@ export async function POST(req: Request) {
 
     let query = adminSupabase
       .from('staff_loyality')
-      .select('id, merchant_id, merchants_loyality!inner(primary_color, logo_url, name, slug)')
+      .select('id, name, merchant_id, merchants_loyality!inner(primary_color, logo_url, name, slug)')
       .eq('pin', pin);
 
     if (slug) {
@@ -42,6 +42,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ 
       success: true, 
       merchantId: staff.merchant_id,
+      staffName: staff.name,
       merchant: staff.merchants_loyality 
     });
   } catch (error: any) {

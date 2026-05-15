@@ -71,6 +71,14 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       
       const data = await response.json();
       if (response.ok && data.success) {
+        // Check if the staff member has "Admin" in their name
+        const staffName = data.staffName || data.merchant?.name || ''; // Fallback
+        if (!data.merchant?.name?.toLowerCase().includes('admin') && 
+            !data.staffName?.toLowerCase().includes('admin')) {
+          setAuthError('Diese PIN hat keinen Zugriff auf das Dashboard.');
+          return;
+        }
+
         setIsAuthorized(true);
         localStorage.setItem(`auth_${slug}`, 'true');
       } else {
