@@ -96,7 +96,7 @@ function getCredentials() {
     console.log('Google Wallet: Using credentials from GOOGLE_SERVICE_ACCOUNT_KEY environment variable.');
     credentials = parseCredentials(serviceAccountVar);
   } else {
-    const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS || 'marketif-loyalty-af5fae2803a0.json';
+    const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS || 'marketif-loyality-389b67921d03.json';
     const keyFilePath = path.resolve(process.cwd(), keyFile);
     
     if (!fs.existsSync(keyFilePath)) {
