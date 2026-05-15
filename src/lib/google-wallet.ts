@@ -70,14 +70,23 @@ function parseCredentials(raw: string) {
  */
 export function getWalletDiagnostics() {
   try {
+    const rawEnv = process.env.GOOGLE_SERVICE_ACCOUNT_KEY || '';
     const credentials = getCredentials();
     let nodeCanDecodeKey = false;
     let decodeError = null;
+    let base64Fragment = '';
 
     try {
       if (credentials.private_key) {
         crypto.createPrivateKey(credentials.private_key);
         nodeCanDecodeKey = true;
+        
+        // Extract base64 part for verification
+        const base64 = credentials.private_key
+          .replace(/-----BEGIN PRIVATE KEY-----/g, '')
+          .replace(/-----END PRIVATE KEY-----/g, '')
+          .replace(/\s+/g, '');
+        base64Fragment = `${base64.substring(0, 20)}...${base64.substring(base64.length - 20)}`;
       }
     } catch (e: any) {
       decodeError = e.message;
@@ -89,9 +98,11 @@ export function getWalletDiagnostics() {
       clientEmail: credentials.client_email,
       hasPrivateKey: !!credentials.private_key,
       privateKeyLength: credentials.private_key?.length || 0,
-      privateKeyStart: credentials.private_key?.substring(0, 30),
+      base64Fragment,
       nodeCanDecodeKey,
       decodeError,
+      rawEnvStart: rawEnv.substring(0, 20),
+      rawEnvLength: rawEnv.length,
       issuerId: process.env.GOOGLE_ISSUER_ID || 'missing',
       appUrl: process.env.NEXT_PUBLIC_APP_URL || 'missing'
     };
