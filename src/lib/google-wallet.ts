@@ -251,12 +251,16 @@ export async function generateLoyaltyObjectJwt(classId: string, objectId: string
     aud: 'google',
     origins: [],
     typ: 'savetowallet',
+    iat: Math.floor(Date.now() / 1000),
     payload: {
       loyaltyObjects: [newObject],
     },
   };
 
-  const token = jwt.sign(claims, privateKey, { algorithm: 'RS256' });
+  const token = jwt.sign(claims, privateKey, { 
+    algorithm: 'RS256',
+    keyid: credentials.private_key_id 
+  });
   return `https://pay.google.com/gp/v/save/${token}`;
 }
 
