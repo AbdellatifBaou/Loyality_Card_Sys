@@ -2,7 +2,6 @@ import { google } from 'googleapis';
 import path from 'path';
 import jwt from 'jsonwebtoken';
 import fs from 'fs';
-import crypto from 'crypto';
 
 // Increment this whenever the card image design changes — forces Google Wallet to re-fetch
 const IMAGE_VERSION = '10';
@@ -62,52 +61,6 @@ function parseCredentials(raw: string) {
     } catch (e2) {
       throw new Error(`Failed to parse service account JSON: ${e instanceof Error ? e.message : String(e)}`);
     }
-  }
-}
-
-/**
- * Diagnostic helper to check auth state without exposing secrets
- */
-export function getWalletDiagnostics() {
-  try {
-    const rawEnv = process.env.GOOGLE_SERVICE_ACCOUNT_KEY || '';
-    const credentials = getCredentials();
-    let nodeCanDecodeKey = false;
-    let decodeError = null;
-    let base64Fragment = '';
-
-    try {
-      if (credentials.private_key) {
-        crypto.createPrivateKey(credentials.private_key);
-        nodeCanDecodeKey = true;
-        
-        // Extract base64 part for verification
-        const base64 = credentials.private_key
-          .replace(/-----BEGIN PRIVATE KEY-----/g, '')
-          .replace(/-----END PRIVATE KEY-----/g, '')
-          .replace(/\s+/g, '');
-        base64Fragment = `${base64.substring(0, 20)}...${base64.substring(base64.length - 20)}`;
-      }
-    } catch (e: any) {
-      decodeError = e.message;
-    }
-
-    return {
-      source: process.env.GOOGLE_SERVICE_ACCOUNT_KEY ? 'env' : 'file',
-      projectId: credentials.project_id,
-      clientEmail: credentials.client_email,
-      hasPrivateKey: !!credentials.private_key,
-      privateKeyLength: credentials.private_key?.length || 0,
-      base64Fragment,
-      nodeCanDecodeKey,
-      decodeError,
-      rawEnvStart: rawEnv.substring(0, 20),
-      rawEnvLength: rawEnv.length,
-      issuerId: process.env.GOOGLE_ISSUER_ID || 'missing',
-      appUrl: process.env.NEXT_PUBLIC_APP_URL || 'missing'
-    };
-  } catch (e: any) {
-    return { error: e.message };
   }
 }
 
