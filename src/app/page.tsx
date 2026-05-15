@@ -67,7 +67,7 @@ export default function LandingPage() {
             ★ Digitale Kundenbindung — Made by Marketif
           </div>
 
-          <h1 className="animate-fade-in font-headline font-black tracking-tighter mb-4 sm:mb-6 leading-[0.9]" style={{fontSize:'clamp(2.5rem, 11vw, 6.5rem)'}}>
+          <h1 className="animate-fade-in font-headline font-black tracking-tighter mb-4 sm:mb-6 leading-[0.9]" style={{fontSize:'clamp(3.4rem, 10vw, 6.5rem)'}}>
             <span className="text-white block">Mehr Stammkunden.</span>
             <span className="text-gradient-hero block">Mehr Umsatz.</span>
           </h1>
