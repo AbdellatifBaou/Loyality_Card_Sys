@@ -6,7 +6,7 @@ export const revalidate = 86400;
 // Generates a properly square, padded logo for Google Wallet
 // Google Wallet crops programLogo to a circle — padding prevents cut-off
 export async function GET() {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '');
 
   return new ImageResponse(
     (

@@ -4,7 +4,7 @@ export const runtime = 'edge';
 export const revalidate = 0;
 
 export async function GET() {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '');
 
   const GOLD       = '#D4AF37';
   const GOLD_LIGHT = '#FFE066';

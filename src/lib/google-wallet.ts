@@ -6,40 +6,61 @@ import fs from 'fs';
 // Increment this whenever the card image design changes — forces Google Wallet to re-fetch
 const IMAGE_VERSION = '10';
 
+// Normalize App URL: remove trailing slash if present
+const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '');
+
 // Safely parse service account JSON, fixing newline corruption from env vars
 function parseCredentials(raw: string) {
-  const creds = JSON.parse(raw);
-  // Normalize private key: replace literal newlines with \n if needed
-  if (creds.private_key) {
-    creds.private_key = creds.private_key
-      .replace(/\r\n/g, '\n')  // Windows CRLF -> LF
-      .replace(/\\n/g, '\n');   // Escaped \n -> real newline (double-escaped)
+  try {
+    const creds = JSON.parse(raw);
+    // Normalize private key: replace literal newlines with \n if needed
+    if (creds.private_key) {
+      creds.private_key = creds.private_key
+        .replace(/\r\n/g, '\n')  // Windows CRLF -> LF
+        .replace(/\\n/g, '\n');   // Escaped \n -> real newline (double-escaped)
+    }
+    return creds;
+  } catch (e) {
+    throw new Error(`Failed to parse service account JSON: ${e instanceof Error ? e.message : String(e)}`);
   }
-  return creds;
+}
+
+// Get Credentials from env var (string) or file path
+function getCredentials() {
+  const serviceAccountVar = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
+  
+  if (serviceAccountVar && serviceAccountVar.trim()) {
+    return parseCredentials(serviceAccountVar);
+  }
+
+  const keyFilePath = path.resolve(process.cwd(), process.env.GOOGLE_APPLICATION_CREDENTIALS || 'marketif-loyalty-db92eeb98711.json');
+  
+  if (!fs.existsSync(keyFilePath)) {
+    throw new Error(`Service account key file not found at: ${keyFilePath}. Please set GOOGLE_SERVICE_ACCOUNT_KEY env var with JSON content.`);
+  }
+
+  try {
+    return JSON.parse(fs.readFileSync(keyFilePath, 'utf8'));
+  } catch (e) {
+    throw new Error(`Failed to read/parse key file at ${keyFilePath}: ${e instanceof Error ? e.message : String(e)}`);
+  }
 }
 
 // Initialize Google Auth
 const getAuth = () => {
-  const serviceAccountVar = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
-  
-  if (serviceAccountVar) {
-    try {
-      const credentials = parseCredentials(serviceAccountVar);
-      return new google.auth.GoogleAuth({
-        credentials,
-        scopes: ['https://www.googleapis.com/auth/wallet_object.issuer'],
-      });
-    } catch (e) {
-      console.error('Failed to parse GOOGLE_SERVICE_ACCOUNT_KEY:', e);
-    }
+  try {
+    const credentials = getCredentials();
+    return new google.auth.GoogleAuth({
+      credentials,
+      scopes: ['https://www.googleapis.com/auth/wallet_object.issuer'],
+    });
+  } catch (e) {
+    console.error('Google Auth initialization failed:', e);
+    // Return a dummy auth that will fail gracefully on use if we can't initialize
+    return new google.auth.GoogleAuth({
+      scopes: ['https://www.googleapis.com/auth/wallet_object.issuer'],
+    });
   }
-
-  const keyFilePath = path.resolve(process.cwd(), process.env.GOOGLE_APPLICATION_CREDENTIALS || 'marketif-loyality-53d9fef6c323.json');
-  
-  return new google.auth.GoogleAuth({
-    keyFile: keyFilePath,
-    scopes: ['https://www.googleapis.com/auth/wallet_object.issuer'],
-  });
 };
 
 const auth = getAuth();
@@ -55,7 +76,6 @@ export const walletClient = google.walletobjects({
  * Creates a generic LoyaltyClass for the Marketif Loyalty system
  */
 export async function createLoyaltyClass(classId: string, merchant: any) {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
 
   const sharedFields = {
     issuerName: merchant.name,
@@ -104,20 +124,11 @@ export async function createLoyaltyClass(classId: string, merchant: any) {
  * Generates the JWT link to "Add to Google Wallet"
  */
 export async function generateLoyaltyObjectJwt(classId: string, objectId: string, points: number, merchant: any) {
-  let credentials;
-  const serviceAccountVar = process.env.GOOGLE_SERVICE_ACCOUNT_KEY;
-  
-  if (serviceAccountVar) {
-    credentials = parseCredentials(serviceAccountVar);
-  } else {
-    const keyFilePath = path.resolve(process.cwd(), process.env.GOOGLE_APPLICATION_CREDENTIALS || 'marketif-loyality-53d9fef6c323.json');
-    credentials = JSON.parse(fs.readFileSync(keyFilePath, 'utf8'));
-  }
+  const credentials = getCredentials();
 
   // Ensure private key has proper newlines for JWT signing
   const privateKey = credentials.private_key;
   const clientEmail = credentials.client_email;
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
 
   const newObject = {
     id: `${issuerId}.${objectId}`,
@@ -180,8 +191,6 @@ export async function generateLoyaltyObjectJwt(classId: string, objectId: string
 export async function updateLoyaltyObjectPoints(objectId: string, points: number, isRedeem: boolean = false, merchant: any) {
   try {
     const issuerId = process.env.GOOGLE_ISSUER_ID;
-    
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || '';
     const isPublicUrl = appUrl && !appUrl.includes('localhost');
 
     const heroImageUri = points >= 9
