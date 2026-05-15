@@ -19,12 +19,12 @@ export const metadata: Metadata = {
   themeColor: "#050505",
   icons: {
     icon: [
-      { url: "/Marketif_LOGO.png", type: "image/png" },
+      { url: "/Marketif_LOGO_Symbol.png", type: "image/png" },
     ],
     apple: [
-      { url: "/Marketif_LOGO.png", type: "image/png" },
+      { url: "/Marketif_LOGO_Symbol.png", type: "image/png" },
     ],
-    shortcut: "/Marketif_LOGO.png",
+    shortcut: "/Marketif_LOGO_Symbol.png",
   },
   appleWebApp: {
     capable: true,

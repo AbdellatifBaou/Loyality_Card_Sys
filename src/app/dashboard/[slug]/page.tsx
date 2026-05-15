@@ -342,7 +342,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       <main className="min-h-screen flex items-center justify-center p-4" style={{ background: '#050505' }}>
         <div className="w-full max-w-md p-8 rounded-[40px] relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #0A0A0A 0%, #111111 100%)', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
           <div className="text-center mb-8">
-            <img src="/Marketif_LOGO.png" alt="Marketif" className="h-14 w-auto mx-auto mb-6 opacity-90" style={{ filter: 'brightness(0) invert(1)' }} />
+            <img src="/Marketif_LOGO_Symbol.png" alt="Marketif" className="h-14 w-auto mx-auto mb-6 opacity-90" style={{ filter: 'brightness(0) invert(1)' }} />
             <h1 className="text-2xl font-bold text-white mb-2">Dashboard Login</h1>
             <p className="text-white/40 text-sm">Bitte gib das Passwort für <span className="text-[#D4AF37]">{slug}</span> ein.</p>
           </div>
@@ -374,7 +374,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         {/* Header */}
         <header className="border-b border-white/10 pb-6 flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <img src="/Marketif_LOGO.png" alt="Marketif" className="h-9 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
+            <img src="/Marketif_LOGO_Symbol.png" alt="Marketif" className="h-9 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
             <div>
               <h1 className="text-2xl font-extrabold text-white tracking-tight">
                 {merchant?.name || 'Händler'} <span style={{ color: primaryColor }}>Dashboard</span>
