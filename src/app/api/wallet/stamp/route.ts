@@ -39,6 +39,9 @@ export async function POST(req: Request) {
     }
 
     const merchant = customer.merchants_loyality;
+    if (merchant.is_active === false) {
+      return NextResponse.json({ error: 'Dieser Händler ist derzeit deaktiviert' }, { status: 403 });
+    }
 
     // 3. Calculate new points
     let newPoints = customer.points + amount;

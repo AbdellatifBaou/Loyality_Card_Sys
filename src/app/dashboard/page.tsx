@@ -154,6 +154,24 @@ export default function DashboardPage() {
     }
   };
 
+  const toggleMerchant = async (merchantId: string, currentStatus: boolean) => {
+    try {
+      const response = await fetch('/api/admin/toggle-merchant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ merchantId, isActive: !currentStatus })
+      });
+      const result = await response.json();
+      if (result.success) {
+        setTopMerchants(prev => prev.map(m => m.id === merchantId ? { ...m, is_active: !currentStatus } : m));
+      } else {
+        alert('Fehler: ' + result.error);
+      }
+    } catch (err) {
+      alert('Netzwerkfehler');
+    }
+  };
+
   if (!isAuthorized) {
     return (
       <main className="min-h-screen flex items-center justify-center p-4" style={{ background: '#050505' }}>
@@ -311,9 +329,15 @@ export default function DashboardPage() {
                             <span className="text-white/40 text-xs"> Kunden</span>
                           </td>
                           <td className="p-4">
-                            <span className="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-green-500/10 text-green-500 border border-green-500/20">
-                              Aktiv
-                            </span>
+                            {m.is_active === false ? (
+                              <button onClick={() => toggleMerchant(m.id, false)} className="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 transition-all cursor-pointer">
+                                Deaktiviert
+                              </button>
+                            ) : (
+                              <button onClick={() => toggleMerchant(m.id, true)} className="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-green-500/10 text-green-500 border border-green-500/20 hover:bg-green-500/20 transition-all cursor-pointer">
+                                Aktiv
+                              </button>
+                            )}
                           </td>
                           <td className="p-4 text-white/50 text-xs">
                             {new Date(m.created_at).toLocaleDateString('de-DE')}

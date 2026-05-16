@@ -41,9 +41,11 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   const [hourlyData, setHourlyData] = useState<any[]>([]);
   const [totalLiability, setTotalLiability] = useState(0);
   const [retentionRate, setRetentionRate] = useState(0);
+  const [topCustomers, setTopCustomers] = useState<any[]>([]);
   
   const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'marketing'>('overview');
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
+  const [cumulativeMonthlyData, setCumulativeMonthlyData] = useState<any[]>([]);
   const [msgTitle, setMsgTitle] = useState('');
   const [msgBody, setMsgBody] = useState('');
   const [sendingMsg, setSendingMsg] = useState(false);
@@ -197,21 +199,56 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       const months = ['Jan', 'Feb', 'Mär', 'Apr', 'Mai', 'Jun', 'Jul', 'Aug', 'Sep', 'Okt', 'Nov', 'Dez'];
       
       const today = new Date();
+      const last6Months: any[] = [];
       for (let i = 5; i >= 0; i--) {
         const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-        monthMap.set(`${months[d.getMonth()]} ${d.getFullYear()}`, 0);
+        const key = `${months[d.getMonth()]} ${d.getFullYear()}`;
+        last6Months.push({ key, date: d });
+        monthMap.set(key, { newCount: 0 });
       }
 
       if (cust) {
+        const oldestMonth = last6Months[0].date;
+        let cumulativeTotal = cust.filter((c: any) => new Date(c.created_at) < oldestMonth).length;
+
         cust.forEach((c: any) => {
           const date = new Date(c.created_at);
-          const key = `${months[date.getMonth()]} ${date.getFullYear()}`;
-          if (monthMap.has(key)) {
-            monthMap.set(key, monthMap.get(key) + 1);
+          if (date >= oldestMonth) {
+            const key = `${months[date.getMonth()]} ${date.getFullYear()}`;
+            if (monthMap.has(key)) {
+              monthMap.get(key).newCount += 1;
+            }
           }
         });
+
+        const cumulativeData = last6Months.map(m => {
+          cumulativeTotal += monthMap.get(m.key).newCount;
+          return { name: m.key, count: cumulativeTotal };
+        });
+        
+        setCumulativeMonthlyData(cumulativeData);
+        
+        // Build regular monthlyData as well for fallback/other charts if needed
+        setMonthlyData(last6Months.map(m => ({ name: m.key, count: monthMap.get(m.key).newCount })));
       }
-      setMonthlyData(Array.from(monthMap, ([name, count]) => ({ name, count })));
+
+      // Calculate Lifetime Stamps for Top 30 Customers
+      if (cust && earnStamps) {
+        const customerLifetimeStamps = new Map();
+        earnStamps.forEach((stamp: any) => {
+           customerLifetimeStamps.set(
+              stamp.customer_id, 
+              (customerLifetimeStamps.get(stamp.customer_id) || 0) + stamp.amount
+           );
+        });
+
+        const top = cust.map((c: any) => ({
+           ...c,
+           lifetimeStamps: customerLifetimeStamps.get(c.id) || 0
+        })).sort((a: any, b: any) => b.lifetimeStamps - a.lifetimeStamps).slice(0, 30);
+        
+        setTopCustomers(top);
+      }
       
     } catch (err) {
       console.error(err);
@@ -248,11 +285,21 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   const deleteCustomer = async (customer: any) => {
     setDeleting(true);
     try {
-      await supabase.from('stamps_loyality').delete().eq('customer_id', customer.id);
-      await supabase.from('customers_loyality').delete().eq('id', customer.id);
-      setCustomers(prev => prev.filter(c => c.id !== customer.id));
-      setCustomerCount(prev => prev - 1);
-      setConfirmDelete(null);
+      const response = await fetch('/api/admin/delete-customer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customerId: customer.id })
+      });
+      const result = await response.json();
+      if (result.success) {
+        setCustomers(prev => prev.filter(c => c.id !== customer.id));
+        setCustomerCount(prev => prev - 1);
+        setConfirmDelete(null);
+      } else {
+        alert('Fehler beim Löschen: ' + result.error);
+      }
+    } catch (err) {
+      alert('Netzwerkfehler beim Löschen');
     } finally {
       setDeleting(false);
     }
@@ -312,12 +359,22 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     setSelectedCustomer(customer);
     setEditPoints(customer.points);
     setHistoryLoading(true);
-    const { data } = await supabase
-      .from('stamps_loyality')
-      .select('*')
-      .eq('customer_id', customer.id)
-      .order('created_at', { ascending: false });
-    setStampHistory(data || []);
+    try {
+      const response = await fetch('/api/admin/stamp-history', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customerId: customer.id })
+      });
+      const result = await response.json();
+      if (result.success) {
+        setStampHistory(result.data || []);
+      } else {
+        setStampHistory([]);
+      }
+    } catch (err) {
+      console.error(err);
+      setStampHistory([]);
+    }
     setHistoryLoading(false);
   };
 
@@ -673,11 +730,11 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="flex items-center gap-3 mb-6">
                 <Activity size={20} className="text-blue-500" />
-                <h2 className="text-lg font-bold text-white">Neue Kunden pro Monat</h2>
+                <h2 className="text-lg font-bold text-white">Gesamtkunden pro Monat</h2>
               </div>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <LineChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <LineChart data={cumulativeMonthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
                     <XAxis dataKey="name" stroke="rgba(255,255,255,0.4)" fontSize={12} tickLine={false} axisLine={false} />
                     <YAxis stroke="rgba(255,255,255,0.4)" fontSize={12} tickLine={false} axisLine={false} />
@@ -685,9 +742,45 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       contentStyle={{ background: '#111', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '12px' }}
                       itemStyle={{ color: '#3b82f6' }}
                     />
-                    <Line type="monotone" dataKey="count" name="Neue Kunden" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                    <Line type="monotone" dataKey="count" name="Gesamtkunden" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }} activeDot={{ r: 6 }} />
                   </LineChart>
                 </ResponsiveContainer>
+              </div>
+            </div>
+
+            <div className="p-6 rounded-3xl lg:col-span-2" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div className="flex items-center gap-3 mb-6">
+                <Users size={20} className="text-green-500" />
+                <h2 className="text-lg font-bold text-white">Top 30 Kunden (Lifetime Scans)</h2>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr style={{ background: 'rgba(255,255,255,0.03)' }} className="text-white/50 text-xs uppercase tracking-wider">
+                      <th className="p-4 font-medium w-16">Rang</th>
+                      <th className="p-4 font-medium">Kunden-ID</th>
+                      <th className="p-4 font-medium text-right">Lifetime Stempel</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {topCustomers.map((c: any, idx: number) => (
+                      <tr key={c.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors cursor-pointer" onClick={() => openCustomer(c)}>
+                        <td className="p-4 text-white/50 font-mono text-xs">{idx + 1}.</td>
+                        <td className="p-4">
+                          <span className="font-mono text-xs text-white/70 bg-white/5 px-2 py-1 rounded-lg">
+                            {c.wallet_object_id?.substring(0, 14)}...
+                          </span>
+                        </td>
+                        <td className="p-4 text-right">
+                          <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-500/10 text-green-400 font-bold text-sm rounded-lg border border-green-500/20">
+                            {c.lifetimeStamps} Scans
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {topCustomers.length === 0 && <p className="text-center text-white/40 text-sm py-8">Keine Daten verfügbar.</p>}
               </div>
             </div>
           </div>
@@ -890,7 +983,12 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         <p className={`text-sm font-bold ${s.type === 'earn' ? 'text-green-400' : s.type === 'correction' ? 'text-blue-400' : 'text-yellow-400'}`}>
                           {s.type === 'earn' ? `+${s.amount} Stempel` : s.type === 'correction' ? `Korrektur: ${s.amount > 0 ? '+' : ''}${s.amount} Stempel` : '🎁 Prämie eingelöst'}
                         </p>
-                        <p className="text-[10px] text-white/30 mt-0.5">{new Date(s.created_at).toLocaleString('de-DE')}</p>
+                        <div className="flex items-center justify-between mt-0.5">
+                          <p className="text-[10px] text-white/30">{new Date(s.created_at).toLocaleString('de-DE')}</p>
+                          {s.staff_loyality?.name && (
+                            <p className="text-[10px] text-white/50 font-medium">👤 {s.staff_loyality.name}</p>
+                          )}
+                        </div>
                       </div>
                     </div>
                   ))}

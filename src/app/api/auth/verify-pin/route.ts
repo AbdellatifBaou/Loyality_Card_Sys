@@ -17,7 +17,7 @@ export async function POST(req: Request) {
 
     let query = adminSupabase
       .from('staff_loyality')
-      .select('id, name, merchant_id, merchants_loyality!inner(primary_color, logo_url, name, slug)')
+      .select('id, name, merchant_id, merchants_loyality!inner(primary_color, logo_url, name, slug, is_active)')
       .eq('pin', pin);
 
     if (slug) {
@@ -37,6 +37,10 @@ export async function POST(req: Request) {
       if ((staff.merchants_loyality as any).slug !== normalizedSlug) {
         return NextResponse.json({ error: 'PIN gehört nicht zu diesem Händler' }, { status: 401 });
       }
+    }
+
+    if ((staff.merchants_loyality as any).is_active === false) {
+      return NextResponse.json({ error: 'Dieser Händler ist derzeit deaktiviert' }, { status: 403 });
     }
 
     return NextResponse.json({ 

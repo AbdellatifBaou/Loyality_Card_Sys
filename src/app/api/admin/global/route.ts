@@ -30,7 +30,7 @@ export async function POST(req: Request) {
       adminSupabase.from('customers_loyality').select('*', { count: 'exact', head: true }),
       adminSupabase.from('stamps_loyality').select('*', { count: 'exact', head: true }).eq('type', 'earn'),
       adminSupabase.from('stamps_loyality').select('*', { count: 'exact', head: true }).eq('type', 'redeem'),
-      adminSupabase.from('stamps_loyality').select('*, customers_loyality(wallet_object_id)').order('created_at', { ascending: false }).limit(10),
+      adminSupabase.from('stamps_loyality').select('*, customers_loyality(wallet_object_id, merchants_loyality(name, primary_color))').order('created_at', { ascending: false }).limit(10),
       adminSupabase.from('customers_loyality').select('id, wallet_object_id, points, created_at, merchant_id, merchants_loyality(name, primary_color, slug)').order('created_at', { ascending: false }),
       adminSupabase.from('merchants_loyality').select('*'),
       adminSupabase.from('stamps_loyality').select('*, customers_loyality!inner(merchant_id)').gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString())
