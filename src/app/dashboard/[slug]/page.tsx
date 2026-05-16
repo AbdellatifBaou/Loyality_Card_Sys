@@ -748,6 +748,27 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
               </div>
             </div>
 
+            <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div className="flex items-center gap-3 mb-6">
+                <UserPlus size={20} className="text-orange-500" />
+                <h2 className="text-lg font-bold text-white">Neue Kunden pro Monat</h2>
+              </div>
+              <div className="h-[300px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={monthlyData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" vertical={false} />
+                    <XAxis dataKey="name" stroke="rgba(255,255,255,0.4)" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis stroke="rgba(255,255,255,0.4)" fontSize={12} tickLine={false} axisLine={false} />
+                    <Tooltip 
+                      contentStyle={{ background: '#111', border: '1px solid rgba(249, 115, 22, 0.3)', borderRadius: '12px' }}
+                      itemStyle={{ color: '#f97316' }}
+                    />
+                    <Bar dataKey="count" name="Neue Kunden" fill="#f97316" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
             <div className="p-6 rounded-3xl lg:col-span-2" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="flex items-center gap-3 mb-6">
                 <Users size={20} className="text-green-500" />
