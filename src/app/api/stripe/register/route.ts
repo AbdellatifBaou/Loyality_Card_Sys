@@ -31,7 +31,6 @@ export async function POST(req: Request) {
     const session = await stripe.checkout.sessions.create({
       customer: customer.id,
       mode: 'subscription',
-      payment_method_types: ['card'],
       line_items: [
         // One-time setup fee — shown clearly in checkout, charged only on first invoice
         {
