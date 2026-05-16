@@ -28,19 +28,21 @@ export async function POST(req: Request) {
       metadata: { name, company, plan },
     });
 
-    // Pending invoice item — Stripe automatically adds it to the first subscription invoice
-    await stripe.invoiceItems.create({
-      customer: customer.id,
-      amount: 29900, // 299 EUR in cents
-      currency: 'eur',
-      description: 'Einmalige Einrichtungsgebühr – Marketif Treue',
-    });
-
     const session = await stripe.checkout.sessions.create({
       customer: customer.id,
       mode: 'subscription',
       payment_method_types: ['card'],
       line_items: [
+        // One-time setup fee — shown clearly in checkout, charged only on first invoice
+        {
+          price_data: {
+            currency: 'eur',
+            product_data: { name: 'Einmalige Einrichtungsgebühr – Marketif Treue' },
+            unit_amount: 29900, // 299 EUR in cents
+          },
+          quantity: 1,
+        },
+        // Monthly subscription
         {
           price_data: {
             currency: 'eur',
