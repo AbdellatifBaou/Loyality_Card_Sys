@@ -220,7 +220,7 @@ function PlanCard({
   return (
     <button
       onClick={onClick}
-      className="text-left w-full rounded-[1.5rem] p-6 transition-all relative"
+      className="text-left w-full rounded-[1.5rem] p-6 transition-all"
       style={{
         background: selected ? `${accent}0d` : 'rgba(255,255,255,0.02)',
         border: `2px solid ${selected ? accent : 'rgba(255,255,255,0.07)'}`,
@@ -228,14 +228,17 @@ function PlanCard({
         transform: selected ? 'translateY(-2px)' : 'none',
       }}
     >
-      {badge && (
-        <div
-          className="absolute -top-3.5 left-5 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
-          style={{ background: accent, color: accent === '#C0C0C0' ? '#111' : '#001760' }}
-        >
-          <Star size={9} fill="currentColor" /> {badge}
-        </div>
-      )}
+      {/* Fixed-height badge row — ensures both cards align regardless of badge presence */}
+      <div className="h-7 flex items-center mb-3">
+        {badge && (
+          <div
+            className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
+            style={{ background: accent, color: accent === '#C0C0C0' ? '#111' : '#001760' }}
+          >
+            <Star size={9} fill="currentColor" /> {badge}
+          </div>
+        )}
+      </div>
 
       <div className="flex items-start justify-between mb-5">
         <div>
@@ -261,7 +264,7 @@ function PlanCard({
           <span className="font-headline font-black text-4xl" style={{ color: accent }}>{monthlyPrice}€</span>
           <span className="text-sm font-bold" style={{ color: '#acaaad' }}>/Monat</span>
         </div>
-        <p className="text-xs" style={{ color: '#48484a' }}>+ {SETUP_FEE}€ Einrichtungsgebühr (einmalig)</p>
+        <p className="text-xs font-semibold" style={{ color: '#9090a0' }}>+ {SETUP_FEE}€ Einrichtungsgebühr (einmalig)</p>
       </div>
 
       <ul className="space-y-2.5">
@@ -363,7 +366,7 @@ function RegistrierungContent() {
   const [form, setForm] = useState({ name: '', company: '', email: '', phone: '' });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
-  const [planMode, setPlanMode] = useState<'definiert' | 'custom'>('definiert');
+  const [planMode, setPlanMode] = useState<'definiert' | 'custom'>('custom');
   const [selectedPlan, setSelectedPlan] = useState<'silber' | 'gold'>('gold');
   const [customPrice, setCustomPrice] = useState('');
   const [customPriceError, setCustomPriceError] = useState('');
@@ -509,7 +512,7 @@ function RegistrierungContent() {
                 className="flex p-1 rounded-2xl"
                 style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.07)' }}
               >
-                {(['definiert', 'custom'] as const).map(mode => (
+                {(['custom', 'definiert'] as const).map(mode => (
                   <button
                     key={mode}
                     onClick={() => setPlanMode(mode)}
