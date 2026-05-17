@@ -7,7 +7,7 @@ const getStripe = () => new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 
 export async function POST(req: Request) {
   try {
-    const { name, company, email, phone, plan, monthlyPrice, planName } = await req.json();
+    const { name, company, email, phone, plan, monthlyPrice, setupFee, planName } = await req.json();
 
     if (!name || !company || !email || !phone || !plan || !monthlyPrice || !planName) {
       return NextResponse.json({ error: 'Fehlende Pflichtfelder' }, { status: 400 });
@@ -16,6 +16,11 @@ export async function POST(req: Request) {
     const monthly = parseFloat(monthlyPrice);
     if (isNaN(monthly) || monthly < 1) {
       return NextResponse.json({ error: 'Ungültiger monatlicher Preis' }, { status: 400 });
+    }
+
+    const setup = setupFee !== undefined ? parseFloat(setupFee) : 299;
+    if (isNaN(setup) || setup < 0) {
+      return NextResponse.json({ error: 'Ungültige Einrichtungsgebühr' }, { status: 400 });
     }
 
     const stripe = getStripe();
@@ -37,7 +42,7 @@ export async function POST(req: Request) {
           price_data: {
             currency: 'eur',
             product_data: { name: 'Einmalige Einrichtungsgebühr – Marketif Treue' },
-            unit_amount: 29900, // 299 EUR in cents
+            unit_amount: Math.round(setup * 100),
           },
           quantity: 1,
         },

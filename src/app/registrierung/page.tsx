@@ -209,85 +209,79 @@ function Field({
   );
 }
 
-// ─── Plan card ────────────────────────────────────────────────────────────────
+// ─── Aligned plan cards (CSS subgrid for perfect row alignment) ───────────────
 
-function PlanCard({
-  title, accent, badge, monthlyPrice, features, extraFeatures, selected, onClick,
-}: {
-  title: string; accent: string; badge?: string; monthlyPrice: number;
-  features: string[]; extraFeatures?: string[]; selected: boolean; onClick: () => void;
-}) {
+function AlignedPlanCards({ selected, onSelect }: { selected: 'silber' | 'gold'; onSelect: (p: 'silber' | 'gold') => void }) {
+  const plans = [
+    { id: 'silber' as const, title: 'Silber', accent: '#B0B0B0', price: 49, features: silverFeatures, badge: undefined },
+    { id: 'gold' as const, title: 'Gold', accent: '#D4AF37', price: 89, features: [...silverFeatures, ...goldExtra], badge: 'Empfohlen' },
+  ];
+
   return (
-    <button
-      onClick={onClick}
-      className="text-left w-full rounded-[1.5rem] p-6 transition-all"
-      style={{
-        background: selected ? `${accent}0d` : 'rgba(255,255,255,0.02)',
-        border: `2px solid ${selected ? accent : 'rgba(255,255,255,0.07)'}`,
-        boxShadow: selected ? `0 0 35px -10px ${accent}50` : 'none',
-        transform: selected ? 'translateY(-2px)' : 'none',
-      }}
-    >
-      {/* Fixed-height badge row — ensures both cards align regardless of badge presence */}
-      <div className="h-7 flex items-center mb-3">
-        {badge && (
-          <div
-            className="px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5"
-            style={{ background: accent, color: accent === '#C0C0C0' ? '#111' : '#001760' }}
+    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: 'auto auto auto 1fr', gap: '16px' }}>
+      {plans.map(plan => {
+        const sel = selected === plan.id;
+        return (
+          <button
+            key={plan.id}
+            onClick={() => onSelect(plan.id)}
+            style={{
+              gridRow: 'span 4',
+              display: 'grid',
+              gridTemplateRows: 'subgrid',
+              gap: 0,
+              background: sel ? `${plan.accent}0d` : 'rgba(255,255,255,0.02)',
+              border: `2px solid ${sel ? plan.accent : 'rgba(255,255,255,0.07)'}`,
+              borderRadius: '1.5rem',
+              padding: '24px',
+              textAlign: 'left',
+              cursor: 'pointer',
+              boxShadow: sel ? `0 0 35px -10px ${plan.accent}50` : 'none',
+              transition: 'all 0.2s',
+            }}
           >
-            <Star size={9} fill="currentColor" /> {badge}
-          </div>
-        )}
-      </div>
+            {/* Row 1 — Badge */}
+            <div style={{ height: '28px', display: 'flex', alignItems: 'center', marginBottom: '12px' }}>
+              {plan.badge && (
+                <div style={{ padding: '4px 12px', borderRadius: '9999px', background: plan.accent, color: '#001760', fontSize: '10px', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.2em', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  ★ {plan.badge}
+                </div>
+              )}
+            </div>
 
-      <div className="flex items-start justify-between mb-5">
-        <div>
-          <p className="text-[10px] font-bold uppercase tracking-[0.25em] mb-1" style={{ color: accent }}>Paket</p>
-          <h3 className="font-headline font-black text-2xl text-white">{title}</h3>
-        </div>
-        <div
-          className="w-7 h-7 rounded-full flex items-center justify-center shrink-0 mt-0.5 transition-all"
-          style={{
-            background: selected ? accent : 'rgba(255,255,255,0.06)',
-            border: `2px solid ${selected ? accent : 'rgba(255,255,255,0.12)'}`,
-          }}
-        >
-          {selected && <Check size={13} strokeWidth={3} style={{ color: '#001760' }} />}
-        </div>
-      </div>
+            {/* Row 2 — Title */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', marginBottom: '16px' }}>
+              <div>
+                <p style={{ fontSize: '10px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.25em', color: plan.accent, marginBottom: '4px' }}>Paket</p>
+                <h3 className="font-headline" style={{ fontWeight: 900, fontSize: '24px', color: 'white', margin: 0 }}>{plan.title}</h3>
+              </div>
+              <div style={{ width: '28px', height: '28px', borderRadius: '50%', flexShrink: 0, background: sel ? plan.accent : 'rgba(255,255,255,0.06)', border: `2px solid ${sel ? plan.accent : 'rgba(255,255,255,0.12)'}`, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                {sel && <Check size={13} strokeWidth={3} style={{ color: '#001760' }} />}
+              </div>
+            </div>
 
-      <div
-        className="mb-5 p-4 rounded-xl"
-        style={{ background: 'rgba(0,0,0,0.3)', border: `1px solid ${accent}20` }}
-      >
-        <div className="flex items-baseline gap-1.5 mb-1">
-          <span className="font-headline font-black text-4xl" style={{ color: accent }}>{monthlyPrice}€</span>
-          <span className="text-sm font-bold" style={{ color: '#acaaad' }}>/Monat</span>
-        </div>
-        <p className="text-xs font-semibold" style={{ color: '#9090a0' }}>+ {SETUP_FEE}€ Einrichtungsgebühr (einmalig)</p>
-      </div>
+            {/* Row 3 — Price box */}
+            <div style={{ padding: '16px', borderRadius: '12px', background: 'rgba(0,0,0,0.3)', border: `1px solid ${plan.accent}20`, marginBottom: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'baseline', gap: '6px', marginBottom: '4px' }}>
+                <span className="font-headline" style={{ fontWeight: 900, fontSize: '38px', color: plan.accent }}>{plan.price}€</span>
+                <span style={{ fontSize: '13px', fontWeight: 700, color: '#acaaad' }}>/Monat</span>
+              </div>
+              <p style={{ fontSize: '12px', fontWeight: 600, color: '#9090a0', margin: 0 }}>+ {SETUP_FEE}€ Einrichtungsgebühr (einmalig)</p>
+            </div>
 
-      <ul className="space-y-2.5">
-        {features.map(f => (
-          <li key={f} className="flex items-start gap-2.5 text-sm" style={{ color: '#e7e5e7' }}>
-            <span
-              className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-[9px] font-bold"
-              style={{ background: `${accent}20`, color: accent }}
-            >✓</span>
-            {f}
-          </li>
-        ))}
-        {extraFeatures?.map(f => (
-          <li key={f} className="flex items-start gap-2.5 text-sm" style={{ color: '#e7e5e7' }}>
-            <span
-              className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 mt-0.5 text-[9px] font-bold"
-              style={{ background: `${accent}20`, color: accent }}
-            >✓</span>
-            {f}
-          </li>
-        ))}
-      </ul>
-    </button>
+            {/* Row 4 — Features */}
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'flex', flexDirection: 'column', gap: '10px' }}>
+              {plan.features.map(f => (
+                <li key={f} style={{ display: 'flex', alignItems: 'flex-start', gap: '10px', fontSize: '14px', color: '#e7e5e7' }}>
+                  <span style={{ width: '16px', height: '16px', borderRadius: '50%', background: `${plan.accent}20`, color: plan.accent, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, marginTop: '2px', fontSize: '9px', fontWeight: 700 }}>✓</span>
+                  {f}
+                </li>
+              ))}
+            </ul>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -370,6 +364,8 @@ function RegistrierungContent() {
   const [selectedPlan, setSelectedPlan] = useState<'silber' | 'gold'>('gold');
   const [customPrice, setCustomPrice] = useState('');
   const [customPriceError, setCustomPriceError] = useState('');
+  const [customSetupFee, setCustomSetupFee] = useState('299');
+  const [customSetupFeeError, setCustomSetupFeeError] = useState('');
 
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState('');
@@ -397,22 +393,25 @@ function RegistrierungContent() {
   const handleStripe = async () => {
     setApiError('');
     if (planMode === 'custom') {
+      let valid = true;
       const p = parseFloat(customPrice);
-      if (!customPrice || isNaN(p) || p < 1) {
-        setCustomPriceError('Bitte einen Preis eingeben (min. 1 €)');
-        return;
-      }
+      if (!customPrice || isNaN(p) || p < 1) { setCustomPriceError('Bitte einen Preis eingeben (min. 1 €)'); valid = false; }
+      const s = parseFloat(customSetupFee);
+      if (customSetupFee === '' || isNaN(s) || s < 0) { setCustomSetupFeeError('Bitte einen Betrag eingeben (0 oder mehr)'); valid = false; }
+      if (!valid) return;
       setCustomPriceError('');
+      setCustomSetupFeeError('');
     }
     setIsLoading(true);
     try {
       const monthlyPrice = planMode === 'definiert' ? (selectedPlan === 'silber' ? 49 : 89) : parseFloat(customPrice);
+      const setupFee = planMode === 'definiert' ? SETUP_FEE : parseFloat(customSetupFee);
       const planName = planMode === 'definiert' ? (selectedPlan === 'silber' ? 'Silber Paket' : 'Gold Paket') : 'Custom Paket';
 
       const res = await fetch('/api/stripe/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, plan: planMode === 'custom' ? 'custom' : selectedPlan, monthlyPrice, planName }),
+        body: JSON.stringify({ ...form, plan: planMode === 'custom' ? 'custom' : selectedPlan, monthlyPrice, setupFee, planName }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Fehler beim Erstellen der Zahlung');
@@ -525,28 +524,9 @@ function RegistrierungContent() {
               </div>
             </div>
 
-            {/* Definiert: two plan cards */}
+            {/* Definiert: two aligned plan cards */}
             {planMode === 'definiert' && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <PlanCard
-                  title="Silber"
-                  accent="#B0B0B0"
-                  monthlyPrice={49}
-                  features={silverFeatures}
-                  selected={selectedPlan === 'silber'}
-                  onClick={() => setSelectedPlan('silber')}
-                />
-                <PlanCard
-                  title="Gold"
-                  accent="#D4AF37"
-                  badge="Empfohlen"
-                  monthlyPrice={89}
-                  features={silverFeatures}
-                  extraFeatures={goldExtra}
-                  selected={selectedPlan === 'gold'}
-                  onClick={() => setSelectedPlan('gold')}
-                />
-              </div>
+              <AlignedPlanCards selected={selectedPlan} onSelect={setSelectedPlan} />
             )}
 
             {/* Custom plan */}
@@ -561,33 +541,51 @@ function RegistrierungContent() {
                 </div>
 
                 <div
-                  className="mb-6 p-4 rounded-xl"
+                  className="mb-6 p-4 rounded-xl space-y-4"
                   style={{ background: 'rgba(0,0,0,0.3)', border: '1px solid rgba(128,151,255,0.15)' }}
                 >
-                  <p className="text-xs font-bold uppercase tracking-wider mb-3" style={{ color: '#acaaad' }}>Monatlicher Preis</p>
-                  <div className="flex items-center gap-3">
-                    <div className="relative flex-1">
-                      <input
-                        type="number"
-                        min="1"
-                        step="1"
-                        value={customPrice}
-                        onChange={e => { setCustomPrice(e.target.value); setCustomPriceError(''); }}
-                        placeholder="z. B. 120"
-                        className="w-full rounded-xl px-5 py-3.5 text-white outline-none font-black text-2xl pr-12 transition-all"
-                        style={{
-                          background: '#19191b',
-                          border: `1px solid ${customPriceError ? '#fd6f85' : 'rgba(128,151,255,0.3)'}`,
-                        }}
-                        onFocus={e => { e.currentTarget.style.borderColor = '#8097ff'; }}
-                        onBlur={e => { e.currentTarget.style.borderColor = customPriceError ? '#fd6f85' : 'rgba(128,151,255,0.3)'; }}
-                      />
-                      <span className="absolute right-4 top-1/2 -translate-y-1/2 font-black text-xl" style={{ color: '#8097ff' }}>€</span>
+                  {/* Monthly price */}
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#acaaad' }}>Monatlicher Preis</p>
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-1">
+                        <input
+                          type="number" min="1" step="1" value={customPrice}
+                          onChange={e => { setCustomPrice(e.target.value); setCustomPriceError(''); }}
+                          placeholder="z. B. 120"
+                          className="w-full rounded-xl px-5 py-3.5 text-white outline-none font-black text-2xl pr-12 transition-all"
+                          style={{ background: '#19191b', border: `1px solid ${customPriceError ? '#fd6f85' : 'rgba(128,151,255,0.3)'}` }}
+                          onFocus={e => { e.currentTarget.style.borderColor = '#8097ff'; }}
+                          onBlur={e => { e.currentTarget.style.borderColor = customPriceError ? '#fd6f85' : 'rgba(128,151,255,0.3)'; }}
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 font-black text-xl" style={{ color: '#8097ff' }}>€</span>
+                      </div>
+                      <span className="text-sm font-bold shrink-0" style={{ color: '#acaaad' }}>/Monat</span>
                     </div>
-                    <span className="text-sm font-bold shrink-0" style={{ color: '#acaaad' }}>/Monat</span>
+                    {customPriceError && <p className="text-xs text-red-400 mt-1.5 font-medium">{customPriceError}</p>}
                   </div>
-                  {customPriceError && <p className="text-xs text-red-400 mt-2 font-medium">{customPriceError}</p>}
-                  <p className="text-xs mt-2" style={{ color: '#48484a' }}>+ {SETUP_FEE}€ Einrichtungsgebühr (einmalig)</p>
+
+                  {/* Setup fee */}
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wider mb-2" style={{ color: '#acaaad' }}>Einmalige Einrichtungsgebühr</p>
+                    <div className="flex items-center gap-3">
+                      <div className="relative flex-1">
+                        <input
+                          type="number" min="0" step="1" value={customSetupFee}
+                          onChange={e => { setCustomSetupFee(e.target.value); setCustomSetupFeeError(''); }}
+                          placeholder="299"
+                          className="w-full rounded-xl px-5 py-3.5 text-white outline-none font-black text-2xl pr-12 transition-all"
+                          style={{ background: '#19191b', border: `1px solid ${customSetupFeeError ? '#fd6f85' : 'rgba(128,151,255,0.3)'}` }}
+                          onFocus={e => { e.currentTarget.style.borderColor = '#8097ff'; }}
+                          onBlur={e => { e.currentTarget.style.borderColor = customSetupFeeError ? '#fd6f85' : 'rgba(128,151,255,0.3)'; }}
+                        />
+                        <span className="absolute right-4 top-1/2 -translate-y-1/2 font-black text-xl" style={{ color: '#8097ff' }}>€</span>
+                      </div>
+                      <span className="text-sm font-bold shrink-0" style={{ color: '#acaaad' }}>einmalig</span>
+                    </div>
+                    {customSetupFeeError && <p className="text-xs text-red-400 mt-1.5 font-medium">{customSetupFeeError}</p>}
+                    <p className="text-xs mt-1.5" style={{ color: '#48484a' }}>0 € = kostenlose Einrichtung</p>
+                  </div>
                 </div>
 
                 <ul className="space-y-2.5">
