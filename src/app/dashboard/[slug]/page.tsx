@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { Users, Pizza, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock, BarChart2, Megaphone, Send } from 'lucide-react';
+import { Users, Pizza, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock, BarChart2, Megaphone, Send, ExternalLink } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
@@ -43,7 +43,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   const [retentionRate, setRetentionRate] = useState(0);
   const [topCustomers, setTopCustomers] = useState<any[]>([]);
   
-  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'marketing'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'marketing' | 'billing'>('overview');
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [cumulativeMonthlyData, setCumulativeMonthlyData] = useState<any[]>([]);
   const [msgTitle, setMsgTitle] = useState('');
@@ -51,6 +51,10 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   const [sendingMsg, setSendingMsg] = useState(false);
   const [msgSuccess, setMsgSuccess] = useState('');
   const [messages, setMessages] = useState<any[]>([]);
+
+  // Stripe Billing State
+  const [billingLoading, setBillingLoading] = useState(false);
+  const [billingError, setBillingError] = useState('');
 
   // Handle Login
   const handleLogin = async (e: React.FormEvent) => {
@@ -282,6 +286,55 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     URL.revokeObjectURL(url);
   };
 
+  const handleStripeReactivate = async (plan: 'silber' | 'gold') => {
+    if (!merchant) return;
+    setBillingLoading(true);
+    setBillingError('');
+    try {
+      const response = await fetch('/api/stripe/reactivate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          merchantId: merchant.id,
+          plan: plan
+        })
+      });
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setBillingError(data.error || 'Fehler beim Checkout');
+        setBillingLoading(false);
+      }
+    } catch (err) {
+      setBillingError('Verbindungsfehler');
+      setBillingLoading(false);
+    }
+  };
+
+  const handleStripePortal = async () => {
+    if (!merchant) return;
+    setBillingLoading(true);
+    setBillingError('');
+    try {
+      const response = await fetch('/api/stripe/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ merchantId: merchant.id })
+      });
+      const data = await response.json();
+      if (data.url) {
+        window.location.href = data.url;
+      } else {
+        setBillingError(data.error || 'Fehler beim Laden des Kundenportals');
+        setBillingLoading(false);
+      }
+    } catch (err) {
+      setBillingError('Verbindungsfehler');
+      setBillingLoading(false);
+    }
+  };
+
   const deleteCustomer = async (customer: any) => {
     setDeleting(true);
     try {
@@ -501,6 +554,12 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${activeTab === 'marketing' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
           >
             <div className="flex items-center gap-2"><Megaphone size={16}/> Marketing</div>
+          </button>
+          <button 
+            onClick={() => setActiveTab('billing')}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${activeTab === 'billing' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
+          >
+            <div className="flex items-center gap-2"><CreditCard size={16}/> Abo & Abrechnung</div>
           </button>
         </div>
 
@@ -881,6 +940,105 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   ))
                 )}
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* BILLING TAB */}
+        {activeTab === 'billing' && (
+          <div className="space-y-6 max-w-2xl">
+            <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div className="flex items-center gap-3 mb-6">
+                <CreditCard size={20} className="text-[#D4AF37]" />
+                <h2 className="text-lg font-bold text-white">Abonnement & Abrechnung</h2>
+              </div>
+              
+              {billingError && (
+                <div className="p-3 mb-6 rounded-xl text-sm bg-red-500/10 text-red-500 border border-red-500/20">
+                  {billingError}
+                </div>
+              )}
+
+              {merchant?.subscription_status === 'active' ? (
+                <>
+                  <p className="text-sm text-white/70 mb-6">
+                    Dein Abonnement ist <span className="text-green-500 font-bold">aktiv</span>. Du kannst deine Zahlungsdaten, Rechnungen und dein Abo im Stripe-Kundenportal verwalten.
+                  </p>
+                  <button 
+                    onClick={handleStripePortal}
+                    disabled={billingLoading}
+                    className="w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-black disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95"
+                    style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}
+                  >
+                    {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : <><ExternalLink size={20} /> Stripe Portal öffnen</>}
+                  </button>
+                </>
+              ) : (
+                <>
+                  {merchant?.package_type === 'custom' ? (
+                    <div className="text-center py-6">
+                      <p className="text-sm text-white/70 mb-4">
+                        Dein individuelles Abonnement ist derzeit <span className="text-red-500 font-bold">gekündigt</span>.
+                      </p>
+                      {merchant?.custom_price ? (
+                        <button 
+                          onClick={() => handleStripeReactivate('custom')}
+                          disabled={billingLoading}
+                          className="w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-black disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95"
+                          style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}
+                        >
+                          {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : <><CreditCard size={20} /> Abo reaktivieren ({merchant.custom_price}€ / Monat)</>}
+                        </button>
+                      ) : (
+                        <a href="mailto:kontakt@marketif.de" className="inline-block w-full py-4 rounded-xl font-bold text-center text-black transition-all hover:scale-[1.02] active:scale-95" style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}>
+                          Support kontaktieren
+                        </a>
+                      )}
+                    </div>
+                  ) : (!merchant?.package_type) ? (
+                    <div className="text-center py-6">
+                      <p className="text-sm text-white/70 mb-4">
+                        Dein Abonnement ist derzeit <span className="text-red-500 font-bold">gekündigt</span>.
+                      </p>
+                      <a href="mailto:kontakt@marketif.de" className="inline-block w-full py-4 rounded-xl font-bold text-center text-black transition-all hover:scale-[1.02] active:scale-95" style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}>
+                        Support kontaktieren
+                      </a>
+                    </div>
+                  ) : (
+                    <div>
+                      <p className="text-sm text-white/70 mb-6">
+                        Dein Abonnement ist derzeit <span className="text-red-500 font-bold">gekündigt</span>. Wähle ein Paket, um dein Abo zu reaktivieren (keine erneuten Einrichtungskosten).
+                      </p>
+                      <div className="grid grid-cols-2 gap-4">
+                        <button 
+                          onClick={() => handleStripeReactivate('silber')}
+                          disabled={billingLoading}
+                          className="p-4 rounded-xl text-left border transition-all hover:scale-[1.02] active:scale-95"
+                          style={{ background: 'rgba(176,176,176,0.1)', borderColor: 'rgba(176,176,176,0.5)' }}
+                        >
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-[#B0B0B0] mb-1">Silber</p>
+                          <p className="text-2xl font-bold text-white mb-2">49€<span className="text-sm text-white/50 font-normal">/Monat</span></p>
+                          <div className="flex items-center gap-2 text-sm text-[#B0B0B0] mt-4 font-bold">
+                            {billingLoading ? <RefreshCw className="animate-spin" size={16} /> : <><CreditCard size={16} /> Reaktivieren</>}
+                          </div>
+                        </button>
+                        <button 
+                          onClick={() => handleStripeReactivate('gold')}
+                          disabled={billingLoading}
+                          className="p-4 rounded-xl text-left border transition-all hover:scale-[1.02] active:scale-95 relative overflow-hidden"
+                          style={{ background: 'rgba(212,175,55,0.1)', borderColor: 'rgba(212,175,55,0.5)' }}
+                        >
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-[#D4AF37] mb-1">Gold</p>
+                          <p className="text-2xl font-bold text-white mb-2">89€<span className="text-sm text-white/50 font-normal">/Monat</span></p>
+                          <div className="flex items-center gap-2 text-sm text-[#D4AF37] mt-4 font-bold">
+                            {billingLoading ? <RefreshCw className="animate-spin" size={16} /> : <><CreditCard size={16} /> Reaktivieren</>}
+                          </div>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </>
+              )}
             </div>
           </div>
         )}

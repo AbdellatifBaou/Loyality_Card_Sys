@@ -57,7 +57,7 @@ export async function POST(req: Request) {
           quantity: 1,
         },
       ],
-      metadata: { name, company, email, phone, plan, planName },
+      metadata: { name, company, email, phone, plan, planName, monthlyPrice: monthly.toString() },
       success_url: `${appUrl}/registrierung?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/registrierung?cancelled=true`,
     });

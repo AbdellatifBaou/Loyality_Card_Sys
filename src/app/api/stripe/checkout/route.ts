@@ -17,10 +17,16 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing merchantId or priceId' }, { status: 400 });
     }
 
-    // Hole den Händler aus der Datenbank
-    const { data: merchant, error: mError } = await supabase
+    // Hole den Händler aus der Datenbank (mit Admin Rechten)
+    const { createClient } = require('@supabase/supabase-js');
+    const adminSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const { data: merchant, error: mError } = await adminSupabase
       .from('merchants_loyality')
-      .select('*')
+      .select('*, merchant_billing(*)')
       .eq('id', merchantId)
       .single();
 
@@ -28,7 +34,10 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
     }
 
-    let customerId = merchant.stripe_customer_id;
+    // Billing data is an array if multiple, but it should be 1-to-1, or object if joined via single relationship
+    // Supabase returns an array of joined tables by default unless configured otherwise.
+    const billingData = Array.isArray(merchant.merchant_billing) ? merchant.merchant_billing[0] : merchant.merchant_billing;
+    let customerId = billingData?.stripe_customer_id;
 
     // Wenn der Händler noch keinen Stripe-Kunden hat, lege einen an
     if (!customerId) {
@@ -41,10 +50,14 @@ export async function POST(req: Request) {
       customerId = customer.id;
 
       // Speichere die Stripe Customer ID in Supabase
-      await supabase
-        .from('merchants_loyality')
-        .update({ stripe_customer_id: customerId })
-        .eq('id', merchantId);
+      const { error: updateError } = await adminSupabase
+        .from('merchant_billing')
+        .upsert({ merchant_id: merchantId, stripe_customer_id: customerId });
+
+      if (updateError) {
+        console.error('Failed to update stripe_customer_id:', updateError);
+        return NextResponse.json({ error: 'Failed to update merchant billing' }, { status: 500 });
+      }
     }
 
     // Erstelle die Checkout Session
