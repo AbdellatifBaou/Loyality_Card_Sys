@@ -286,7 +286,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     URL.revokeObjectURL(url);
   };
 
-  const handleStripeReactivate = async (plan: 'silber' | 'gold') => {
+  const handleStripeReactivate = async (plan: 'silber' | 'gold' | 'custom') => {
     if (!merchant) return;
     setBillingLoading(true);
     setBillingError('');
