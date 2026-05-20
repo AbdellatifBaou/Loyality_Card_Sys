@@ -959,11 +959,17 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                 </div>
               )}
 
-              {merchant?.subscription_status === 'active' ? (
+              {merchant?.subscription_status === 'active' || merchant?.subscription_status === 'cancels_at_period_end' ? (
                 <>
-                  <p className="text-sm text-white/70 mb-6">
-                    Dein Abonnement ist <span className="text-green-500 font-bold">aktiv</span>. Du kannst deine Zahlungsdaten, Rechnungen und dein Abo im Stripe-Kundenportal verwalten.
-                  </p>
+                  {merchant?.subscription_status === 'cancels_at_period_end' ? (
+                    <p className="text-sm text-white/70 mb-6">
+                      Dein Abonnement ist <span className="text-yellow-500 font-bold">gekündigt</span>, aber noch voll aktiv bis zum <span className="font-bold text-white">{merchant.current_period_end ? new Date(merchant.current_period_end).toLocaleDateString('de-DE') : 'Ende des Abrechnungszeitraums'}</span>. Du kannst es im Stripe-Kundenportal jederzeit wieder reaktivieren.
+                    </p>
+                  ) : (
+                    <p className="text-sm text-white/70 mb-6">
+                      Dein Abonnement ist <span className="text-green-500 font-bold">aktiv</span>. Du kannst deine Zahlungsdaten, Rechnungen und dein Abo im Stripe-Kundenportal verwalten.
+                    </p>
+                  )}
                   <button 
                     onClick={handleStripePortal}
                     disabled={billingLoading}
