@@ -89,6 +89,30 @@ export async function POST(req: Request) {
                      <li><strong>Dashboard Slug:</strong> ${generatedSlug}</li>
                    </ul>`,
           });
+
+          // E-Mail an den KUNDEN senden (Professionelles Design)
+          if (email) {
+            await sendEmail({
+              to: email,
+              subject: `Willkommen bei Marketif Treue, ${name}!`,
+              html: `
+                <div style="font-family: 'Inter', Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; color: #ffffff; background-color: #0a0a0a; border-radius: 12px; border: 1px solid #333;">
+                  <div style="text-align: center; margin-bottom: 20px;">
+                    <h1 style="color: #D4AF37; margin: 0;">Marketif <span style="color: #ffffff;">Treue</span></h1>
+                  </div>
+                  <p style="font-size: 16px; line-height: 1.5;">Hallo ${name},</p>
+                  <p style="font-size: 16px; line-height: 1.5;">vielen Dank für deine Registrierung! Dein Marketif Treue-System für <strong>${company}</strong> ist nun erfolgreich eingerichtet und aktiv.</p>
+                  <p style="font-size: 16px; line-height: 1.5;">Dein persönliches Händler-Dashboard (inklusive Statistiken und Einstellungen) erreichst du ab sofort unter diesem Link:</p>
+                  <div style="text-align: center; margin: 30px 0;">
+                    <a href="https://treue.marketif.de/dashboard/${generatedSlug}" style="background-color: #D4AF37; color: #000000; padding: 14px 28px; text-decoration: none; font-weight: bold; border-radius: 8px; font-size: 16px; display: inline-block;">Zum Dashboard</a>
+                  </div>
+                  <p style="font-size: 16px; line-height: 1.5;">Falls du Fragen zur Einrichtung hast oder Unterstützung benötigst, kannst du jederzeit auf diese E-Mail antworten.</p>
+                  <hr style="border-color: #333; margin: 30px 0;">
+                  <p style="font-size: 14px; color: #888; text-align: center;">Beste Grüße,<br>Dein Marketif Team</p>
+                </div>
+              `,
+            });
+          }
         } else if (merchantId) {
           // Bestehender Händler: Reaktivierung
           const updateData: any = {
