@@ -36,7 +36,19 @@ export async function POST(req: Request) {
     let customerId = billingData?.stripe_customer_id;
 
     if (!customerId) {
-      return NextResponse.json({ error: 'No Stripe customer linked. Please contact support.' }, { status: 400 });
+      const newCustomer = await stripe.customers.create({
+        name: merchant.name,
+      });
+      customerId = newCustomer.id;
+
+      const { error: insertError } = await adminSupabase.from('merchant_billing').insert({
+        merchant_id: merchant.id,
+        stripe_customer_id: customerId,
+      });
+      
+      if (insertError) {
+        return NextResponse.json({ error: 'Fehler beim Verknüpfen des Stripe-Kunden' }, { status: 500 });
+      }
     }
 
     let monthly = 0;
