@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { sendEmail } from '@/lib/email';
 
 const getStripe = () => new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2026-04-22.dahlia',
@@ -96,8 +97,7 @@ export async function POST(req: Request) {
              console.error('Fehler beim Speichern der Billing-Daten:', billingError);
           }
 
-          // E-Mail senden
-          const { sendEmail } = await import('@/lib/email');
+          // E-Mail an den Admin senden
           await sendEmail({
             to: 'kontakt@marketif.de',
             subject: `🟢 Neuer Händler: ${company} (Paket: ${plan})`,
@@ -152,7 +152,6 @@ export async function POST(req: Request) {
             stripe_subscription_id: subscriptionId ?? null,
           }).eq('merchant_id', merchantId);
 
-          const { sendEmail } = await import('@/lib/email');
           await sendEmail({
             to: 'kontakt@marketif.de',
             subject: `🟢 Händler Reaktivierung: Merchant ID ${merchantId}`,
@@ -175,7 +174,6 @@ export async function POST(req: Request) {
           }).eq('id', merchantId);
           console.log(`Merchant deactivated — Stripe customer: ${customerId}`);
           
-          const { sendEmail } = await import('@/lib/email');
           await sendEmail({
             to: 'kontakt@marketif.de',
             subject: `🔴 Abo gekündigt: Merchant ID ${merchantId}`,
@@ -193,7 +191,6 @@ export async function POST(req: Request) {
         if (!merchantId) break;
 
         const previousAttributes = event.data.previous_attributes as any;
-        const { sendEmail } = await import('@/lib/email');
 
         if (sub.cancel_at_period_end) {
           // Kündigung ist angesetzt — Händler bleibt aktiv bis Periodenende
