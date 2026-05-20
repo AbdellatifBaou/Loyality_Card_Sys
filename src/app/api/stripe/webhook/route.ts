@@ -232,12 +232,15 @@ export async function POST(req: Request) {
         const prev = (event.data.previous_attributes ?? {}) as Record<string, unknown>;
 
         if (sub.cancel_at_period_end) {
+          const updateObj: any = { subscription_status: 'cancels_at_period_end' };
+          const periodEnd = (sub as any).current_period_end;
+          if (periodEnd) {
+             updateObj.current_period_end = new Date(periodEnd * 1000).toISOString();
+          }
+
           await db
             .from('merchants_loyality')
-            .update({
-              subscription_status: 'cancels_at_period_end',
-              current_period_end: new Date((sub as any).current_period_end * 1000).toISOString(),
-            })
+            .update(updateObj)
             .eq('id', merchantId);
 
           // Only email when cancel_at_period_end just flipped to true
@@ -247,17 +250,19 @@ export async function POST(req: Request) {
               subject: `⚠️ Abo-Kündigung geplant: Merchant ID ${merchantId}`,
               html: `<p>Ein Händler hat sein Abo zum Periodenende gekündigt.</p>
                      <p>Merchant ID: ${merchantId}</p>
-                     <p>Service endet am: ${new Date((sub as any).current_period_end * 1000).toLocaleDateString('de-DE')}</p>`,
+                     <p>Service endet am: ${periodEnd ? new Date(periodEnd * 1000).toLocaleDateString('de-DE') : 'Unbekannt'}</p>`,
             });
           }
         } else if (sub.status === 'active') {
+          const updateObj: any = { is_active: true, subscription_status: 'active' };
+          const periodEnd = (sub as any).current_period_end;
+          if (periodEnd) {
+             updateObj.current_period_end = new Date(periodEnd * 1000).toISOString();
+          }
+
           await db
             .from('merchants_loyality')
-            .update({
-              is_active: true,
-              subscription_status: 'active',
-              current_period_end: new Date((sub as any).current_period_end * 1000).toISOString(),
-            })
+            .update(updateObj)
             .eq('id', merchantId);
 
           // Only email when cancel_at_period_end just flipped back to false (reactivation)
