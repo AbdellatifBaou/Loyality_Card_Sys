@@ -192,18 +192,39 @@ export async function POST(req: Request) {
         const merchantId = await getMerchantId(customerId);
         if (!merchantId) break;
 
+        const previousAttributes = event.data.previous_attributes as any;
+        const { sendEmail } = await import('@/lib/email');
+
         if (sub.cancel_at_period_end) {
           // Kündigung ist angesetzt — Händler bleibt aktiv bis Periodenende
           await db.from('merchants_loyality').update({
             subscription_status: 'cancels_at_period_end',
             current_period_end: new Date((sub as any).current_period_end * 1000).toISOString(),
           }).eq('id', merchantId);
+
+          // E-Mail senden, falls es gerade erst gekündigt wurde
+          if (previousAttributes && previousAttributes.cancel_at_period_end === false) {
+            await sendEmail({
+              to: 'kontakt@marketif.de',
+              subject: `⚠️ Abo-Kündigung zum Periodenende: Merchant ID ${merchantId}`,
+              html: `<p>Ein Händler hat sein Abo gekündigt. Das Abo bleibt bis zum Ende der laufenden Periode aktiv.</p><p>Merchant ID: ${merchantId}</p><p>Endet am: ${new Date((sub as any).current_period_end * 1000).toLocaleDateString('de-DE')}</p>`,
+            });
+          }
         } else if (sub.status === 'active') {
           await db.from('merchants_loyality').update({
             is_active: true,
             subscription_status: 'active',
             current_period_end: new Date((sub as any).current_period_end * 1000).toISOString(),
           }).eq('id', merchantId);
+
+          // E-Mail senden, falls es gerade erst reaktiviert wurde
+          if (previousAttributes && previousAttributes.cancel_at_period_end === true) {
+            await sendEmail({
+              to: 'kontakt@marketif.de',
+              subject: `🟢 Abo im Portal reaktiviert: Merchant ID ${merchantId}`,
+              html: `<p>Ein Händler hat seine Kündigung im Stripe-Portal zurückgezogen. Das Abo läuft normal weiter.</p><p>Merchant ID: ${merchantId}</p>`,
+            });
+          }
         }
         break;
       }
