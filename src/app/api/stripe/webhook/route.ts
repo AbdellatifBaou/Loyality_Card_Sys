@@ -236,7 +236,7 @@ export async function POST(req: Request) {
             .from('merchants_loyality')
             .update({
               subscription_status: 'cancels_at_period_end',
-              current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+              current_period_end: new Date((sub as any).current_period_end * 1000).toISOString(),
             })
             .eq('id', merchantId);
 
@@ -247,7 +247,7 @@ export async function POST(req: Request) {
               subject: `⚠️ Abo-Kündigung geplant: Merchant ID ${merchantId}`,
               html: `<p>Ein Händler hat sein Abo zum Periodenende gekündigt.</p>
                      <p>Merchant ID: ${merchantId}</p>
-                     <p>Service endet am: ${new Date(sub.current_period_end * 1000).toLocaleDateString('de-DE')}</p>`,
+                     <p>Service endet am: ${new Date((sub as any).current_period_end * 1000).toLocaleDateString('de-DE')}</p>`,
             });
           }
         } else if (sub.status === 'active') {
@@ -256,7 +256,7 @@ export async function POST(req: Request) {
             .update({
               is_active: true,
               subscription_status: 'active',
-              current_period_end: new Date(sub.current_period_end * 1000).toISOString(),
+              current_period_end: new Date((sub as any).current_period_end * 1000).toISOString(),
             })
             .eq('id', merchantId);
 
