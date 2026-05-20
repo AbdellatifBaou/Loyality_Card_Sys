@@ -301,7 +301,8 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       });
       const data = await response.json();
       if (data.url) {
-        window.location.href = data.url;
+        window.open(data.url, '_blank');
+        setBillingLoading(false);
       } else {
         setBillingError(data.error || 'Fehler beim Checkout');
         setBillingLoading(false);
@@ -324,7 +325,8 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       });
       const data = await response.json();
       if (data.url) {
-        window.location.href = data.url;
+        window.open(data.url, '_blank');
+        setBillingLoading(false);
       } else {
         setBillingError(data.error || 'Fehler beim Laden des Kundenportals');
         setBillingLoading(false);

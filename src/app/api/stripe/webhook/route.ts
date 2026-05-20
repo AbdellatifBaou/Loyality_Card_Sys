@@ -50,29 +50,49 @@ export async function POST(req: Request) {
           const { company, plan, name, email, phone, monthlyPrice } = session.metadata;
           const generatedSlug = company.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
           
-          // Neuen Händler anlegen
-          const { data: newMerchant, error: insertError } = await db.from('merchants_loyality').insert({
-            name: company,
-            slug: generatedSlug,
-            is_active: true,
-            subscription_status: 'active',
-            package_type: plan, // 'custom', 'silber' oder 'gold'
-            custom_price: plan === 'custom' && monthlyPrice ? parseFloat(monthlyPrice) : null,
-          }).select('id').single();
+          // Prüfen, ob Händler bereits existiert (Mapping über den generierten Slug)
+          const { data: existingMerchant } = await db.from('merchants_loyality')
+            .select('id')
+            .eq('slug', generatedSlug)
+            .single();
 
-          if (insertError) {
-            console.error('Fehler beim Anlegen des Händlers:', insertError);
-            break;
+          if (existingMerchant) {
+            merchantId = existingMerchant.id;
+            // Bestehenden Händler updaten
+            await db.from('merchants_loyality').update({
+              is_active: true,
+              subscription_status: 'active',
+              package_type: plan,
+              custom_price: plan === 'custom' && monthlyPrice ? parseFloat(monthlyPrice) : null,
+            }).eq('id', merchantId);
+          } else {
+            // Neuen Händler anlegen
+            const { data: newMerchant, error: insertError } = await db.from('merchants_loyality').insert({
+              name: company,
+              slug: generatedSlug,
+              is_active: true,
+              subscription_status: 'active',
+              package_type: plan, // 'custom', 'silber' oder 'gold'
+              custom_price: plan === 'custom' && monthlyPrice ? parseFloat(monthlyPrice) : null,
+            }).select('id').single();
+
+            if (insertError) {
+              console.error('Fehler beim Anlegen des Händlers:', insertError);
+              break;
+            }
+            merchantId = newMerchant.id;
           }
 
-          merchantId = newMerchant.id;
-
-          // Billing Record anlegen
-          await db.from('merchant_billing').insert({
+          // Billing Record anlegen (Upsert, falls er schon existiert)
+          const { error: billingError } = await db.from('merchant_billing').upsert({
             merchant_id: merchantId,
             stripe_customer_id: customerId,
             stripe_subscription_id: subscriptionId ?? null,
-          });
+          }, { onConflict: 'merchant_id' });
+          
+          if (billingError) {
+             console.error('Fehler beim Speichern der Billing-Daten:', billingError);
+          }
 
           // E-Mail senden
           const { sendEmail } = await import('@/lib/email');
