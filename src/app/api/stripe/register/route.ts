@@ -7,9 +7,9 @@ const getStripe = () => new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 
 export async function POST(req: Request) {
   try {
-    const { name, company, email, phone, plan, monthlyPrice, setupFee, planName } = await req.json();
+    const { name, company, shortName, email, phone, plan, monthlyPrice, setupFee, planName } = await req.json();
 
-    if (!name || !company || !email || !phone || !plan || !monthlyPrice || !planName) {
+    if (!name || !company || !shortName || !email || !phone || !plan || !monthlyPrice || !planName) {
       return NextResponse.json({ error: 'Fehlende Pflichtfelder' }, { status: 400 });
     }
 
@@ -30,7 +30,7 @@ export async function POST(req: Request) {
       name: `${name} – ${company}`,
       email,
       phone,
-      metadata: { name, company, plan },
+      metadata: { name, company, shortName, plan },
     });
 
     const session = await stripe.checkout.sessions.create({
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
           quantity: 1,
         },
       ],
-      metadata: { name, company, email, phone, plan, planName, monthlyPrice: monthly.toString() },
+      metadata: { name, company, shortName, email, phone, plan, planName, monthlyPrice: monthly.toString() },
       success_url: `${appUrl}/registrierung?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/registrierung?cancelled=true`,
     });

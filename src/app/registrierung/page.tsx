@@ -357,7 +357,7 @@ function RegistrierungContent() {
   const [authError, setAuthError] = useState('');
 
   const [step, setStep] = useState<1 | 2>(1);
-  const [form, setForm] = useState({ name: '', company: '', email: '', phone: '' });
+  const [form, setForm] = useState({ name: '', company: '', shortName: '', email: '', phone: '' });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
 
   const [planMode, setPlanMode] = useState<'definiert' | 'custom'>('custom');
@@ -384,6 +384,7 @@ function RegistrierungContent() {
     const errs: Record<string, string> = {};
     if (!form.name.trim()) errs.name = 'Pflichtfeld';
     if (!form.company.trim()) errs.company = 'Pflichtfeld';
+    if (!form.shortName.trim()) errs.shortName = 'Pflichtfeld';
     if (!form.email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) errs.email = 'Gültige E-Mail erforderlich';
     if (!form.phone.trim()) errs.phone = 'Pflichtfeld';
     setFormErrors(errs);
@@ -466,7 +467,8 @@ function RegistrierungContent() {
             <h2 className="font-headline font-bold text-white text-xl mb-6">Kontaktdaten</h2>
             <div className="space-y-5">
               <Field label="Vollständiger Name" value={form.name} onChange={v => setForm(f => ({ ...f, name: v }))} placeholder="Max Mustermann" error={formErrors.name} />
-              <Field label="Firmenname" value={form.company} onChange={v => setForm(f => ({ ...f, company: v }))} placeholder="Muster GmbH" error={formErrors.company} />
+              <Field label="Firmenname (Offiziell)" value={form.company} onChange={v => setForm(f => ({ ...f, company: v }))} placeholder="Muster GmbH" error={formErrors.company} />
+              <Field label="Kürzel (Für Dashboard Link)" value={form.shortName} onChange={v => setForm(f => ({ ...f, shortName: v }))} placeholder="muster" error={formErrors.shortName} />
               <Field label="E-Mail Adresse" value={form.email} onChange={v => setForm(f => ({ ...f, email: v }))} type="email" placeholder="mail@unternehmen.de" error={formErrors.email} />
               <Field label="Telefonnummer" value={form.phone} onChange={v => setForm(f => ({ ...f, phone: v }))} type="tel" placeholder="+49 123 456789" error={formErrors.phone} />
             </div>

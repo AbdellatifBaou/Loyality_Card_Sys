@@ -47,8 +47,10 @@ export async function POST(req: Request) {
         
         // Neu-Registrierung: Wenn kein Merchant in merchant_billing gefunden wurde
         if (!merchantId && session.metadata?.company) {
-          const { company, plan, name, email, phone, monthlyPrice } = session.metadata;
-          const generatedSlug = company.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+          const { company, shortName, plan, name, email, phone, monthlyPrice } = session.metadata;
+          // Use shortName for slug generation. Fallback to company just in case.
+          const slugBase = shortName || company;
+          const generatedSlug = slugBase.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
           
           // Prüfen, ob Händler bereits existiert (Mapping über den generierten Slug)
           const { data: existingMerchant } = await db.from('merchants_loyality')
