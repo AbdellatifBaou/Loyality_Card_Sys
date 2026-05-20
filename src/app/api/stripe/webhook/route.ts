@@ -29,14 +29,14 @@ export async function POST(req: Request) {
   const db = getAdmin();
 
   try {
-    switch (event.type) {
+    // Helper function to find merchant_id by customerId
+    const getMerchantId = async (customerId: string) => {
+      if (!customerId) return null;
+      const { data } = await db.from('merchant_billing').select('merchant_id').eq('stripe_customer_id', customerId).single();
+      return data?.merchant_id;
+    };
 
-      // Helper function to find merchant_id by customerId
-      const getMerchantId = async (customerId: string) => {
-        if (!customerId) return null;
-        const { data } = await db.from('merchant_billing').select('merchant_id').eq('stripe_customer_id', customerId).single();
-        return data?.merchant_id;
-      };
+    switch (event.type) {
 
       // ── Checkout erfolgreich abgeschlossen ───────────────────────────────────
       case 'checkout.session.completed': {
