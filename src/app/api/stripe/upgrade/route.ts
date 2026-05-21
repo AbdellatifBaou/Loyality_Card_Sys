@@ -82,7 +82,13 @@ export async function POST(req: Request) {
       .eq('id', merchantId);
 
     // 5. Sende die Willkommens-E-Mail (jetzt mit Dashboard-Link)
-    if (merchant.email) {
+    let email = merchant.email;
+    if (!email && billingData?.stripe_customer_id) {
+      const stripeCustomer = await stripe.customers.retrieve(billingData.stripe_customer_id) as Stripe.Customer;
+      email = stripeCustomer.email;
+    }
+
+    if (email) {
       const generatedSlug = merchant.slug;
       const scannerUrl = `https://treue.marketif.de/${generatedSlug}`;
       const loyaltyUrl = `https://treue.marketif.de/join/${generatedSlug}`;
@@ -93,7 +99,7 @@ export async function POST(req: Request) {
       const dashboardQrLink = `https://treue.marketif.de/api/qr-code?text=${encodeURIComponent(dashboardUrl)}`;
 
       await sendEmail({
-        to: merchant.email,
+        to: email,
         subject: `Upgrade erfolgreich: Willkommen im Gold-Paket, ${merchant.name}!`,
         html: `
           <div style="font-family:'Inter',Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#ffffff;background-color:#0a0a0a;border-radius:12px;border:1px solid #333;">
