@@ -447,7 +447,7 @@ export async function POST(req: Request) {
                     <p style="font-size:16px;line-height:1.5;">Hallo ${userName},</p>
                     <p style="font-size:16px;line-height:1.5;">leider konnte deine letzte Abo-Zahlung für das Marketif Treue System nicht erfolgreich abgebucht werden.</p>
                     <p style="font-size:16px;line-height:1.5;">Bitte logge dich in dein Händler-Dashboard ein und aktualisiere deine Zahlungsmethode im Reiter <strong>"Abo & Abrechnung"</strong>, um zu verhindern, dass dein Zugang gesperrt wird.</p>
-                    <p style="font-size:16px;line-height:1.5;">Du hast ab jetzt <strong>3 Tage Zeit</strong>, die Zahlung nachzuholen, bevor das System automatisch deaktiviert wird.</p>
+                    <p style="font-size:16px;line-height:1.5;">Du hast ab jetzt <strong>15 Tage Zeit</strong>, die Zahlung nachzuholen, bevor das System automatisch deaktiviert wird.</p>
                     <hr style="border-color:#333;margin:30px 0;">
                     <p style="font-size:14px;color:#888;text-align:center;">Beste Grüße,<br>Dein Marketif Team</p>
                   </div>
@@ -465,7 +465,7 @@ export async function POST(req: Request) {
             html: `
               <p>Eine wiederkehrende Zahlung eines Händlers ist fehlgeschlagen.</p>
               <p><strong>Merchant ID:</strong> ${merchantId}</p>
-              <p>Der Händler wurde per E-Mail benachrichtigt und hat 3 Tage Zeit, seine Zahlungsinformationen zu aktualisieren.</p>
+              <p>Der Händler wurde per E-Mail benachrichtigt und hat 15 Tage Zeit, seine Zahlungsinformationen zu aktualisieren.</p>
             `
           });
         }
