@@ -241,20 +241,36 @@ export async function POST(req: Request) {
 
         const prev = (event.data.previous_attributes ?? {}) as Record<string, unknown>;
 
-        if (sub.cancel_at_period_end) {
+        // Stripe Customer Portal often sets `cancel_at` (timestamp) instead of `cancel_at_period_end` (boolean).
+        const isCanceling = sub.cancel_at_period_end || sub.cancel_at !== null;
+        
+        // Did it JUST flip from not canceling to canceling?
+        const justCanceled = 
+          (sub.cancel_at_period_end && prev.cancel_at_period_end === false) ||
+          (sub.cancel_at !== null && prev.cancel_at === null);
+
+        // Did it JUST flip from canceling to not canceling (reactivated)?
+        const justReactivated = 
+          (sub.cancel_at_period_end === false && prev.cancel_at_period_end === true) ||
+          (sub.cancel_at === null && prev.cancel_at !== null && prev.cancel_at !== undefined);
+
+        if (isCanceling) {
           const updateObj: any = { subscription_status: 'cancels_at_period_end' };
-          const periodEnd = (sub as any).current_period_end;
+          const periodEnd = (sub as any).current_period_end || sub.cancel_at;
           if (periodEnd) {
              updateObj.current_period_end = new Date(periodEnd * 1000).toISOString();
           }
 
-          await db
+          const { error: updateErr } = await db
             .from('merchants_loyality')
             .update(updateObj)
             .eq('id', merchantId);
 
-          // Only email when cancel_at_period_end just flipped to true
-          if (prev.cancel_at_period_end === false) {
+          if (updateErr) {
+            console.error('[WEBHOOK ERROR] Failed to update merchants_loyality for cancel:', updateErr);
+          }
+
+          if (justCanceled) {
             await safeEmail({
               to: 'kontakt@marketif.de',
               subject: `⚠️ Abo-Kündigung geplant: Merchant ID ${merchantId}`,
@@ -270,13 +286,16 @@ export async function POST(req: Request) {
              updateObj.current_period_end = new Date(periodEnd * 1000).toISOString();
           }
 
-          await db
+          const { error: updateErr } = await db
             .from('merchants_loyality')
             .update(updateObj)
             .eq('id', merchantId);
 
-          // Only email when cancel_at_period_end just flipped back to false (reactivation)
-          if (prev.cancel_at_period_end === true) {
+          if (updateErr) {
+            console.error('[WEBHOOK ERROR] Failed to update merchants_loyality for active:', updateErr);
+          }
+
+          if (justReactivated) {
             await safeEmail({
               to: 'kontakt@marketif.de',
               subject: `🟢 Abo reaktiviert: Merchant ID ${merchantId}`,
