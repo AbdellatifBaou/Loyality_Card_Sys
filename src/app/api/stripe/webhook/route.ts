@@ -326,7 +326,7 @@ export async function POST(req: Request) {
 
             // Customer Email
             try {
-              const customerInfo = await stripe.customers.retrieve(customerId) as Stripe.Customer;
+              const customerInfo = await getStripe().customers.retrieve(customerId) as Stripe.Customer;
               if (customerInfo.email) {
                 const userName = customerInfo.name || 'Händler';
                 await safeEmail({
@@ -378,7 +378,7 @@ export async function POST(req: Request) {
 
             // Customer Email
             try {
-              const customerInfo = await stripe.customers.retrieve(customerId) as Stripe.Customer;
+              const customerInfo = await getStripe().customers.retrieve(customerId) as Stripe.Customer;
               if (customerInfo.email) {
                 const userName = customerInfo.name || 'Händler';
                 await safeEmail({
