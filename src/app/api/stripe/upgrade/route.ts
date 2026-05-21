@@ -104,15 +104,15 @@ export async function POST(req: Request) {
         html: `
           <div style="font-family:'Inter',Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#ffffff;background-color:#0a0a0a;border-radius:12px;border:1px solid #333;">
             <div style="text-align:center;margin-bottom:20px;">
-              <h1 style="color:#D4AF37;margin:0;">Marketif <span style="color:#ffffff;">Treue Gold</span></h1>
+              <h1 style="color:#8097ff;margin:0;">Marketif <span style="color:#ffffff;">Treue</span></h1>
             </div>
             <p style="font-size:16px;line-height:1.5;">Hallo ${merchant.name},</p>
-            <p style="font-size:16px;line-height:1.5;">herzlichen Glückwunsch! Dein Upgrade auf das Gold-Paket für <strong>${merchant.company}</strong> war erfolgreich. Du hast ab sofort vollen Zugriff auf das Analytics-Dashboard und alle erweiterten Funktionen.</p>
+            <p style="font-size:16px;line-height:1.5;">herzlichen Glückwunsch! Dein Upgrade auf das Gold-Paket war erfolgreich. Du hast ab sofort vollen Zugriff auf das Analytics-Dashboard und alle erweiterten Funktionen.</p>
             
             <div style="background-color:#1a1a1a;padding:20px;border-radius:8px;margin:20px 0;border:1px solid #333;">
               <p style="font-size:16px;line-height:1.5;margin-top:0;">Dein persönliches Händler-Dashboard erreichst du ab sofort hier:</p>
               <div style="text-align:center;margin:20px 0;">
-                <a href="${dashboardUrl}" style="background-color:#D4AF37;color:#000000;padding:14px 28px;text-decoration:none;font-weight:bold;border-radius:8px;font-size:16px;display:inline-block;">Zum Dashboard</a>
+                <a href="${dashboardUrl}" style="background-color:#8097ff;color:#000000;padding:14px 28px;text-decoration:none;font-weight:bold;border-radius:8px;font-size:16px;display:inline-block;">Zum Dashboard</a>
               </div>
               <p style="font-size:14px;color:#aaa;text-align:center;">Oder scanne/lade dir direkt den Dashboard QR-Code herunter:</p>
               <div style="text-align:center;">
@@ -125,7 +125,7 @@ export async function POST(req: Request) {
             <div style="margin-bottom:20px;">
               <p style="font-size:16px;margin-bottom:5px;"><strong>1. Link für deine Kunden (Digitale Kundenkarte holen)</strong></p>
               <p style="font-size:14px;color:#aaa;margin-top:0;line-height:1.4;">Teile diesen Link mit deinen Kunden oder drucke den QR-Code aus, damit sie sich ihre Karte sichern können.</p>
-              <a href="${loyaltyUrl}" style="color:#D4AF37;font-size:15px;">${loyaltyUrl}</a>
+              <a href="${loyaltyUrl}" style="color:#8097ff;font-size:15px;">${loyaltyUrl}</a>
               <br>
               <a href="${loyaltyQrLink}" style="display:inline-block;margin-top:10px;padding:8px 16px;background-color:#222;color:#fff;text-decoration:none;border-radius:6px;font-size:14px;border:1px solid #444;">⬇️ QR-Code herunterladen (PNG)</a>
             </div>
@@ -133,7 +133,7 @@ export async function POST(req: Request) {
             <div style="margin-bottom:20px;">
               <p style="font-size:16px;margin-bottom:5px;"><strong>2. Link für dich/deine Mitarbeiter (Scanner)</strong></p>
               <p style="font-size:14px;color:#aaa;margin-top:0;line-height:1.4;">Öffne diesen Link auf deinem Smartphone oder Tablet, um Kundenkarten zu scannen und Stempel zu vergeben.</p>
-              <a href="${scannerUrl}" style="color:#D4AF37;font-size:15px;">${scannerUrl}</a>
+              <a href="${scannerUrl}" style="color:#8097ff;font-size:15px;">${scannerUrl}</a>
               <br>
               <a href="${scannerQrLink}" style="display:inline-block;margin-top:10px;padding:8px 16px;background-color:#222;color:#fff;text-decoration:none;border-radius:6px;font-size:14px;border:1px solid #444;">⬇️ QR-Code herunterladen (PNG)</a>
             </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, BarChart2, Store } from 'lucide-react';
+import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, BarChart2, Store, DollarSign, Download, FileText } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
@@ -25,7 +25,36 @@ export default function DashboardPage() {
 
   const [confirmDelete, setConfirmDelete] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'analytics'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'finances'>('overview');
+
+  const [financesYear, setFinancesYear] = useState(2026);
+  const [financesData, setFinancesData] = useState<any[]>([]);
+  const [financesLoading, setFinancesLoading] = useState(false);
+
+  const fetchFinances = async (year: number) => {
+    setFinancesLoading(true);
+    try {
+      const res = await fetch('/api/admin/finances', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: '2025', year })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setFinancesData(data.invoices || []);
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setFinancesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === 'finances' && isAuthorized) {
+      fetchFinances(financesYear);
+    }
+  }, [activeTab, financesYear, isAuthorized]);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -239,6 +268,12 @@ export default function DashboardPage() {
           >
             <div className="flex items-center gap-2"><BarChart2 size={16}/> B2B Analytics</div>
           </button>
+          <button 
+            onClick={() => setActiveTab('finances')}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${activeTab === 'finances' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
+          >
+            <div className="flex items-center gap-2"><DollarSign size={16}/> Finanzen</div>
+          </button>
         </div>
 
         {loading ? (
@@ -295,6 +330,7 @@ export default function DashboardPage() {
                     <tr style={{ background: 'rgba(255,255,255,0.03)' }} className="text-white/50 text-xs uppercase tracking-wider">
                       <th className="p-4 font-medium">Händler</th>
                       <th className="p-4 font-medium">Slug</th>
+                      <th className="p-4 font-medium">Paket</th>
                       <th className="p-4 font-medium">Kunden</th>
                       <th className="p-4 font-medium">Status</th>
                       <th className="p-4 font-medium">Registriert</th>
@@ -325,6 +361,11 @@ export default function DashboardPage() {
                           </td>
                           <td className="p-4 font-mono text-xs text-white/40">{m.slug}</td>
                           <td className="p-4">
+                            <span className="text-xs font-bold uppercase tracking-wider px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-white/70">
+                              {m.package_type || 'silber'}
+                            </span>
+                          </td>
+                          <td className="p-4">
                             <span className="text-white font-bold">{merchantStats.get(m.id) || 0}</span>
                             <span className="text-white/40 text-xs"> Kunden</span>
                           </td>
@@ -346,7 +387,7 @@ export default function DashboardPage() {
                       ));
                     })()}
                     {topMerchants.length === 0 && (
-                      <tr><td colSpan={5} className="p-8 text-center text-white/30">Keine Händler gefunden.</td></tr>
+                      <tr><td colSpan={6} className="p-8 text-center text-white/30">Keine Händler gefunden.</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -483,6 +524,139 @@ export default function DashboardPage() {
                     })}
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* FINANCES TAB */}
+        {activeTab === 'finances' && (
+          <div className="space-y-8 animate-fade-in">
+            {/* Header mit Gesamt-MRR (Erwartet) */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="p-3 bg-green-500/10 rounded-2xl border border-green-500/20"><Activity size={22} className="text-green-500" /></div>
+                  <h2 className="text-white/60 font-medium text-sm">Aktueller MRR (Erwartet)</h2>
+                </div>
+                {(() => {
+                  let mrr = 0;
+                  topMerchants.forEach((m: any) => {
+                    if (m.is_active !== false) {
+                      if (m.package_type === 'gold') mrr += 89;
+                      else if (m.package_type === 'custom') mrr += 199;
+                      else mrr += 49; // default silber
+                    }
+                  });
+                  return <p className="text-4xl font-black text-white">{mrr}€</p>;
+                })()}
+                <p className="text-xs text-white/40 mt-2">Basierend auf aktiven Paketen in der DB</p>
+              </div>
+
+              <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="p-3 rounded-2xl" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}><DollarSign size={22} style={{ color: '#D4AF37' }} /></div>
+                  <h2 className="text-white/60 font-medium text-sm">Bezahlter Jahresumsatz ({financesYear})</h2>
+                </div>
+                {financesLoading ? (
+                  <div className="h-10 flex items-center"><RefreshCw size={24} className="animate-spin text-white/30" /></div>
+                ) : (
+                  <p className="text-4xl font-black text-white">
+                    {(financesData.reduce((acc, curr) => acc + curr.amount_paid, 0) / 100).toFixed(2)}€
+                  </p>
+                )}
+                <p className="text-xs text-white/40 mt-2">Basierend auf Stripe Invoices (Status: Paid)</p>
+              </div>
+            </div>
+
+            <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div className="flex items-center justify-between mb-6">
+                <div className="flex items-center gap-3">
+                  <FileText size={20} className="text-white/60" />
+                  <h2 className="text-lg font-bold text-white">Stripe Rechnungen</h2>
+                </div>
+                
+                <div className="flex items-center gap-3">
+                  <select 
+                    value={financesYear}
+                    onChange={(e) => setFinancesYear(Number(e.target.value))}
+                    className="bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-white outline-none focus:border-[#D4AF37] transition-all text-sm appearance-none"
+                  >
+                    <option value={2026}>2026</option>
+                    <option value={2027}>2027</option>
+                    <option value={2028}>2028</option>
+                  </select>
+
+                  <button 
+                    onClick={() => {
+                      if (financesData.length === 0) return;
+                      const csvRows = [
+                        ['Datum', 'Rechnungs-ID', 'Kunde', 'E-Mail', 'Betrag']
+                      ];
+                      financesData.forEach(inv => {
+                        csvRows.push([
+                          new Date(inv.created * 1000).toLocaleDateString('de-DE'),
+                          inv.id,
+                          inv.customer_name || '-',
+                          inv.customer_email || '-',
+                          (inv.amount_paid / 100).toFixed(2)
+                        ]);
+                      });
+                      const csvContent = "data:text/csv;charset=utf-8," + csvRows.map(e => e.join(";")).join("\n");
+                      const encodedUri = encodeURI(csvContent);
+                      const link = document.createElement("a");
+                      link.setAttribute("href", encodedUri);
+                      link.setAttribute("download", `marketif_finanzen_${financesYear}.csv`);
+                      document.body.appendChild(link);
+                      link.click();
+                      document.body.removeChild(link);
+                    }}
+                    disabled={financesData.length === 0 || financesLoading}
+                    className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all disabled:opacity-50"
+                  >
+                    <Download size={16} /> CSV Download
+                  </button>
+                </div>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr style={{ background: 'rgba(255,255,255,0.03)' }} className="text-white/50 text-xs uppercase tracking-wider">
+                      <th className="p-4 font-medium">Datum</th>
+                      <th className="p-4 font-medium">Kunde / E-Mail</th>
+                      <th className="p-4 font-medium">Betrag</th>
+                      <th className="p-4 font-medium text-right">Aktion</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {financesLoading ? (
+                      <tr><td colSpan={4} className="p-8 text-center text-white/30"><RefreshCw size={24} className="animate-spin mx-auto" /></td></tr>
+                    ) : financesData.length === 0 ? (
+                      <tr><td colSpan={4} className="p-8 text-center text-white/30">Keine Zahlungen für dieses Jahr gefunden.</td></tr>
+                    ) : (
+                      financesData.map((inv: any) => (
+                        <tr key={inv.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
+                          <td className="p-4 text-white/70 text-sm">{new Date(inv.created * 1000).toLocaleDateString('de-DE')}</td>
+                          <td className="p-4">
+                            <p className="text-sm font-bold text-white">{inv.customer_name || 'Unbekannt'}</p>
+                            <p className="text-xs text-white/40">{inv.customer_email || '-'}</p>
+                          </td>
+                          <td className="p-4">
+                            <span className="text-green-400 font-bold">{(inv.amount_paid / 100).toFixed(2)} {inv.currency.toUpperCase()}</span>
+                          </td>
+                          <td className="p-4 text-right">
+                            {inv.invoice_pdf && (
+                              <a href={inv.invoice_pdf} target="_blank" rel="noopener noreferrer" className="text-xs text-[#D4AF37] hover:underline">
+                                PDF ansehen
+                              </a>
+                            )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
               </div>
             </div>
           </div>

@@ -44,7 +44,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   const [retentionRate, setRetentionRate] = useState(0);
   const [topCustomers, setTopCustomers] = useState<any[]>([]);
   
-  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'marketing' | 'billing' | 'qrcodes'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'marketing' | 'billing' | 'qrcodes' | 'security'>('overview');
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [cumulativeMonthlyData, setCumulativeMonthlyData] = useState<any[]>([]);
   const [msgTitle, setMsgTitle] = useState('');
@@ -56,6 +56,11 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   // Stripe Billing State
   const [billingLoading, setBillingLoading] = useState(false);
   const [billingError, setBillingError] = useState('');
+
+  // Security State
+  const [oldPin, setOldPin] = useState('');
+  const [newPin, setNewPin] = useState('');
+  const [pinChangeStatus, setPinChangeStatus] = useState<{loading: boolean, error: string, success: string}>({loading: false, error: '', success: ''});
 
   // Handle Login
   const handleLogin = async (e: React.FormEvent) => {
@@ -634,9 +639,17 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           </button>
           <button 
             onClick={() => setActiveTab('qrcodes')}
-            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${activeTab === 'qrcodes' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${activeTab === 'qrcodes' ? `border-[${merchant.primary_color || '#D4AF37'}] text-[${merchant.primary_color || '#D4AF37'}]` : 'border-transparent text-white/40 hover:text-white/70'}`}
+            style={{ borderColor: activeTab === 'qrcodes' ? (merchant.primary_color || '#D4AF37') : 'transparent', color: activeTab === 'qrcodes' ? (merchant.primary_color || '#D4AF37') : undefined }}
           >
             <div className="flex items-center gap-2"><Download size={16}/> QR-Codes</div>
+          </button>
+          <button 
+            onClick={() => setActiveTab('security')}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${activeTab === 'security' ? `border-[${merchant.primary_color || '#D4AF37'}] text-[${merchant.primary_color || '#D4AF37'}]` : 'border-transparent text-white/40 hover:text-white/70'}`}
+            style={{ borderColor: activeTab === 'security' ? (merchant.primary_color || '#D4AF37') : 'transparent', color: activeTab === 'security' ? (merchant.primary_color || '#D4AF37') : undefined }}
+          >
+            <div className="flex items-center gap-2"><Lock size={16}/> Sicherheit</div>
           </button>
         </div>
 
@@ -1184,6 +1197,62 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   <p className="text-xs text-white/30 mt-4 break-all">https://treue.marketif.de/dashboard/{slug}</p>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* SECURITY TAB */}
+        {activeTab === 'security' && (
+          <div className="max-w-xl mx-auto">
+            <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div className="flex items-center gap-3 mb-6">
+                <Lock size={20} style={{ color: merchant?.primary_color || '#D4AF37' }} />
+                <h2 className="text-lg font-bold text-white">Master-PIN ändern</h2>
+              </div>
+              <p className="text-sm text-white/50 mb-6">
+                Hier kannst du deine Master-PIN ändern. Diese PIN wird benötigt, um dich in dieses Händler-Dashboard einzuloggen.
+              </p>
+              <form onSubmit={handlePinChange} className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-white/60 mb-2">Aktuelle PIN</label>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    value={oldPin}
+                    onChange={(e) => setOldPin(e.target.value)}
+                    required
+                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none transition-all text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-white/60 mb-2">Neue PIN (mind. 4 Ziffern)</label>
+                  <input
+                    type="password"
+                    inputMode="numeric"
+                    value={newPin}
+                    onChange={(e) => setNewPin(e.target.value)}
+                    required
+                    minLength={4}
+                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none transition-all text-sm"
+                  />
+                </div>
+
+                {pinChangeStatus.error && (
+                  <p className="text-red-500 text-xs bg-red-500/10 p-3 rounded-xl border border-red-500/20">{pinChangeStatus.error}</p>
+                )}
+                {pinChangeStatus.success && (
+                  <p className="text-green-500 text-xs bg-green-500/10 p-3 rounded-xl border border-green-500/20">{pinChangeStatus.success}</p>
+                )}
+
+                <button 
+                  type="submit" 
+                  disabled={pinChangeStatus.loading}
+                  className="w-full py-3 rounded-xl font-bold uppercase tracking-widest text-black transition-all disabled:opacity-50 mt-4" 
+                  style={{ background: merchant?.primary_color || '#D4AF37' }}
+                >
+                  {pinChangeStatus.loading ? <RefreshCw className="animate-spin mx-auto" size={16} /> : 'PIN Aktualisieren'}
+                </button>
+              </form>
             </div>
           </div>
         )}
