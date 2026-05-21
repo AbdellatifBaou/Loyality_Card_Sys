@@ -164,12 +164,14 @@ export async function POST(req: Request) {
 
           // Customer welcome email
           if (email) {
-            const scannerUrl = `https://treue.marketif.de/scanner/${generatedSlug}`;
-            const loyaltyUrl = `https://treue.marketif.de/loyalty/${generatedSlug}`;
+            const scannerUrl = `https://treue.marketif.de/${generatedSlug}`;
+            const loyaltyUrl = `https://treue.marketif.de/join/${generatedSlug}`;
+            const dashboardUrl = `https://treue.marketif.de/dashboard/${generatedSlug}`;
             
             // Dynamic Links for Email
             const scannerQrLink = `https://treue.marketif.de/api/qr-code?text=${encodeURIComponent(scannerUrl)}`;
             const loyaltyQrLink = `https://treue.marketif.de/api/qr-code?text=${encodeURIComponent(loyaltyUrl)}`;
+            const dashboardQrLink = `https://treue.marketif.de/api/qr-code?text=${encodeURIComponent(dashboardUrl)}`;
             
             const isSilber = plan?.toLowerCase() === 'silber';
             
@@ -184,9 +186,15 @@ export async function POST(req: Request) {
               `;
             } else {
               dashboardSection = `
-                <p style="font-size:16px;line-height:1.5;">Dein persönliches Händler-Dashboard erreichst du ab sofort unter diesem Link:</p>
-                <div style="text-align:center;margin:30px 0;">
-                  <a href="https://treue.marketif.de/dashboard/${generatedSlug}" style="background-color:#8097ff;color:#000000;padding:14px 28px;text-decoration:none;font-weight:bold;border-radius:8px;font-size:16px;display:inline-block;">Zum Dashboard</a>
+                <div style="background-color:#1a1a1a;padding:20px;border-radius:8px;margin:20px 0;border:1px solid #333;">
+                  <p style="font-size:16px;line-height:1.5;margin-top:0;">Dein persönliches Händler-Dashboard erreichst du ab sofort hier:</p>
+                  <div style="text-align:center;margin:20px 0;">
+                    <a href="${dashboardUrl}" style="background-color:#8097ff;color:#000000;padding:14px 28px;text-decoration:none;font-weight:bold;border-radius:8px;font-size:16px;display:inline-block;">Zum Dashboard</a>
+                  </div>
+                  <p style="font-size:14px;color:#aaa;text-align:center;">Oder scanne/lade dir direkt den Dashboard QR-Code herunter:</p>
+                  <div style="text-align:center;">
+                    <a href="${dashboardQrLink}" style="display:inline-block;margin-top:5px;padding:8px 16px;background-color:#222;color:#fff;text-decoration:none;border-radius:6px;font-size:14px;border:1px solid #444;">⬇️ Dashboard QR-Code herunterladen</a>
+                  </div>
                 </div>
               `;
             }

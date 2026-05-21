@@ -1093,20 +1093,20 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                 Hier kannst du die QR-Codes für dein Treuesystem herunterladen. Drucke sie aus und platziere sie gut sichtbar für deine Kunden und Mitarbeiter.
               </p>
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {/* Customer QR */}
                 <div className="p-6 rounded-2xl flex flex-col items-center text-center" style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)' }}>
                   <h3 className="text-white font-bold mb-2">1. Für deine Kunden</h3>
                   <p className="text-white/40 text-xs mb-6">Digitale Kundenkarte holen (Registrierung)</p>
                   
                   <div className="w-48 h-48 bg-white p-2 rounded-xl mb-6">
-                    <img src={`/api/qr-code?text=${encodeURIComponent('https://treue.marketif.de/loyalty/' + slug)}`} alt="Customer QR Code" className="w-full h-full object-contain" />
+                    <img src={`/api/qr-code?text=${encodeURIComponent('https://treue.marketif.de/join/' + slug)}`} alt="Customer QR Code" className="w-full h-full object-contain" />
                   </div>
                   
-                  <a href={`/api/qr-code?text=${encodeURIComponent('https://treue.marketif.de/loyalty/' + slug)}`} download={`marketif_treue_karte_${slug}.png`} className="w-full py-3 rounded-xl border border-white/10 text-white/80 hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-sm font-medium">
+                  <a href={`/api/qr-code?text=${encodeURIComponent('https://treue.marketif.de/join/' + slug)}`} download={`marketif_treue_karte_${slug}.png`} className="w-full py-3 rounded-xl border border-white/10 text-white/80 hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-sm font-medium">
                     <Download size={16} /> QR-Code als PNG
                   </a>
-                  <p className="text-xs text-white/30 mt-4 break-all">https://treue.marketif.de/loyalty/{slug}</p>
+                  <p className="text-xs text-white/30 mt-4 break-all">https://treue.marketif.de/join/{slug}</p>
                 </div>
 
                 {/* Staff QR */}
@@ -1115,13 +1115,28 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   <p className="text-white/40 text-xs mb-6">Scanner App öffnen (Stempel vergeben)</p>
                   
                   <div className="w-48 h-48 bg-white p-2 rounded-xl mb-6">
-                    <img src={`/api/qr-code?text=${encodeURIComponent('https://treue.marketif.de/scanner/' + slug)}`} alt="Scanner QR Code" className="w-full h-full object-contain" />
+                    <img src={`/api/qr-code?text=${encodeURIComponent('https://treue.marketif.de/' + slug)}`} alt="Scanner QR Code" className="w-full h-full object-contain" />
                   </div>
                   
-                  <a href={`/api/qr-code?text=${encodeURIComponent('https://treue.marketif.de/scanner/' + slug)}`} download={`marketif_scanner_${slug}.png`} className="w-full py-3 rounded-xl border border-white/10 text-white/80 hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-sm font-medium">
+                  <a href={`/api/qr-code?text=${encodeURIComponent('https://treue.marketif.de/' + slug)}`} download={`marketif_scanner_${slug}.png`} className="w-full py-3 rounded-xl border border-white/10 text-white/80 hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-sm font-medium">
                     <Download size={16} /> QR-Code als PNG
                   </a>
-                  <p className="text-xs text-white/30 mt-4 break-all">https://treue.marketif.de/scanner/{slug}</p>
+                  <p className="text-xs text-white/30 mt-4 break-all">https://treue.marketif.de/{slug}</p>
+                </div>
+
+                {/* Dashboard QR */}
+                <div className="p-6 rounded-2xl flex flex-col items-center text-center" style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <h3 className="text-white font-bold mb-2">3. Für das Dashboard</h3>
+                  <p className="text-white/40 text-xs mb-6">Dein Admin-Bereich (Hier)</p>
+                  
+                  <div className="w-48 h-48 bg-white p-2 rounded-xl mb-6">
+                    <img src={`/api/qr-code?text=${encodeURIComponent('https://treue.marketif.de/dashboard/' + slug)}`} alt="Dashboard QR Code" className="w-full h-full object-contain" />
+                  </div>
+                  
+                  <a href={`/api/qr-code?text=${encodeURIComponent('https://treue.marketif.de/dashboard/' + slug)}`} download={`marketif_dashboard_${slug}.png`} className="w-full py-3 rounded-xl border border-white/10 text-white/80 hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-sm font-medium">
+                    <Download size={16} /> QR-Code als PNG
+                  </a>
+                  <p className="text-xs text-white/30 mt-4 break-all">https://treue.marketif.de/dashboard/{slug}</p>
                 </div>
               </div>
             </div>
