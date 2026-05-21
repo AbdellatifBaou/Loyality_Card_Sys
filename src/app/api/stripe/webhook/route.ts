@@ -271,6 +271,7 @@ export async function POST(req: Request) {
           }
 
           if (justCanceled) {
+            // Admin Email
             await safeEmail({
               to: 'kontakt@marketif.de',
               subject: `⚠️ Abo-Kündigung geplant: Merchant ID ${merchantId}`,
@@ -278,6 +279,33 @@ export async function POST(req: Request) {
                      <p>Merchant ID: ${merchantId}</p>
                      <p>Service endet am: ${periodEnd ? new Date(periodEnd * 1000).toLocaleDateString('de-DE') : 'Unbekannt'}</p>`,
             });
+
+            // Customer Email
+            try {
+              const customerInfo = await stripe.customers.retrieve(customerId) as Stripe.Customer;
+              if (customerInfo.email) {
+                const userName = customerInfo.name || 'Händler';
+                await safeEmail({
+                  to: customerInfo.email,
+                  subject: `Kündigung deines Marketif Treue Abonnements`,
+                  html: `
+                    <div style="font-family:'Inter',Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#ffffff;background-color:#0a0a0a;border-radius:12px;border:1px solid #333;">
+                      <div style="text-align:center;margin-bottom:20px;">
+                        <h1 style="color:#8097ff;margin:0;">Marketif <span style="color:#ffffff;">Treue</span></h1>
+                      </div>
+                      <p style="font-size:16px;line-height:1.5;">Hallo ${userName},</p>
+                      <p style="font-size:16px;line-height:1.5;">wir bestätigen hiermit den Eingang deiner Kündigung für das Marketif Treue System.</p>
+                      <p style="font-size:16px;line-height:1.5;">Dein Zugang und dein Dashboard bleiben noch bis zum Ende der laufenden Abrechnungsperiode (<strong>${periodEnd ? new Date(periodEnd * 1000).toLocaleDateString('de-DE') : 'Vertragsende'}</strong>) vollständig nutzbar. Danach wird das System automatisch deaktiviert.</p>
+                      <p style="font-size:16px;line-height:1.5;">Schade, dass du uns verlässt! Wenn du es dir anders überlegst, kannst du dein Abonnement jederzeit vor Ablauf im Stripe-Kundenportal wieder reaktivieren.</p>
+                      <hr style="border-color:#333;margin:30px 0;">
+                      <p style="font-size:14px;color:#888;text-align:center;">Beste Grüße,<br>Dein Marketif Team</p>
+                    </div>
+                  `,
+                });
+              }
+            } catch (err) {
+              console.error('[WEBHOOK ERROR] Failed to fetch customer for cancel email:', err);
+            }
           }
         } else if (sub.status === 'active') {
           const updateObj: any = { is_active: true, subscription_status: 'active' };
@@ -296,12 +324,40 @@ export async function POST(req: Request) {
           }
 
           if (justReactivated) {
+            // Admin Email
             await safeEmail({
               to: 'kontakt@marketif.de',
               subject: `🟢 Abo reaktiviert: Merchant ID ${merchantId}`,
               html: `<p>Ein Händler hat seine Kündigung zurückgezogen. Das Abo läuft normal weiter.</p>
                      <p>Merchant ID: ${merchantId}</p>`,
             });
+
+            // Customer Email
+            try {
+              const customerInfo = await stripe.customers.retrieve(customerId) as Stripe.Customer;
+              if (customerInfo.email) {
+                const userName = customerInfo.name || 'Händler';
+                await safeEmail({
+                  to: customerInfo.email,
+                  subject: `Marketif Treue Abonnement reaktiviert!`,
+                  html: `
+                    <div style="font-family:'Inter',Arial,sans-serif;max-width:600px;margin:0 auto;padding:20px;color:#ffffff;background-color:#0a0a0a;border-radius:12px;border:1px solid #333;">
+                      <div style="text-align:center;margin-bottom:20px;">
+                        <h1 style="color:#8097ff;margin:0;">Marketif <span style="color:#ffffff;">Treue</span></h1>
+                      </div>
+                      <p style="font-size:16px;line-height:1.5;">Hallo ${userName},</p>
+                      <p style="font-size:16px;line-height:1.5;">großartige Neuigkeiten: Dein Marketif Treue Abonnement wurde erfolgreich reaktiviert!</p>
+                      <p style="font-size:16px;line-height:1.5;">Du kannst dein System wie gewohnt weiter nutzen und musst dir keine Sorgen über eine Unterbrechung machen.</p>
+                      <p style="font-size:16px;line-height:1.5;">Wir freuen uns sehr, dass du weiterhin dabei bist.</p>
+                      <hr style="border-color:#333;margin:30px 0;">
+                      <p style="font-size:14px;color:#888;text-align:center;">Beste Grüße,<br>Dein Marketif Team</p>
+                    </div>
+                  `,
+                });
+              }
+            } catch (err) {
+              console.error('[WEBHOOK ERROR] Failed to fetch customer for reactivation email:', err);
+            }
           }
         }
         break;
