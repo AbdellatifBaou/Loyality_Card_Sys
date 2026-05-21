@@ -43,7 +43,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   const [retentionRate, setRetentionRate] = useState(0);
   const [topCustomers, setTopCustomers] = useState<any[]>([]);
   
-  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'marketing' | 'billing'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'marketing' | 'billing' | 'qrcodes'>('overview');
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [cumulativeMonthlyData, setCumulativeMonthlyData] = useState<any[]>([]);
   const [msgTitle, setMsgTitle] = useState('');
@@ -507,6 +507,30 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
 
   const primaryColor = merchant?.primary_color || '#D4AF37';
 
+  if (merchant?.package_type?.toLowerCase() === 'silber') {
+    return (
+      <main className="min-h-screen flex items-center justify-center p-6" style={{ background: '#050505' }}>
+        <div className="w-full max-w-lg p-10 rounded-[40px] text-center" style={{ background: 'linear-gradient(145deg, #0A0A0A 0%, #111111 100%)', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
+          <div className="mx-auto w-20 h-20 bg-[#D4AF37]/10 rounded-full flex items-center justify-center mb-6">
+            <Lock className="text-[#D4AF37]" size={40} />
+          </div>
+          <h2 className="text-3xl font-bold text-white mb-4">Dashboard Gesperrt</h2>
+          <p className="text-white/60 mb-8 leading-relaxed">
+            Als Nutzer des Silber-Pakets hast du keinen Zugriff auf das Analytics-Dashboard. Dein System läuft aber reibungslos im Hintergrund.
+          </p>
+          <div className="space-y-4">
+            <a href="mailto:kontakt@marketif.de?subject=Upgrade%20auf%20Gold-Paket" className="block w-full py-4 rounded-2xl font-bold uppercase tracking-widest text-black transition-all hover:scale-105" style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}>
+              Upgrade auf Gold anfragen
+            </a>
+            <button onClick={() => { localStorage.removeItem(`auth_${slug}`); setIsAuthorized(false); }} className="block w-full py-4 rounded-2xl font-bold uppercase tracking-widest text-white/50 border border-white/10 hover:bg-white/5 transition-all">
+              Abmelden
+            </button>
+          </div>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className="min-h-screen p-6 md:p-8" style={{ background: '#050505' }}>
       <div className="max-w-6xl mx-auto space-y-8 animate-fade-in">
@@ -559,9 +583,15 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           </button>
           <button 
             onClick={() => setActiveTab('billing')}
-            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${activeTab === 'billing' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${activeTab === 'billing' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
           >
             <div className="flex items-center gap-2"><CreditCard size={16}/> Abo & Abrechnung</div>
+          </button>
+          <button 
+            onClick={() => setActiveTab('qrcodes')}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${activeTab === 'qrcodes' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
+          >
+            <div className="flex items-center gap-2"><Download size={16}/> QR-Codes</div>
           </button>
         </div>
 
@@ -1047,6 +1077,53 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   )}
                 </>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* QR CODES TAB */}
+        {activeTab === 'qrcodes' && (
+          <div className="space-y-6">
+            <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div className="flex items-center gap-3 mb-6">
+                <Download size={20} className="text-[#D4AF37]" />
+                <h2 className="text-lg font-bold text-white">QR-Codes herunterladen</h2>
+              </div>
+              <p className="text-white/60 text-sm mb-8">
+                Hier kannst du die QR-Codes für dein Treuesystem herunterladen. Drucke sie aus und platziere sie gut sichtbar für deine Kunden und Mitarbeiter.
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {/* Customer QR */}
+                <div className="p-6 rounded-2xl flex flex-col items-center text-center" style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <h3 className="text-white font-bold mb-2">1. Für deine Kunden</h3>
+                  <p className="text-white/40 text-xs mb-6">Digitale Kundenkarte holen (Registrierung)</p>
+                  
+                  <div className="w-48 h-48 bg-white p-2 rounded-xl mb-6">
+                    <img src={`/api/qr-code?text=${encodeURIComponent('https://treue.marketif.de/loyalty/' + slug)}`} alt="Customer QR Code" className="w-full h-full object-contain" />
+                  </div>
+                  
+                  <a href={`/api/qr-code?text=${encodeURIComponent('https://treue.marketif.de/loyalty/' + slug)}`} download={`marketif_treue_karte_${slug}.png`} className="w-full py-3 rounded-xl border border-white/10 text-white/80 hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-sm font-medium">
+                    <Download size={16} /> QR-Code als PNG
+                  </a>
+                  <p className="text-xs text-white/30 mt-4 break-all">https://treue.marketif.de/loyalty/{slug}</p>
+                </div>
+
+                {/* Staff QR */}
+                <div className="p-6 rounded-2xl flex flex-col items-center text-center" style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <h3 className="text-white font-bold mb-2">2. Für deine Mitarbeiter</h3>
+                  <p className="text-white/40 text-xs mb-6">Scanner App öffnen (Stempel vergeben)</p>
+                  
+                  <div className="w-48 h-48 bg-white p-2 rounded-xl mb-6">
+                    <img src={`/api/qr-code?text=${encodeURIComponent('https://treue.marketif.de/scanner/' + slug)}`} alt="Scanner QR Code" className="w-full h-full object-contain" />
+                  </div>
+                  
+                  <a href={`/api/qr-code?text=${encodeURIComponent('https://treue.marketif.de/scanner/' + slug)}`} download={`marketif_scanner_${slug}.png`} className="w-full py-3 rounded-xl border border-white/10 text-white/80 hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-sm font-medium">
+                    <Download size={16} /> QR-Code als PNG
+                  </a>
+                  <p className="text-xs text-white/30 mt-4 break-all">https://treue.marketif.de/scanner/{slug}</p>
+                </div>
+              </div>
             </div>
           </div>
         )}

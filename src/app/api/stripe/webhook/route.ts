@@ -164,6 +164,33 @@ export async function POST(req: Request) {
 
           // Customer welcome email
           if (email) {
+            const scannerUrl = `https://treue.marketif.de/scanner/${generatedSlug}`;
+            const loyaltyUrl = `https://treue.marketif.de/loyalty/${generatedSlug}`;
+            
+            // Dynamic Links for Email
+            const scannerQrLink = `https://treue.marketif.de/api/qr-code?text=${encodeURIComponent(scannerUrl)}`;
+            const loyaltyQrLink = `https://treue.marketif.de/api/qr-code?text=${encodeURIComponent(loyaltyUrl)}`;
+            
+            const isSilber = plan?.toLowerCase() === 'silber';
+            
+            let dashboardSection = '';
+            if (isSilber) {
+              dashboardSection = `
+                <div style="background-color:#1a1a1a;padding:20px;border-radius:8px;margin:20px 0;border:1px solid #333;">
+                  <p style="margin-top:0;font-size:16px;color:#8097ff;">💡 <strong>Dein System ist einsatzbereit!</strong></p>
+                  <p style="font-size:15px;color:#ccc;line-height:1.5;">Als Nutzer des Silber-Pakets kannst du ab sofort Stempel vergeben und Kundenkarten ausstellen. Ein dediziertes Analytics-Dashboard ist in diesem Paket nicht enthalten.</p>
+                  <p style="margin-bottom:0;font-size:15px;color:#ccc;line-height:1.5;">Möchtest du detaillierte Statistiken und vollen Zugriff auf deine Kundendatenbank? <a href="mailto:kontakt@marketif.de" style="color:#8097ff;">Kontaktiere uns für ein Upgrade auf das Gold-Paket!</a></p>
+                </div>
+              `;
+            } else {
+              dashboardSection = `
+                <p style="font-size:16px;line-height:1.5;">Dein persönliches Händler-Dashboard erreichst du ab sofort unter diesem Link:</p>
+                <div style="text-align:center;margin:30px 0;">
+                  <a href="https://treue.marketif.de/dashboard/${generatedSlug}" style="background-color:#8097ff;color:#000000;padding:14px 28px;text-decoration:none;font-weight:bold;border-radius:8px;font-size:16px;display:inline-block;">Zum Dashboard</a>
+                </div>
+              `;
+            }
+
             await safeEmail({
               to: email,
               subject: `Willkommen bei Marketif Treue, ${name}!`,
@@ -174,11 +201,28 @@ export async function POST(req: Request) {
                   </div>
                   <p style="font-size:16px;line-height:1.5;">Hallo ${name},</p>
                   <p style="font-size:16px;line-height:1.5;">vielen Dank für deine Registrierung! Dein Marketif Treue-System für <strong>${company}</strong> ist nun erfolgreich eingerichtet und aktiv.</p>
-                  <p style="font-size:16px;line-height:1.5;">Dein persönliches Händler-Dashboard erreichst du ab sofort unter diesem Link:</p>
-                  <div style="text-align:center;margin:30px 0;">
-                    <a href="https://treue.marketif.de/dashboard/${generatedSlug}" style="background-color:#8097ff;color:#000000;padding:14px 28px;text-decoration:none;font-weight:bold;border-radius:8px;font-size:16px;display:inline-block;">Zum Dashboard</a>
+                  
+                  ${dashboardSection}
+
+                  <h3 style="color:#ffffff;margin-top:30px;border-bottom:1px solid #333;padding-bottom:10px;">Deine System-Links & QR-Codes</h3>
+                  
+                  <div style="margin-bottom:20px;">
+                    <p style="font-size:16px;margin-bottom:5px;"><strong>1. Link für deine Kunden (Digitale Kundenkarte holen)</strong></p>
+                    <p style="font-size:14px;color:#aaa;margin-top:0;line-height:1.4;">Teile diesen Link mit deinen Kunden oder drucke den QR-Code aus, damit sie sich ihre Karte sichern können.</p>
+                    <a href="${loyaltyUrl}" style="color:#8097ff;font-size:15px;">${loyaltyUrl}</a>
+                    <br>
+                    <a href="${loyaltyQrLink}" style="display:inline-block;margin-top:10px;padding:8px 16px;background-color:#222;color:#fff;text-decoration:none;border-radius:6px;font-size:14px;border:1px solid #444;">⬇️ QR-Code herunterladen (PNG)</a>
                   </div>
-                  <p style="font-size:16px;line-height:1.5;">Falls du Fragen zur Einrichtung hast oder Unterstützung benötigst, kannst du jederzeit auf diese E-Mail antworten.</p>
+
+                  <div style="margin-bottom:20px;">
+                    <p style="font-size:16px;margin-bottom:5px;"><strong>2. Link für dich/deine Mitarbeiter (Scanner)</strong></p>
+                    <p style="font-size:14px;color:#aaa;margin-top:0;line-height:1.4;">Öffne diesen Link auf deinem Smartphone oder Tablet, um Kundenkarten zu scannen und Stempel zu vergeben.</p>
+                    <a href="${scannerUrl}" style="color:#8097ff;font-size:15px;">${scannerUrl}</a>
+                    <br>
+                    <a href="${scannerQrLink}" style="display:inline-block;margin-top:10px;padding:8px 16px;background-color:#222;color:#fff;text-decoration:none;border-radius:6px;font-size:14px;border:1px solid #444;">⬇️ QR-Code herunterladen (PNG)</a>
+                  </div>
+
+                  <p style="font-size:16px;line-height:1.5;margin-top:30px;">Falls du Fragen zur Einrichtung hast oder Unterstützung benötigst, kannst du jederzeit auf diese E-Mail antworten.</p>
                   <hr style="border-color:#333;margin:30px 0;">
                   <p style="font-size:14px;color:#888;text-align:center;">Beste Grüße,<br>Dein Marketif Team</p>
                 </div>
