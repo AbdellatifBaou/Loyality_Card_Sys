@@ -645,6 +645,19 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           </div>
         </header>
 
+        {/* Payment Warning Banner */}
+        {merchant?.subscription_status === 'payment_failed' && (
+          <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-2xl flex items-start gap-4">
+            <AlertTriangle className="shrink-0 mt-0.5" size={20} />
+            <div>
+              <p className="font-bold text-sm mb-1">Wichtiger Hinweis zur Abrechnung</p>
+              <p className="text-sm text-red-400/90 leading-relaxed">
+                Bei der Abbuchung deiner letzten Zahlung ist ein Fehler aufgetreten. Bitte überprüfe deine hinterlegte Zahlungsmethode unter dem Reiter <strong>"Abo & Abrechnung"</strong> oder sorge für ausreichende Deckung, um eine automatische Sperrung deines Zugangs zu vermeiden.
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Navigation Tabs */}
         <div className="flex gap-4 border-b border-white/5 pb-1">
           <button 
