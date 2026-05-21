@@ -483,6 +483,28 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     URL.revokeObjectURL(url);
   };
 
+  const handlePinChange = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setPinChangeStatus({ loading: true, error: '', success: '' });
+    try {
+      const response = await fetch('/api/merchant/change-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slug, oldPin, newPin })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setPinChangeStatus({ loading: false, error: '', success: 'PIN erfolgreich geändert!' });
+        setOldPin('');
+        setNewPin('');
+      } else {
+        setPinChangeStatus({ loading: false, error: data.error || 'Fehler beim Ändern', success: '' });
+      }
+    } catch (err) {
+      setPinChangeStatus({ loading: false, error: 'Netzwerkfehler', success: '' });
+    }
+  };
+
   if (!isAuthorized) {
     return (
       <main className="min-h-screen flex items-center justify-center p-4" style={{ background: '#050505' }}>
