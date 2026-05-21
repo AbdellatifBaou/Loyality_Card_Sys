@@ -41,7 +41,31 @@ export async function POST(req: Request) {
       });
     }
 
-    return NextResponse.json({ success: true, invoices });
+    const failedInvoices = [];
+    for await (const invoice of stripe.invoices.list({
+      created: {
+        gte: startDate,
+        lte: endDate,
+      },
+      status: 'open',
+      limit: 100,
+    })) {
+      if (invoice.attempt_count >= 2) {
+        failedInvoices.push({
+          id: invoice.id,
+          amount_due: invoice.amount_due,
+          currency: invoice.currency,
+          created: invoice.created,
+          customer_email: invoice.customer_email,
+          customer_name: invoice.customer_name,
+          attempt_count: invoice.attempt_count,
+          hosted_invoice_url: invoice.hosted_invoice_url,
+          lines: invoice.lines.data.map(l => ({ description: l.description, amount: l.amount }))
+        });
+      }
+    }
+
+    return NextResponse.json({ success: true, invoices, failedInvoices });
   } catch (error: any) {
     console.error('Admin Finances API Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

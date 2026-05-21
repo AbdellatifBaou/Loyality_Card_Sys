@@ -29,6 +29,7 @@ export default function DashboardPage() {
 
   const [financesYear, setFinancesYear] = useState(2026);
   const [financesData, setFinancesData] = useState<any[]>([]);
+  const [failedFinancesData, setFailedFinancesData] = useState<any[]>([]);
   const [financesLoading, setFinancesLoading] = useState(false);
 
   const fetchFinances = async (year: number) => {
@@ -42,6 +43,7 @@ export default function DashboardPage() {
       const data = await res.json();
       if (data.success) {
         setFinancesData(data.invoices || []);
+        setFailedFinancesData(data.failedInvoices || []);
       }
     } catch (e) {
       console.error(e);
@@ -651,6 +653,52 @@ export default function DashboardPage() {
                                 PDF ansehen
                               </a>
                             )}
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Failed Invoices Section */}
+            <div className="p-6 rounded-3xl" style={{ background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
+              <div className="flex items-center gap-3 mb-6">
+                <AlertTriangle size={20} className="text-red-500" />
+                <h2 className="text-lg font-bold text-red-500">Fehlgeschlagene Zahlungen (2+ Versuche)</h2>
+              </div>
+              
+              <div className="overflow-x-auto">
+                <table className="w-full text-left border-collapse">
+                  <thead>
+                    <tr style={{ background: 'rgba(239, 68, 68, 0.1)' }} className="text-red-400/80 text-xs uppercase tracking-wider">
+                      <th className="p-4 font-medium">Datum</th>
+                      <th className="p-4 font-medium">Kunde / E-Mail</th>
+                      <th className="p-4 font-medium">Betrag</th>
+                      <th className="p-4 font-medium text-right">Fehlversuche</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {financesLoading ? (
+                      <tr><td colSpan={4} className="p-8 text-center text-red-500/50"><RefreshCw size={24} className="animate-spin mx-auto" /></td></tr>
+                    ) : failedFinancesData.length === 0 ? (
+                      <tr><td colSpan={4} className="p-8 text-center text-red-500/50">Keine mehrfach fehlgeschlagenen Zahlungen gefunden.</td></tr>
+                    ) : (
+                      failedFinancesData.map((inv: any) => (
+                        <tr key={inv.id} className="border-b border-red-500/10 last:border-0 hover:bg-red-500/5 transition-colors">
+                          <td className="p-4 text-red-400/70 text-sm">{new Date(inv.created * 1000).toLocaleDateString('de-DE')}</td>
+                          <td className="p-4">
+                            <p className="text-sm font-bold text-red-400">{inv.customer_name || 'Unbekannt'}</p>
+                            <p className="text-xs text-red-400/60">{inv.customer_email || '-'}</p>
+                          </td>
+                          <td className="p-4">
+                            <span className="text-red-500 font-bold">{(inv.amount_due / 100).toFixed(2)} {inv.currency.toUpperCase()}</span>
+                          </td>
+                          <td className="p-4 text-right">
+                            <span className="bg-red-500/20 text-red-500 px-3 py-1 rounded-full text-xs font-bold">
+                              {inv.attempt_count} Versuche
+                            </span>
                           </td>
                         </tr>
                       ))
