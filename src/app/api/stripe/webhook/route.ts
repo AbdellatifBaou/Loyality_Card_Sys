@@ -44,6 +44,16 @@ export async function POST(req: Request) {
 
   const db = getAdmin();
 
+  // DEBUG: Log the event to DB
+  try {
+    await db.from('webhook_logs').insert({
+      event_type: event.type,
+      payload: event
+    });
+  } catch (e) {
+    console.error('Failed to log webhook', e);
+  }
+
   // Helper: look up our merchant ID from Stripe's customer ID
   const getMerchantId = async (customerId: string): Promise<string | null> => {
     if (!customerId) return null;
