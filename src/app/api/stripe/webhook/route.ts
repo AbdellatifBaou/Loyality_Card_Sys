@@ -181,7 +181,7 @@ export async function POST(req: Request) {
                 <div style="background-color:#1a1a1a;padding:20px;border-radius:8px;margin:20px 0;border:1px solid #333;">
                   <p style="margin-top:0;font-size:16px;color:#8097ff;">💡 <strong>Dein System ist einsatzbereit!</strong></p>
                   <p style="font-size:15px;color:#ccc;line-height:1.5;">Als Nutzer des Silber-Pakets kannst du ab sofort Stempel vergeben und Kundenkarten ausstellen. Ein dediziertes Analytics-Dashboard ist in diesem Paket nicht enthalten.</p>
-                  <p style="margin-bottom:0;font-size:15px;color:#ccc;line-height:1.5;">Möchtest du detaillierte Statistiken und vollen Zugriff auf deine Kundendatenbank? <a href="mailto:kontakt@marketif.de" style="color:#8097ff;">Kontaktiere uns für ein Upgrade auf das Gold-Paket!</a></p>
+                  <p style="margin-bottom:0;font-size:15px;color:#ccc;line-height:1.5;">Möchtest du detaillierte Statistiken und vollen Zugriff auf deine Kundendatenbank? <a href="${dashboardUrl}" style="color:#8097ff;">Öffne dein Dashboard für ein sofortiges Upgrade auf das Gold-Paket!</a></p>
                 </div>
               `;
             } else {

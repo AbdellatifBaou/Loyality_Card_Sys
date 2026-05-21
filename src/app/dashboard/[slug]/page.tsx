@@ -544,10 +544,10 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             Schalte jetzt detaillierte Statistiken, Kundenverwaltung und Mitarbeiter-PINs frei!
           </p>
 
-          <div className="mb-8 rounded-2xl overflow-hidden border border-white/10 mx-auto max-w-2xl relative">
-            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end justify-center pb-6 z-10">
+          <div className="mb-8 rounded-2xl overflow-hidden border-2 border-[#D4AF37]/50 shadow-[0_0_40px_rgba(212,175,55,0.15)] mx-auto max-w-2xl relative">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end justify-center pb-6 z-10">
             </div>
-            <img src="/dashboard-preview.jpg" alt="Dashboard Preview" className="w-full h-auto opacity-75 grayscale-[20%] transition-all hover:grayscale-0" />
+            <img src="/dashboard-preview.jpg" alt="Dashboard Preview" className="w-full h-auto" />
           </div>
 
           <div className="max-w-md mx-auto space-y-4">

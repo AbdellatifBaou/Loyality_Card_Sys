@@ -53,17 +53,22 @@ export async function POST(req: Request) {
     // Wenn es mehrere gibt, nehmen wir das erste "recurring" item.
     const subItem = subscription.items.data.find(item => item.price.recurring) || subscription.items.data[0];
 
+    // Erstelle einen neuen Preis (inklusive Produkt) für das Gold Paket
+    const newPrice = await stripe.prices.create({
+      currency: 'eur',
+      unit_amount: Math.round(PRICING.gold.price * 100),
+      recurring: { interval: 'month' },
+      product_data: {
+        name: `Marketif Treue – ${PRICING.gold.name} Paket`,
+      },
+    });
+
     // 3. Führe das Update durch (Upgrade auf Gold)
     const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
       items: [
         {
           id: subItem.id,
-          price_data: {
-            currency: 'eur',
-            product: typeof subItem.price.product === 'string' ? subItem.price.product : (subItem.price.product as any).id,
-            unit_amount: Math.round(PRICING.gold.price * 100), // aus der config
-            recurring: { interval: 'month' },
-          },
+          price: newPrice.id,
         },
       ],
       proration_behavior: 'always_invoice',
