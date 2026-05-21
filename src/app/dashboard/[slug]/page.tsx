@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { Users, Pizza, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock, BarChart2, Megaphone, Send, ExternalLink } from 'lucide-react';
+import { Users, Pizza, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock, BarChart2, Megaphone, Send, ExternalLink, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { PRICING } from '@/lib/pricing';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -61,6 +61,9 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   const [oldPin, setOldPin] = useState('');
   const [newPin, setNewPin] = useState('');
   const [pinChangeStatus, setPinChangeStatus] = useState<{loading: boolean, error: string, success: string}>({loading: false, error: '', success: ''});
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+  const [showOldPin, setShowOldPin] = useState(false);
+  const [showNewPin, setShowNewPin] = useState(false);
 
   // Handle Login
   const handleLogin = async (e: React.FormEvent) => {
@@ -515,14 +518,23 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             <p className="text-white/40 text-sm">Bitte gib das Passwort für <span className="text-[#D4AF37]">{slug}</span> ein.</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-black/50 border border-[#D4AF37]/20 rounded-2xl px-6 py-4 text-center text-white outline-none focus:border-[#D4AF37] transition-all"
-              placeholder="Passwort"
-              autoFocus
-            />
+            <div className="relative">
+              <input
+                type={showLoginPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full bg-black/50 border border-[#D4AF37]/20 rounded-2xl px-6 py-4 text-center text-white outline-none focus:border-[#D4AF37] transition-all"
+                placeholder="Passwort"
+                autoFocus
+              />
+              <button 
+                type="button"
+                onClick={() => setShowLoginPassword(!showLoginPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-[#D4AF37] transition-colors"
+              >
+                {showLoginPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
             {authError && <p className="text-red-500 text-xs text-center">{authError}</p>}
             <button type="submit" className="w-full py-4 rounded-2xl font-bold uppercase tracking-widest text-black transition-all active:scale-95" style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}>
               Anmelden
@@ -1237,26 +1249,44 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
               <form onSubmit={handlePinChange} className="space-y-4">
                 <div>
                   <label className="block text-xs font-medium text-white/60 mb-2">Aktuelle PIN</label>
-                  <input
-                    type="password"
-                    inputMode="numeric"
-                    value={oldPin}
-                    onChange={(e) => setOldPin(e.target.value)}
-                    required
-                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none transition-all text-sm"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showOldPin ? "text" : "password"}
+                      inputMode="numeric"
+                      value={oldPin}
+                      onChange={(e) => setOldPin(e.target.value)}
+                      required
+                      className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none transition-all text-sm pr-12"
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setShowOldPin(!showOldPin)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 transition-colors"
+                    >
+                      {showOldPin ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-white/60 mb-2">Neue PIN (mind. 4 Ziffern)</label>
-                  <input
-                    type="password"
-                    inputMode="numeric"
-                    value={newPin}
-                    onChange={(e) => setNewPin(e.target.value)}
-                    required
-                    minLength={4}
-                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none transition-all text-sm"
-                  />
+                  <div className="relative">
+                    <input
+                      type={showNewPin ? "text" : "password"}
+                      inputMode="numeric"
+                      value={newPin}
+                      onChange={(e) => setNewPin(e.target.value)}
+                      required
+                      minLength={4}
+                      className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none transition-all text-sm pr-12"
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setShowNewPin(!showNewPin)}
+                      className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 transition-colors"
+                    >
+                      {showNewPin ? <EyeOff size={18} /> : <Eye size={18} />}
+                    </button>
+                  </div>
                 </div>
 
                 {pinChangeStatus.error && (

@@ -21,25 +21,26 @@ export async function POST(req: Request) {
     );
 
     // Verify old PIN
-    const { data: merchant, error: fetchError } = await adminSupabase
-      .from('merchants_loyality')
-      .select('id, master_pin')
-      .eq('slug', slug)
+    const { data: staff, error: fetchError } = await adminSupabase
+      .from('staff_loyality')
+      .select('id, name, merchant_id, merchants_loyality!inner(slug)')
+      .eq('pin', oldPin)
+      .eq('merchants_loyality.slug', slug)
       .single();
 
-    if (fetchError || !merchant) {
-      return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
+    if (fetchError || !staff) {
+      return NextResponse.json({ error: 'Die aktuelle PIN ist falsch oder Händler nicht gefunden' }, { status: 401 });
     }
 
-    if (merchant.master_pin !== oldPin) {
-      return NextResponse.json({ error: 'Die aktuelle PIN ist falsch' }, { status: 401 });
+    if (!staff.name.toLowerCase().includes('admin') && !(staff.merchants_loyality as any).slug.includes('admin')) {
+      return NextResponse.json({ error: 'Diese PIN hat keine Administrator-Rechte' }, { status: 403 });
     }
 
     // Update PIN
     const { error: updateError } = await adminSupabase
-      .from('merchants_loyality')
-      .update({ master_pin: newPin })
-      .eq('id', merchant.id);
+      .from('staff_loyality')
+      .update({ pin: newPin })
+      .eq('id', staff.id);
 
     if (updateError) {
       return NextResponse.json({ error: 'Fehler beim Ändern der PIN' }, { status: 500 });
