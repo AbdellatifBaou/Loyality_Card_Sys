@@ -2,10 +2,10 @@
 
 import { useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import { PRICING } from '@/lib/pricing';
 import { Loader2, Check, ChevronLeft, ArrowRight, Star, Shield } from 'lucide-react';
 
 const ADMIN_PASSWORD = '2025';
-const SETUP_FEE = 299;
 
 const silverFeatures = [
   'Digitale Treuekarte (Google & Apple Wallet)',
@@ -213,8 +213,8 @@ function Field({
 
 function AlignedPlanCards({ selected, onSelect }: { selected: 'silber' | 'gold'; onSelect: (p: 'silber' | 'gold') => void }) {
   const plans = [
-    { id: 'silber' as const, title: 'Silber', accent: '#B0B0B0', price: 49, features: silverFeatures, badge: undefined },
-    { id: 'gold' as const, title: 'Gold', accent: '#D4AF37', price: 89, features: [...silverFeatures, ...goldExtra], badge: 'Empfohlen' },
+    { id: 'silber' as const, title: 'Silber', accent: '#B0B0B0', price: PRICING.silber.price, features: silverFeatures, badge: undefined },
+    { id: 'gold' as const, title: 'Gold', accent: '#D4AF37', price: PRICING.gold.price, features: [...silverFeatures, ...goldExtra], badge: 'Empfohlen' },
   ];
 
   return (
@@ -266,7 +266,7 @@ function AlignedPlanCards({ selected, onSelect }: { selected: 'silber' | 'gold';
                 <span className="font-headline" style={{ fontWeight: 900, fontSize: '38px', color: plan.accent }}>{plan.price}€</span>
                 <span style={{ fontSize: '13px', fontWeight: 700, color: '#acaaad' }}>/Monat</span>
               </div>
-              <p style={{ fontSize: '12px', fontWeight: 600, color: '#9090a0', margin: 0 }}>+ {SETUP_FEE}€ Einrichtungsgebühr (einmalig)</p>
+              <p style={{ fontSize: '12px', fontWeight: 600, color: '#9090a0', margin: 0 }}>+ {PRICING.setup.price}€ Einrichtungsgebühr (einmalig)</p>
             </div>
 
             {/* Row 4 — Features */}
@@ -405,9 +405,10 @@ function RegistrierungContent() {
     }
     setIsLoading(true);
     try {
-      const monthlyPrice = planMode === 'definiert' ? (selectedPlan === 'silber' ? 49 : 89) : parseFloat(customPrice);
-      const setupFee = planMode === 'definiert' ? SETUP_FEE : parseFloat(customSetupFee);
-      const planName = planMode === 'definiert' ? (selectedPlan === 'silber' ? 'Silber Paket' : 'Gold Paket') : 'Custom Paket';
+      const basePrice = selectedPlan === 'silber' ? PRICING.silber.price : PRICING.gold.price;
+      const monthlyPrice = planMode === 'definiert' ? basePrice : parseFloat(customPrice);
+      const setupFee = planMode === 'definiert' ? PRICING.setup.price : parseFloat(customSetupFee);
+      const planName = planMode === 'definiert' ? (selectedPlan === 'silber' ? PRICING.silber.name : PRICING.gold.name) : 'Custom Paket';
 
       const res = await fetch('/api/stripe/register', {
         method: 'POST',

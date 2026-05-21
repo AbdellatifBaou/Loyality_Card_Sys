@@ -3,6 +3,7 @@
 import { useState, useEffect, use } from 'react';
 import { Users, Pizza, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock, BarChart2, Megaphone, Send, ExternalLink } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { PRICING } from '@/lib/pricing';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 export default function MerchantDashboardPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -505,24 +506,68 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     );
   }
 
+
+
+  const handle1ClickUpgrade = async () => {
+    if (!merchant?.id) return;
+    setBillingLoading(true);
+    setBillingError('');
+    try {
+      const res = await fetch('/api/stripe/upgrade', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ merchantId: merchant.id })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Fehler beim Upgrade');
+      
+      // Reload page to unlock dashboard
+      window.location.reload();
+    } catch (err: any) {
+      setBillingError(err.message || 'Etwas ist schiefgelaufen.');
+      setBillingLoading(false);
+    }
+  };
+
   const primaryColor = merchant?.primary_color || '#D4AF37';
 
   if (merchant?.package_type?.toLowerCase() === 'silber') {
     return (
       <main className="min-h-screen flex items-center justify-center p-6" style={{ background: '#050505' }}>
-        <div className="w-full max-w-lg p-10 rounded-[40px] text-center" style={{ background: 'linear-gradient(145deg, #0A0A0A 0%, #111111 100%)', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
+        <div className="w-full max-w-4xl p-8 md:p-10 rounded-[40px] text-center" style={{ background: 'linear-gradient(145deg, #0A0A0A 0%, #111111 100%)', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
           <div className="mx-auto w-20 h-20 bg-[#D4AF37]/10 rounded-full flex items-center justify-center mb-6">
             <Lock className="text-[#D4AF37]" size={40} />
           </div>
           <h2 className="text-3xl font-bold text-white mb-4">Dashboard Gesperrt</h2>
-          <p className="text-white/60 mb-8 leading-relaxed">
-            Als Nutzer des Silber-Pakets hast du keinen Zugriff auf das Analytics-Dashboard. Dein System läuft aber reibungslos im Hintergrund.
+          <p className="text-white/60 mb-8 max-w-2xl mx-auto leading-relaxed">
+            Als Nutzer des Silber-Pakets hast du keinen Zugriff auf das Analytics-Dashboard.
+            Schalte jetzt detaillierte Statistiken, Kundenverwaltung und Mitarbeiter-PINs frei!
           </p>
-          <div className="space-y-4">
-            <a href="mailto:kontakt@marketif.de?subject=Upgrade%20auf%20Gold-Paket" className="block w-full py-4 rounded-2xl font-bold uppercase tracking-widest text-black transition-all hover:scale-105" style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}>
-              Upgrade auf Gold anfragen
-            </a>
-            <button onClick={() => { localStorage.removeItem(`auth_${slug}`); setIsAuthorized(false); }} className="block w-full py-4 rounded-2xl font-bold uppercase tracking-widest text-white/50 border border-white/10 hover:bg-white/5 transition-all">
+
+          <div className="mb-8 rounded-2xl overflow-hidden border border-white/10 mx-auto max-w-2xl relative">
+            <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end justify-center pb-6 z-10">
+            </div>
+            <img src="/dashboard-preview.jpg" alt="Dashboard Preview" className="w-full h-auto opacity-75 grayscale-[20%] transition-all hover:grayscale-0" />
+          </div>
+
+          <div className="max-w-md mx-auto space-y-4">
+            {billingError && (
+              <div className="p-3 rounded-xl text-sm bg-red-500/10 text-red-500 border border-red-500/20 mb-4">
+                {billingError}
+              </div>
+            )}
+            <button 
+              onClick={handle1ClickUpgrade}
+              disabled={billingLoading}
+              className="block w-full py-4 rounded-2xl font-bold text-black transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3" 
+              style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}
+            >
+              {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : <><Activity size={20} /> Jetzt für +{PRICING.gold.price - PRICING.silber.price}€/Monat auf Gold upgraden</>}
+            </button>
+            <p className="text-xs text-white/40 mt-3">
+              Keine erneuten Einrichtungskosten. Die Differenz für den aktuellen Monat wird automatisch anteilig berechnet und sofort abgebucht.
+            </p>
+            <button onClick={() => { localStorage.removeItem(`auth_${slug}`); setIsAuthorized(false); }} className="mt-6 block w-full py-3 rounded-xl font-bold text-white/50 border border-white/10 hover:bg-white/5 transition-all text-sm">
               Abmelden
             </button>
           </div>
