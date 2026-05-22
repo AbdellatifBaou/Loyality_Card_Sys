@@ -907,10 +907,16 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   <div className="p-4 space-y-4">
                     {recentActivity.map((a: any) => (
                       <div key={a.id} className="flex items-start gap-3">
-                        <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${a.type === 'earn' ? 'bg-green-500' : 'bg-[#D4AF37]'}`} />
+                        <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${a.type === 'earn' ? 'bg-green-500' : a.type === 'correction' ? 'bg-blue-500' : 'bg-yellow-500'}`} />
                         <div>
                           <p className="text-xs text-white/70">
-                            <span className="font-bold">{a.type === 'earn' ? `+${a.amount} Stempel` : 'Prämie eingelöst'}</span>
+                            <span className="font-bold">
+                              {a.type === 'earn' 
+                                ? `+${a.amount} Stempel` 
+                                : a.type === 'correction' 
+                                  ? `${a.amount > 0 ? '+' : ''}${a.amount} Stempel` 
+                                  : 'Prämie eingelöst'}
+                            </span>
                           </p>
                           <p className="text-[10px] text-white/30">{new Date(a.created_at).toLocaleString('de-DE')}</p>
                         </div>
@@ -1666,7 +1672,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       <div className={`w-2 h-2 rounded-full shrink-0 ${s.type === 'earn' ? 'bg-green-500' : s.type === 'correction' ? 'bg-blue-500' : 'bg-yellow-500'}`} />
                       <div className="flex-1">
                         <p className={`text-sm font-bold ${s.type === 'earn' ? 'text-green-400' : s.type === 'correction' ? 'text-blue-400' : 'text-yellow-400'}`}>
-                          {s.type === 'earn' ? `+${s.amount} Stempel` : s.type === 'correction' ? `Korrektur: ${s.amount > 0 ? '+' : ''}${s.amount} Stempel` : '🎁 Prämie eingelöst'}
+                          {s.type === 'earn' ? `+${s.amount} Stempel` : s.type === 'correction' ? `${s.amount > 0 ? '+' : ''}${s.amount} Stempel` : '🎁 Prämie eingelöst'}
                         </p>
                         <div className="flex items-center justify-between mt-0.5">
                           <p className="text-[10px] text-white/30">{new Date(s.created_at).toLocaleString('de-DE')}</p>
