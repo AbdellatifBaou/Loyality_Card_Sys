@@ -144,6 +144,16 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       } = resData.data;
 
       setMerchant(merchantData);
+      setPushSettings({
+        stamp_header: merchantData?.push_settings?.stamp_header || '{points} von 9 Stempeln 🍕',
+        stamp_body: merchantData?.push_settings?.stamp_body || 'Du hast {points} Stempel gesammelt. Weiter so!',
+        reward_header: merchantData?.push_settings?.reward_header || 'Belohnung bereit! ✨',
+        reward_body: merchantData?.push_settings?.reward_body || merchantData?.reward_text || 'Herzlichen Glückwunsch! Du hast deine Stempelkarte voll. Zeige sie beim nächsten Mal vor.',
+        redeem_header: merchantData?.push_settings?.redeem_header || 'Prämie eingelöst! 🍕',
+        redeem_body: merchantData?.push_settings?.redeem_body || 'Guten Appetit! Deine Karte wurde auf 0 zurückgesetzt, du kannst nun wieder neu sammeln.',
+        miss_you_header: merchantData?.push_settings?.miss_you_header || `Wir vermissen dich bei ${merchantData?.name || 'uns'}! 👋`,
+        miss_you_body: merchantData?.push_settings?.miss_you_body || 'Du warst schon länger nicht mehr da. Komm vorbei und zeige deine Karte — deine Stempel warten!'
+      });
       setCustomerCount(cc || 0);
       setEarnCount(earnStamps?.length || 0);
       setRedeemCount(redeemStamps?.length || 0);
@@ -1329,6 +1339,57 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-[#D4AF37] min-h-[80px]" 
                       />
                     </div>
+                  </div>
+                </div>
+
+                {/* We Miss You Message */}
+                <div className="p-5 bg-black/40 rounded-xl border border-white/5 space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
+                      <Clock className="w-4 h-4 text-purple-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-medium">Kunden-Reaktivierung (Wir vermissen dich)</h3>
+                      <p className="text-xs text-white/50">Wird gesendet, wenn der Kunde 30 Tage lang keinen Stempel erhalten hat.</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-white/60 mb-1">Titel</label>
+                      <input 
+                        type="text" 
+                        value={pushSettings.miss_you_header || ''}
+                        onChange={(e) => setPushSettings({...pushSettings, miss_you_header: e.target.value})}
+                        placeholder={`Wir vermissen dich bei ${merchant?.name || 'uns'}! 👋`}
+                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-[#D4AF37]" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-white/60 mb-1">Nachricht</label>
+                      <textarea 
+                        value={pushSettings.miss_you_body || ''}
+                        onChange={(e) => setPushSettings({...pushSettings, miss_you_body: e.target.value})}
+                        placeholder="Du warst schon länger nicht mehr da. Komm vorbei und zeige deine Karte — deine Stempel warten!" 
+                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-[#D4AF37] min-h-[80px]" 
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Location Message (Info only) */}
+                <div className="p-5 bg-black/40 rounded-xl border border-white/5 space-y-4 opacity-75">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 rounded-full bg-cyan-500/20 flex items-center justify-center">
+                      <Megaphone className="w-4 h-4 text-cyan-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-medium">Standort-Erinnerung (100m Nähe)</h3>
+                      <p className="text-xs text-white/50">Wird gesendet, wenn der Kunde in der Nähe deines Ladens ist.</p>
+                    </div>
+                  </div>
+                  <div className="bg-white/5 border border-white/10 rounded p-3 text-sm text-white/70">
+                    <p>Diese Benachrichtigung wird <strong>automatisch von Apple Wallet und Google Wallet</strong> generiert, sobald sich der Kunde auf ca. 100 Meter nähert.</p>
+                    <p className="mt-2 text-xs text-white/50">Hinweis: Die Texte für diese standortbasierte Erinnerung werden vom Betriebssystem des Handys festgelegt und können nicht individuell angepasst werden.</p>
                   </div>
                 </div>
               </div>

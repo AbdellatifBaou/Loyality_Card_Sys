@@ -22,7 +22,7 @@ export async function GET(req: Request) {
   // Fetch all customers (any point count) from active merchants
   const { data: customers, error } = await db
     .from('customers_loyality')
-    .select('id, wallet_object_id, last_miss_you_sent_at, merchants_loyality!inner(name, is_active)');
+    .select('id, wallet_object_id, last_miss_you_sent_at, merchants_loyality!inner(name, is_active, push_settings)');
 
   if (error) {
     console.error('Cron DB error:', error);
@@ -64,12 +64,16 @@ export async function GET(req: Request) {
 
     // 30+ days inactive → send wallet push notification
     try {
+      const push = merchant.push_settings || {};
+      const customHeader = push.miss_you_header || `Wir vermissen dich bei ${merchant.name}! 👋`;
+      const customBody = push.miss_you_body || 'Du warst schon länger nicht mehr da. Komm vorbei und zeige deine Karte — deine Stempel warten!';
+
       await walletClient.loyaltyobject.addmessage({
         resourceId: `${issuerId}.${customer.wallet_object_id}`,
         requestBody: {
           message: {
-            header: `Wir vermissen dich bei ${merchant.name}! 👋`,
-            body: 'Du warst schon länger nicht mehr da. Komm vorbei und zeige deine Karte — deine Stempel warten!',
+            header: customHeader,
+            body: customBody,
             id: `WE_MISS_YOU_${Date.now()}_${customer.id.substring(0, 8)}`,
             messageType: 'TEXT_AND_NOTIFY',
           },
