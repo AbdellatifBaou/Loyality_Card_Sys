@@ -96,6 +96,9 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
 
         setIsAuthorized(true);
         localStorage.setItem(`auth_${slug}`, 'true');
+        if (data.staffId) {
+          localStorage.setItem(`staffId_${slug}`, data.staffId);
+        }
       } else {
         setAuthError(data.error || 'Ungültige PIN');
       }
@@ -452,7 +455,8 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           customerId: selectedCustomer.id,
-          newPoints: editPoints
+          newPoints: editPoints,
+          staffId: localStorage.getItem(`staffId_${slug}`) || null
         })
       });
       

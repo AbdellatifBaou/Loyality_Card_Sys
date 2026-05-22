@@ -46,6 +46,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ 
       success: true, 
       merchantId: staff.merchant_id,
+      staffId: staff.id,
       staffName: staff.name,
       merchant: staff.merchants_loyality 
     });

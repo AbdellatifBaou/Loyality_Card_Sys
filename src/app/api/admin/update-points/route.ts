@@ -4,14 +4,20 @@ import { updateLoyaltyObjectPoints } from '@/lib/google-wallet';
 
 export async function POST(req: Request) {
   try {
-    const { customerId, newPoints } = await req.json();
+    const { customerId, newPoints, staffId } = await req.json();
 
     if (!customerId || newPoints === undefined) {
       return NextResponse.json({ error: 'Missing customerId or newPoints' }, { status: 400 });
     }
 
+    const { createClient } = require('@supabase/supabase-js');
+    const adminSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
     // 1. Get customer and their merchant
-    const { data: customer, error: customerError } = await supabase
+    const { data: customer, error: customerError } = await adminSupabase
       .from('customers_loyality')
       .select('id, wallet_object_id, points, merchants_loyality(*)')
       .eq('id', customerId)
@@ -26,7 +32,7 @@ export async function POST(req: Request) {
     const type = isRedeem ? 'redeem' : 'correction';
 
     // 2. Update Database (Customer points)
-    const { error: updateError } = await supabase
+    const { error: updateError } = await adminSupabase
       .from('customers_loyality')
       .update({ points: newPoints })
       .eq('id', customerId);
@@ -39,12 +45,10 @@ export async function POST(req: Request) {
     // Since amount is delta, we calculate it
     const amountDifference = newPoints - customer.points;
     if (amountDifference !== 0) {
-      await supabase.from('stamps_loyality').insert([
+      await adminSupabase.from('stamps_loyality').insert([
         { 
           customer_id: customerId, 
-          // We can leave staff_id null or pass a default if required by schema. 
-          // Assuming staff_id can be null or we need to pass it from frontend.
-          // For now, type 'correction' helps identify it.
+          staff_id: staffId || null,
           amount: amountDifference, 
           type: type 
         }
