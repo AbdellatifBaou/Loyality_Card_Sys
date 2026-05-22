@@ -1477,7 +1477,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
 
         {/* SECURITY TAB */}
         {activeTab === 'security' && (
-          <div className="max-w-xl mx-auto">
+          <div className="space-y-6 max-w-2xl">
             <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="flex items-center gap-3 mb-6">
                 <Lock size={20} style={{ color: merchant?.primary_color || '#D4AF37' }} />
