@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { Users, Pizza, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock, BarChart2, Megaphone, Send, ExternalLink, Eye, EyeOff } from 'lucide-react';
+import { Users, Pizza, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock, BarChart2, Megaphone, Send, ExternalLink, Eye, EyeOff, CheckCircle, Save } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { PRICING } from '@/lib/pricing';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
@@ -44,7 +44,9 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   const [retentionRate, setRetentionRate] = useState(0);
   const [topCustomers, setTopCustomers] = useState<any[]>([]);
   
-  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'marketing' | 'billing' | 'qrcodes' | 'security'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'marketing' | 'billing' | 'qrcodes' | 'security' | 'push'>('overview');
+  const [pushSettings, setPushSettings] = useState<any>({});
+  const [savingPush, setSavingPush] = useState(false);
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
   const [cumulativeMonthlyData, setCumulativeMonthlyData] = useState<any[]>([]);
   const [msgTitle, setMsgTitle] = useState('');
@@ -445,6 +447,29 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     setHistoryLoading(false);
   };
 
+  const savePushSettings = async () => {
+    setSavingPush(true);
+    try {
+      const response = await fetch('/api/merchant/update-push-settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          merchantId: merchant.id,
+          settings: pushSettings
+        })
+      });
+      if (response.ok) {
+        alert('Push-Einstellungen gespeichert!');
+      } else {
+        alert('Fehler beim Speichern der Push-Einstellungen.');
+      }
+    } catch (err) {
+      alert('Netzwerkfehler.');
+    } finally {
+      setSavingPush(false);
+    }
+  };
+
   const savePoints = async () => {
     if (editPoints === null || !selectedCustomer) return;
     setSavingPoints(true);
@@ -687,6 +712,13 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${activeTab === 'billing' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
           >
             <div className="flex items-center gap-2"><CreditCard size={16}/> Abo & Abrechnung</div>
+          </button>
+          <button
+            onClick={() => setActiveTab('push')}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${activeTab === 'push' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
+            style={{ borderColor: activeTab === 'push' ? (merchant.primary_color || '#D4AF37') : 'transparent', color: activeTab === 'push' ? (merchant.primary_color || '#D4AF37') : undefined }}
+          >
+            Push-Nachrichten
           </button>
           <button 
             onClick={() => setActiveTab('qrcodes')}
@@ -1186,6 +1218,136 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   )}
                 </>
               )}
+            </div>
+          </div>
+        )}
+
+        {/* Push Settings Tab */}
+        {activeTab === 'push' && (
+          <div className="space-y-6">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
+              <h2 className="text-xl font-bold text-white mb-2">Push-Nachrichten anpassen</h2>
+              <p className="text-white/60 text-sm mb-6">Passe die automatisierten Nachrichten an, die deine Kunden direkt auf ihr Handy bekommen. Du kannst <code className="bg-black/30 px-2 py-0.5 rounded text-[#D4AF37]">{'{points}'}</code> als Platzhalter für die aktuelle Stempel-Anzahl verwenden.</p>
+
+              <div className="space-y-8">
+                {/* Stamp Message */}
+                <div className="p-5 bg-black/40 rounded-xl border border-white/5 space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+                      <CheckCircle className="w-4 h-4 text-blue-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-medium">Beim Stempeln</h3>
+                      <p className="text-xs text-white/50">Wird gesendet, wenn der Kunde 1-8 Stempel hat.</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-white/60 mb-1">Titel</label>
+                      <input 
+                        type="text" 
+                        value={pushSettings.stamp_header || ''}
+                        onChange={(e) => setPushSettings({...pushSettings, stamp_header: e.target.value})}
+                        placeholder="{points} von 9 Stempeln 🍕" 
+                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-[#D4AF37]" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-white/60 mb-1">Nachricht</label>
+                      <textarea 
+                        value={pushSettings.stamp_body || ''}
+                        onChange={(e) => setPushSettings({...pushSettings, stamp_body: e.target.value})}
+                        placeholder="Du hast {points} Stempel gesammelt. Weiter so!" 
+                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-[#D4AF37] min-h-[80px]" 
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Reward Ready Message */}
+                <div className="p-5 bg-black/40 rounded-xl border border-white/5 space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                      <Gift className="w-4 h-4 text-yellow-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-medium">Prämie erreicht (9 Stempel)</h3>
+                      <p className="text-xs text-white/50">Wird gesendet, wenn die Karte voll ist.</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-white/60 mb-1">Titel</label>
+                      <input 
+                        type="text" 
+                        value={pushSettings.reward_header || ''}
+                        onChange={(e) => setPushSettings({...pushSettings, reward_header: e.target.value})}
+                        placeholder="Belohnung bereit! ✨" 
+                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-[#D4AF37]" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-white/60 mb-1">Nachricht</label>
+                      <textarea 
+                        value={pushSettings.reward_body || ''}
+                        onChange={(e) => setPushSettings({...pushSettings, reward_body: e.target.value})}
+                        placeholder="Herzlichen Glückwunsch! Du hast deine Stempelkarte voll. Zeige sie beim nächsten Mal vor." 
+                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-[#D4AF37] min-h-[80px]" 
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Redeem Message */}
+                <div className="p-5 bg-black/40 rounded-xl border border-white/5 space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 rounded-full bg-green-500/20 flex items-center justify-center">
+                      <LogOut className="w-4 h-4 text-green-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-medium">Prämie eingelöst (0 Stempel)</h3>
+                      <p className="text-xs text-white/50">Wird gesendet, wenn die Karte zurückgesetzt wird.</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-white/60 mb-1">Titel</label>
+                      <input 
+                        type="text" 
+                        value={pushSettings.redeem_header || ''}
+                        onChange={(e) => setPushSettings({...pushSettings, redeem_header: e.target.value})}
+                        placeholder="Prämie eingelöst! 🍕" 
+                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-[#D4AF37]" 
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-white/60 mb-1">Nachricht</label>
+                      <textarea 
+                        value={pushSettings.redeem_body || ''}
+                        onChange={(e) => setPushSettings({...pushSettings, redeem_body: e.target.value})}
+                        placeholder="Guten Appetit! Deine Karte wurde auf 0 zurückgesetzt, du kannst nun wieder neu sammeln." 
+                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-[#D4AF37] min-h-[80px]" 
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-8 pt-6 border-t border-white/10 flex justify-end">
+                <button
+                  onClick={savePushSettings}
+                  disabled={savingPush}
+                  className="px-6 py-2.5 bg-[#D4AF37] hover:bg-[#C5A030] text-black font-semibold rounded-lg transition-colors flex items-center gap-2"
+                  style={{ backgroundColor: merchant.primary_color || '#D4AF37', color: '#000' }}
+                >
+                  {savingPush ? (
+                    <span className="w-5 h-5 border-2 border-black/20 border-t-black rounded-full animate-spin"></span>
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  Einstellungen speichern
+                </button>
+              </div>
             </div>
           </div>
         )}

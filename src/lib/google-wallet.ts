@@ -284,11 +284,13 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
     };
 
     // Always add a notify message to force Google Wallet to refresh the pass on the device
+    const push = merchant?.push_settings || {};
+    
     if (isRedeem) {
       updatedObject.messages = [
         {
-          header: 'Prämie eingelöst! 🍕',
-          body: 'Guten Appetit! Deine Karte wurde auf 0 zurückgesetzt, du kannst nun wieder neu sammeln.',
+          header: push.redeem_header || 'Prämie eingelöst! 🍕',
+          body: push.redeem_body || 'Guten Appetit! Deine Karte wurde auf 0 zurückgesetzt, du kannst nun wieder neu sammeln.',
           id: `REDEEM_MESSAGE_${Date.now()}`,
           messageType: 'TEXT_AND_NOTIFY'
         }
@@ -304,20 +306,26 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
       };
       updatedObject.messages = [
         {
-          header: 'Belohnung bereit! ✨',
-          body: merchant?.reward_text || 'Herzlichen Glückwunsch! Du hast deine Stempelkarte voll. Zeige sie beim nächsten Mal vor.',
+          header: push.reward_header || 'Belohnung bereit! ✨',
+          body: push.reward_body || merchant?.reward_text || 'Herzlichen Glückwunsch! Du hast deine Stempelkarte voll. Zeige sie beim nächsten Mal vor.',
           id: `REWARD_READY_MESSAGE_${Date.now()}`,
           messageType: 'TEXT_AND_NOTIFY'
         }
       ];
     } else {
       // For regular stamps: send a silent notify to force the pass to refresh
+      const defaultStampHeader = `${points} von 9 Stempeln 🍕`;
+      const defaultStampBody = points >= 8
+            ? 'Nur noch 1 Stempel bis zu deiner Gratisbelohnung! 🎉'
+            : `Du hast ${points} Stempel gesammelt. Weiter so!`;
+            
+      const customHeader = push.stamp_header ? push.stamp_header.replace(/{points}/g, points.toString()) : defaultStampHeader;
+      const customBody = push.stamp_body ? push.stamp_body.replace(/{points}/g, points.toString()) : defaultStampBody;
+
       updatedObject.messages = [
         {
-          header: `${points} von 9 Stempeln 🍕`,
-          body: points >= 8
-            ? 'Nur noch 1 Stempel bis zu deiner Gratisbelohnung! 🎉'
-            : `Du hast ${points} Stempel gesammelt. Weiter so!`,
+          header: customHeader,
+          body: customBody,
           id: `STAMP_MESSAGE_${Date.now()}`,
           messageType: 'TEXT_AND_NOTIFY'
         }
