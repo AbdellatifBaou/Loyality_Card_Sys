@@ -429,6 +429,10 @@ export default function DashboardPage() {
                               <span className="inline-flex items-center gap-1.5 text-white/70 text-xs font-medium">
                                 <Coffee size={12} className="text-green-500" /> hat <span className="text-white font-bold">+{activity.amount} Stempel</span> vergeben
                               </span>
+                            ) : activity.type === 'correction' ? (
+                              <span className="inline-flex items-center gap-1.5 text-white/70 text-xs font-medium">
+                                <Activity size={12} className="text-blue-500" /> hat <span className="text-blue-400 font-bold">{activity.amount > 0 ? '+' : ''}{activity.amount} Stempel</span> korrigiert
+                              </span>
                             ) : (
                               <span className="inline-flex items-center gap-1.5 text-white/70 text-xs font-medium">
                                 <Gift size={12} style={{ color: '#D4AF37' }} /> hat eine <span className="text-[#D4AF37] font-bold">Prämie eingelöst</span>
