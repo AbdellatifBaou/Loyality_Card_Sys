@@ -21,6 +21,7 @@ export default function DashboardPage() {
   const [merchantCount, setMerchantCount] = useState(0);
   const [merchantGrowthData, setMerchantGrowthData] = useState<any[]>([]);
   const [topMerchants, setTopMerchants] = useState<any[]>([]);
+  const [allMerchants, setAllMerchants] = useState<any[]>([]);
   const [inactiveMerchants, setInactiveMerchants] = useState<any[]>([]);
 
   const [confirmDelete, setConfirmDelete] = useState<any>(null);
@@ -156,6 +157,7 @@ export default function DashboardPage() {
         // Top Merchants
         const top = [...allMapped].sort((a, b) => b.recentStamps - a.recentStamps).filter(m => m.recentStamps > 0);
         setTopMerchants(top);
+        setAllMerchants([...allMapped].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()));
 
         // Inactive (no activity in last 7 days)
         const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
@@ -199,6 +201,7 @@ export default function DashboardPage() {
       const result = await response.json();
       if (result.success) {
         setTopMerchants(prev => prev.map(m => m.id === merchantId ? { ...m, is_active: !currentStatus } : m));
+      setAllMerchants(prev => prev.map(m => m.id === merchantId ? { ...m, is_active: !currentStatus } : m));
       } else {
         alert('Fehler: ' + result.error);
       }
@@ -356,7 +359,7 @@ export default function DashboardPage() {
                       // Wait, I have 'topMerchants' which contains merchant info.
                       // Let's use the topMerchants list which is already sorted/mapped.
                       
-                      return topMerchants.map((m: any) => (
+                      return allMerchants.map((m: any) => (
                         <tr key={m.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
                           <td className="p-4">
                             <div className="flex items-center gap-3">
@@ -402,7 +405,7 @@ export default function DashboardPage() {
                         </tr>
                       ));
                     })()}
-                    {topMerchants.length === 0 && (
+                    {allMerchants.length === 0 && (
                       <tr><td colSpan={7} className="p-8 text-center text-white/30">Keine Händler gefunden.</td></tr>
                     )}
                   </tbody>
