@@ -779,6 +779,52 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+      {/* Manual Activation Modal */}
+      {manualActivationMerchant && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <div className="bg-[#111111] border border-white/10 rounded-3xl p-8 max-w-md w-full">
+            <h3 className="text-xl font-bold text-white mb-2">Manuell Freischalten</h3>
+            <p className="text-white/60 text-sm mb-6">
+              Hiermit schaltest du den Händler <strong className="text-white">{manualActivationMerchant.name}</strong> für klassische Rechnungszahlung manuell frei.
+            </p>
+
+            <div className="space-y-4 mb-8">
+              <div>
+                <label className="block text-xs font-medium text-white/50 mb-2">Dauer der Freischaltung</label>
+                <select 
+                  value={manualMonths}
+                  onChange={(e) => setManualMonths(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
+                >
+                  <option value="1">1 Monat</option>
+                  <option value="3">3 Monate</option>
+                  <option value="6">6 Monate</option>
+                  <option value="12">1 Jahr</option>
+                  <option value="24">2 Jahre</option>
+                  <option value="120">10 Jahre (Lifetime)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="flex gap-4">
+              <button
+                onClick={() => setManualActivationMerchant(null)}
+                className="flex-1 py-3 text-white/60 font-medium hover:text-white transition-colors"
+                disabled={manualActivating}
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={handleManualActivation}
+                disabled={manualActivating}
+                className="flex-1 py-3 bg-blue-500 text-white font-bold rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50"
+              >
+                {manualActivating ? 'Bitte warten...' : 'Freischalten'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </main>
   );
 }
