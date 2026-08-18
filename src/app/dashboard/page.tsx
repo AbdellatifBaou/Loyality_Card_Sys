@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, BarChart2, Store, DollarSign, Download, FileText } from 'lucide-react';
+import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Unlock, Lock, LogOut, BarChart2, Store, DollarSign, Download, FileText } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
@@ -26,6 +26,10 @@ export default function DashboardPage() {
   const [confirmDelete, setConfirmDelete] = useState<any>(null);
   const [deleting, setDeleting] = useState(false);
   const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'finances'>('overview');
+
+  const [manualActivationMerchant, setManualActivationMerchant] = useState<any>(null);
+  const [manualMonths, setManualMonths] = useState('12');
+  const [manualActivating, setManualActivating] = useState(false);
 
   const [financesYear, setFinancesYear] = useState(2026);
   const [financesData, setFinancesData] = useState<any[]>([]);
@@ -336,6 +340,7 @@ export default function DashboardPage() {
                       <th className="p-4 font-medium">Kunden</th>
                       <th className="p-4 font-medium">Status</th>
                       <th className="p-4 font-medium">Registriert</th>
+                      <th className="p-4 font-medium">Aktionen</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -385,11 +390,20 @@ export default function DashboardPage() {
                           <td className="p-4 text-white/50 text-xs">
                             {new Date(m.created_at).toLocaleDateString('de-DE')}
                           </td>
+                          <td className="p-4 text-right">
+                            <button 
+                              onClick={() => setManualActivationMerchant(m)}
+                              title="Manuell Freischalten / Rechnung"
+                              className="p-2 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors border border-blue-500/20"
+                            >
+                              <Unlock size={14} />
+                            </button>
+                          </td>
                         </tr>
                       ));
                     })()}
                     {topMerchants.length === 0 && (
-                      <tr><td colSpan={6} className="p-8 text-center text-white/30">Keine Händler gefunden.</td></tr>
+                      <tr><td colSpan={7} className="p-8 text-center text-white/30">Keine Händler gefunden.</td></tr>
                     )}
                   </tbody>
                 </table>

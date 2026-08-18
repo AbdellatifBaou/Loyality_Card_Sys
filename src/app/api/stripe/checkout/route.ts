@@ -64,7 +64,6 @@ export async function POST(req: Request) {
     const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      payment_method_types: ['card'],
       line_items: [
         {
           price: priceId, // Die Preis-ID aus dem Stripe Dashboard (z.B. price_12345...)

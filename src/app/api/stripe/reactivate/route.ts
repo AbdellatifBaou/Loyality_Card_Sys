@@ -75,7 +75,6 @@ export async function POST(req: Request) {
     // Create checkout session with NO setup fee
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
-      payment_method_types: ['card'],
       mode: 'subscription',
       line_items: [
         {

@@ -1154,19 +1154,25 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                     <p className="text-sm text-white/70 mb-6">
                       Dein Abonnement ist <span className="text-yellow-500 font-bold">gekündigt</span>, aber noch voll aktiv bis zum <span className="font-bold text-white">{merchant.current_period_end ? new Date(merchant.current_period_end).toLocaleDateString('de-DE') : 'Ende des Abrechnungszeitraums'}</span>. Du kannst es im Stripe-Kundenportal jederzeit wieder reaktivieren.
                     </p>
+                  ) : merchant?.stripe_subscription_id === 'manual_invoice' ? (
+                    <p className="text-sm text-white/70 mb-6">
+                      Dein Abonnement ist <span className="text-green-500 font-bold">aktiv</span> bis zum <span className="font-bold text-white">{merchant.current_period_end ? new Date(merchant.current_period_end).toLocaleDateString('de-DE') : 'Ende des Abrechnungszeitraums'}</span>. Die Abrechnung erfolgt per klassischer manueller Rechnung.
+                    </p>
                   ) : (
                     <p className="text-sm text-white/70 mb-6">
                       Dein Abonnement ist <span className="text-green-500 font-bold">aktiv</span>. Du kannst deine Zahlungsdaten, Rechnungen und dein Abo im Stripe-Kundenportal verwalten.
                     </p>
                   )}
-                  <button 
-                    onClick={handleStripePortal}
-                    disabled={billingLoading}
-                    className="w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-black disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95"
-                    style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}
-                  >
-                    {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : <><ExternalLink size={20} /> Stripe Portal öffnen</>}
-                  </button>
+                  {merchant?.stripe_subscription_id !== 'manual_invoice' && (
+                    <button 
+                      onClick={handleStripePortal}
+                      disabled={billingLoading}
+                      className="w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-black disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95"
+                      style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}
+                    >
+                      {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : <><ExternalLink size={20} /> Stripe Portal öffnen</>}
+                    </button>
+                  )}
                 </>
               ) : (
                 <>
