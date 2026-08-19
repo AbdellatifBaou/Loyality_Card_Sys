@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, use, useCallback } from 'react';
 import { Html5QrcodeScanner, Html5QrcodeScanType } from 'html5-qrcode';
-import { CheckCircle2, XCircle, Loader2, LogOut, Download, Flashlight, Keyboard, WifiOff, Clock, RefreshCw } from 'lucide-react';
+import { CheckCircle2, XCircle, Loader2, LogOut, Download, Flashlight, Keyboard, WifiOff, Clock, RefreshCw, AlertTriangle } from 'lucide-react';
 
 const QUEUE_KEY = 'offline_stamp_queue';
 
@@ -331,6 +331,25 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
           )}
         </div>
       </main>
+    );
+  }
+
+  if (merchantConfig?.is_active === false) {
+    return (
+      <div className="min-h-screen w-full flex items-center justify-center p-6" style={{ background: '#050505' }}>
+        <div className="bg-[#111] border border-red-500/30 rounded-3xl p-8 text-center max-w-md w-full shadow-2xl">
+          <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
+             <AlertTriangle size={32} />
+          </div>
+          <h2 className="text-xl font-bold text-white mb-4">Terminal gesperrt</h2>
+          <p className="text-white/60 mb-8 text-sm">
+            Dieses Händlerkonto ist derzeit deaktiviert. Bitte logge dich als Administrator in das <strong className="text-white">Dashboard</strong> ein, um das Abonnement zu prüfen und zu erneuern.
+          </p>
+          <button onClick={() => { setIsAuthenticated(false); setPin(''); }} className="w-full py-4 bg-white/5 text-white rounded-2xl font-bold border border-white/10 hover:bg-white/10 transition-colors">
+            Ausloggen
+          </button>
+        </div>
+      </div>
     );
   }
 

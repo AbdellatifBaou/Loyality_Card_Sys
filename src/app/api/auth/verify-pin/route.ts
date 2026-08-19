@@ -64,9 +64,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'PIN gehört nicht zu diesem Händler' }, { status: 401 });
     }
 
-    if (merchant.is_active === false) {
-      return NextResponse.json({ error: 'Dieser Händler ist derzeit deaktiviert' }, { status: 403 });
-    }
+    // We removed the strict is_active block here so merchants can still log in to their dashboard to renew.
+    // The scanner app and the dashboard itself will handle restricting access based on is_active.
 
     // 3. Reset failed login attempts on success
     if (merchant.failed_login_attempts > 0) {

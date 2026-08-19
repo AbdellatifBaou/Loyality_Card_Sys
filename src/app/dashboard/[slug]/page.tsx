@@ -289,6 +289,13 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     fetchData();
   }, [isAuthorized, slug]);
 
+  // Lock deactivated merchants to billing tab
+  useEffect(() => {
+    if (merchant && merchant.is_active === false) {
+      setActiveTab('billing');
+    }
+  }, [merchant]);
+
   const exportToCSV = () => {
     if (customers.length === 0) return;
     const header = ['Kunden-ID', 'Stempel', 'Registriert am', 'Wallet ID'];
@@ -698,22 +705,31 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         )}
 
         {/* Navigation Tabs */}
+        {merchant?.is_active === false && (
+          <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-500 font-medium text-sm flex items-center gap-3">
+            <AlertTriangle size={20} />
+            Dein Account ist deaktiviert. Bitte wähle ein Abo oder hinterlege deine Zahlungsdaten, um alle Funktionen und die Scanner-App wieder freizuschalten.
+          </div>
+        )}
         <div className="flex gap-4 border-b border-white/5 pb-1">
           <button 
             onClick={() => setActiveTab('overview')}
-            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${activeTab === 'overview' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
+            disabled={merchant?.is_active === false}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : activeTab === 'overview' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
           >
             <div className="flex items-center gap-2"><Activity size={16}/> Übersicht</div>
           </button>
           <button 
             onClick={() => setActiveTab('analytics')}
-            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${activeTab === 'analytics' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
+            disabled={merchant?.is_active === false}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : activeTab === 'analytics' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
           >
             <div className="flex items-center gap-2"><BarChart2 size={16}/> Analytics</div>
           </button>
           <button 
             onClick={() => setActiveTab('marketing')}
-            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${activeTab === 'marketing' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
+            disabled={merchant?.is_active === false}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : activeTab === 'marketing' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
           >
             <div className="flex items-center gap-2"><Megaphone size={16}/> Marketing</div>
           </button>
@@ -725,22 +741,25 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           </button>
           <button
             onClick={() => setActiveTab('push')}
-            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${activeTab === 'push' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
-            style={{ borderColor: activeTab === 'push' ? (merchant.primary_color || '#D4AF37') : 'transparent', color: activeTab === 'push' ? (merchant.primary_color || '#D4AF37') : undefined }}
+            disabled={merchant?.is_active === false}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : activeTab === 'push' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
+            style={merchant?.is_active !== false ? { borderColor: activeTab === 'push' ? (merchant.primary_color || '#D4AF37') : 'transparent', color: activeTab === 'push' ? (merchant.primary_color || '#D4AF37') : undefined } : {}}
           >
             Push-Nachrichten
           </button>
           <button 
             onClick={() => setActiveTab('qrcodes')}
-            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${activeTab === 'qrcodes' ? `border-[${merchant.primary_color || '#D4AF37'}] text-[${merchant.primary_color || '#D4AF37'}]` : 'border-transparent text-white/40 hover:text-white/70'}`}
-            style={{ borderColor: activeTab === 'qrcodes' ? (merchant.primary_color || '#D4AF37') : 'transparent', color: activeTab === 'qrcodes' ? (merchant.primary_color || '#D4AF37') : undefined }}
+            disabled={merchant?.is_active === false}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : activeTab === 'qrcodes' ? `border-[${merchant.primary_color || '#D4AF37'}] text-[${merchant.primary_color || '#D4AF37'}]` : 'border-transparent text-white/40 hover:text-white/70'}`}
+            style={merchant?.is_active !== false ? { borderColor: activeTab === 'qrcodes' ? (merchant.primary_color || '#D4AF37') : 'transparent', color: activeTab === 'qrcodes' ? (merchant.primary_color || '#D4AF37') : undefined } : {}}
           >
             <div className="flex items-center gap-2"><Download size={16}/> QR-Codes</div>
           </button>
           <button 
             onClick={() => setActiveTab('security')}
-            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${activeTab === 'security' ? `border-[${merchant.primary_color || '#D4AF37'}] text-[${merchant.primary_color || '#D4AF37'}]` : 'border-transparent text-white/40 hover:text-white/70'}`}
-            style={{ borderColor: activeTab === 'security' ? (merchant.primary_color || '#D4AF37') : 'transparent', color: activeTab === 'security' ? (merchant.primary_color || '#D4AF37') : undefined }}
+            disabled={merchant?.is_active === false}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : activeTab === 'security' ? `border-[${merchant.primary_color || '#D4AF37'}] text-[${merchant.primary_color || '#D4AF37'}]` : 'border-transparent text-white/40 hover:text-white/70'}`}
+            style={merchant?.is_active !== false ? { borderColor: activeTab === 'security' ? (merchant.primary_color || '#D4AF37') : 'transparent', color: activeTab === 'security' ? (merchant.primary_color || '#D4AF37') : undefined } : {}}
           >
             <div className="flex items-center gap-2"><Lock size={16}/> Sicherheit</div>
           </button>
@@ -1163,7 +1182,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       Dein Abonnement ist <span className="text-green-500 font-bold">aktiv</span>. Du kannst deine Zahlungsdaten, Rechnungen und dein Abo im Stripe-Kundenportal verwalten.
                     </p>
                   )}
-                  {merchant?.stripe_subscription_id !== 'manual_invoice' && (
+                  {merchant?.stripe_subscription_id !== 'manual_invoice' ? (
                     <button 
                       onClick={handleStripePortal}
                       disabled={billingLoading}
@@ -1171,6 +1190,14 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}
                     >
                       {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : <><ExternalLink size={20} /> Stripe Portal öffnen</>}
+                    </button>
+                  ) : (
+                    <button 
+                      onClick={() => handleStripeReactivate(merchant.package_type || 'silber')}
+                      disabled={billingLoading}
+                      className="w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-black disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95 bg-white/10 hover:bg-white/20"
+                    >
+                      {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : 'Auf automatische Zahlung (Stripe) umstellen'}
                     </button>
                   )}
                 </>
