@@ -1167,7 +1167,21 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                 </div>
               )}
 
-              {merchant?.subscription_status === 'active' || merchant?.subscription_status === 'cancels_at_period_end' ? (
+              {merchant?.is_active === false ? (
+                <>
+                  <p className="text-sm text-white/70 mb-6">
+                    Dein Abonnement wurde <span className="text-red-500 font-bold">gesperrt oder ist abgelaufen</span>. Bitte hinterlege ein gültiges Zahlungsmittel, um deinen Account sofort wieder freizuschalten.
+                  </p>
+                  <button 
+                    onClick={() => handleStripeReactivate(merchant.package_type || 'silber')}
+                    disabled={billingLoading}
+                    className="w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-black disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95 bg-white/10 hover:bg-white/20"
+                    style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}
+                  >
+                    {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : 'Jetzt Abonnement reaktivieren (Stripe)'}
+                  </button>
+                </>
+              ) : merchant?.subscription_status === 'active' || merchant?.subscription_status === 'cancels_at_period_end' ? (
                 <>
                   {merchant?.subscription_status === 'cancels_at_period_end' ? (
                     <p className="text-sm text-white/70 mb-6">
@@ -1195,7 +1209,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                     <button 
                       onClick={() => handleStripeReactivate(merchant.package_type || 'silber')}
                       disabled={billingLoading}
-                      className="w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-black disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95 bg-white/10 hover:bg-white/20"
+                      className="w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-white disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95 bg-white/10 hover:bg-white/20"
                     >
                       {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : 'Auf automatische Zahlung (Stripe) umstellen'}
                     </button>
