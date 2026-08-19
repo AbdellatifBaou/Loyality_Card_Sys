@@ -210,6 +210,29 @@ export default function DashboardPage() {
     }
   };
 
+  const handleManualActivation = async () => {
+    if (!manualActivationMerchant) return;
+    setManualActivating(true);
+    try {
+      const res = await fetch('/api/admin/manual-activation', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: '2025', merchantId: manualActivationMerchant.id, months: manualMonths })
+      });
+      if (res.ok) {
+        setManualActivationMerchant(null);
+        fetchData();
+      } else {
+        alert('Fehler bei der manuellen Freischaltung');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Systemfehler');
+    } finally {
+      setManualActivating(false);
+    }
+  };
+
   if (!isAuthorized) {
     return (
       <main className="min-h-screen flex items-center justify-center p-4" style={{ background: '#050505' }}>
