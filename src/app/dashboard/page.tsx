@@ -819,12 +819,12 @@ export default function DashboardPage() {
                   onChange={(e) => setManualMonths(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
                 >
-                  <option value="1">1 Monat</option>
-                  <option value="3">3 Monate</option>
-                  <option value="6">6 Monate</option>
-                  <option value="12">1 Jahr</option>
-                  <option value="24">2 Jahre</option>
-                  <option value="120">10 Jahre (Lifetime)</option>
+                  <option className="bg-[#111111] text-white" value="1">1 Monat</option>
+                  <option className="bg-[#111111] text-white" value="3">3 Monate</option>
+                  <option className="bg-[#111111] text-white" value="6">6 Monate</option>
+                  <option className="bg-[#111111] text-white" value="12">1 Jahr</option>
+                  <option className="bg-[#111111] text-white" value="24">2 Jahre</option>
+                  <option className="bg-[#111111] text-white" value="120">10 Jahre (Lifetime)</option>
                 </select>
               </div>
             </div>
