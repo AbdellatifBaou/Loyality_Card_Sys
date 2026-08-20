@@ -52,6 +52,7 @@ export async function POST(req: Request) {
     const { error } = await adminSupabase
       .from('merchants_loyality')
       .update({
+        is_active: true,
         subscription_status: 'active',
         stripe_subscription_id: 'manual_invoice',
         current_period_end: currentPeriodEnd.toISOString(),

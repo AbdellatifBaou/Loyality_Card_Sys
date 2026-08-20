@@ -223,11 +223,18 @@ export default function DashboardPage() {
         setManualActivationMerchant(null);
         fetchData();
       } else {
-        alert('Fehler bei der manuellen Freischaltung');
+        let errMsg = '';
+        try {
+           const errData = await res.json();
+           errMsg = errData.error || res.statusText;
+        } catch(e) {
+           errMsg = res.statusText;
+        }
+        alert('Fehler bei der manuellen Freischaltung: ' + errMsg);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
-      alert('Systemfehler');
+      alert('Systemfehler: ' + e.message);
     } finally {
       setManualActivating(false);
     }
