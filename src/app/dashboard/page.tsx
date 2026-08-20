@@ -365,6 +365,7 @@ export default function DashboardPage() {
                       <th className="p-4 font-medium">Paket</th>
                       <th className="p-4 font-medium">Kunden</th>
                       <th className="p-4 font-medium">Status</th>
+                      <th className="p-4 font-medium">Abo & Zahlung</th>
                       <th className="p-4 font-medium">Registriert</th>
                       <th className="p-4 font-medium">Aktionen</th>
                     </tr>
@@ -413,6 +414,17 @@ export default function DashboardPage() {
                               </button>
                             )}
                           </td>
+                          <td className="p-4">
+                            <div className="flex flex-col gap-1">
+                              <span className="text-xs font-bold text-white">
+                                {m.stripe_subscription_id === 'manual_invoice' ? 'Manuelle Rechnung' : (m.stripe_subscription_id ? 'Stripe Abo' : 'Kein Abo')}
+                              </span>
+                              <span className={`text-[10px] font-bold ${m.subscription_status === 'active' || m.subscription_status === 'cancels_at_period_end' ? 'text-green-500' : 'text-red-500'}`}>
+                                {m.subscription_status === 'active' ? 'AKTIV' : m.subscription_status === 'cancels_at_period_end' ? 'GEKÜNDIGT (NOCH AKTIV)' : (m.subscription_status || 'UNBEKANNT').toUpperCase()}
+                                {m.current_period_end && ` (bis ${new Date(m.current_period_end).toLocaleDateString('de-DE')})`}
+                              </span>
+                            </div>
+                          </td>
                           <td className="p-4 text-white/50 text-xs">
                             {new Date(m.created_at).toLocaleDateString('de-DE')}
                           </td>
@@ -429,7 +441,7 @@ export default function DashboardPage() {
                       ));
                     })()}
                     {allMerchants.length === 0 && (
-                      <tr><td colSpan={7} className="p-8 text-center text-white/30">Keine Händler gefunden.</td></tr>
+                      <tr><td colSpan={8} className="p-8 text-center text-white/30">Keine Händler gefunden.</td></tr>
                     )}
                   </tbody>
                 </table>
