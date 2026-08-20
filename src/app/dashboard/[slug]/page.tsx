@@ -420,25 +420,45 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     if (!newStaffName || !newStaffPin || !merchant) return;
     
     setIsAddingStaff(true);
-    const { data, error } = await supabase
-      .from('staff_loyality')
-      .insert([{ merchant_id: merchant.id, name: newStaffName, pin: newStaffPin }])
-      .select();
+    try {
+      const response = await fetch('/api/admin/add-staff', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ merchantId: merchant.id, name: newStaffName, pin: newStaffPin, password: '2025' })
+      });
+      const resData = await response.json();
       
-    if (error) {
-      alert('Fehler beim Hinzufügen: ' + error.message);
-    } else if (data) {
-      setStaff(prev => [...prev, data[0]]);
-      setNewStaffName('');
-      setNewStaffPin('');
-      setShowStaffModal(false);
+      if (!response.ok || !resData.success) {
+        alert('Fehler beim Hinzufügen: ' + (resData.error || 'Netzwerkfehler'));
+      } else if (resData.data) {
+        setStaff(prev => [...prev, resData.data[0]]);
+        setNewStaffName('');
+        setNewStaffPin('');
+        setShowStaffModal(false);
+      }
+    } catch (err: any) {
+      alert('Systemfehler: ' + err.message);
+    } finally {
+      setIsAddingStaff(false);
     }
-    setIsAddingStaff(false);
   };
 
   const deleteStaff = async (id: string) => {
-    const { error } = await supabase.from('staff_loyality').delete().eq('id', id);
-    if (!error) setStaff(prev => prev.filter(s => s.id !== id));
+    try {
+      const response = await fetch('/api/admin/delete-staff', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id, password: '2025' })
+      });
+      const resData = await response.json();
+      if (response.ok && resData.success) {
+        setStaff(prev => prev.filter(s => s.id !== id));
+      } else {
+        alert('Fehler beim Löschen: ' + resData.error);
+      }
+    } catch (err: any) {
+      alert('Systemfehler: ' + err.message);
+    }
   };
 
   const openCustomer = async (customer: any) => {
