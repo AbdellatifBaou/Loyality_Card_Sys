@@ -89,6 +89,8 @@ export async function POST(req: Request) {
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/(^-|-$)/g, '');
 
+          let generatedPin = null;
+
           // Does a merchant with this slug already exist?
           const { data: existingMerchant } = await db
             .from('merchants_loyality')
@@ -135,6 +137,14 @@ export async function POST(req: Request) {
               );
             }
             merchantId = newMerchant.id;
+
+            // Create default admin staff member for new merchant
+            generatedPin = Math.floor(1000 + Math.random() * 9000).toString();
+            await db.from('staff_loyality').insert({
+              merchant_id: merchantId,
+              name: 'Admin',
+              pin: generatedPin
+            });
           }
 
           // Billing record
@@ -210,6 +220,13 @@ export async function POST(req: Request) {
                   <p style="font-size:16px;line-height:1.5;">Hallo ${name},</p>
                   <p style="font-size:16px;line-height:1.5;">vielen Dank für deine Registrierung! Dein Marketif Treue-System für <strong>${company}</strong> ist nun erfolgreich eingerichtet und aktiv.</p>
                   
+                  ${generatedPin ? `
+                  <div style="background-color:#2a2a2a;padding:15px;border-radius:8px;margin:20px 0;border:1px solid #444;">
+                    <p style="margin:0;font-size:16px;"><strong>WICHTIG: Deine Zugangs-PIN</strong></p>
+                    <p style="margin-top:5px;margin-bottom:0;font-size:15px;color:#ccc;">Deine automatisch generierte Admin-PIN lautet: <strong style="color:#8097ff;font-size:18px;">${generatedPin}</strong><br/>Bitte bewahre diese sicher auf. Du benötigst sie für den Login ins Dashboard und die Scanner-App. Im Dashboard kannst du sie später unter "Sicherheit" jederzeit ändern.</p>
+                  </div>
+                  ` : ''}
+
                   ${dashboardSection}
 
                   <h3 style="color:#ffffff;margin-top:30px;border-bottom:1px solid #333;padding-bottom:10px;">Deine System-Links & QR-Codes</h3>
