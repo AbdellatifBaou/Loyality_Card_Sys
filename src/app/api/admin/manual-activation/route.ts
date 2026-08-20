@@ -25,20 +25,20 @@ export async function POST(req: Request) {
     const adminSupabase = getAdminSupabase();
 
     // 1. Hole den Händler, um zu schauen, ob er ein aktives Stripe Abo hat
-    const { data: merchant } = await adminSupabase
-      .from('merchants_loyality')
+    const { data: billing } = await adminSupabase
+      .from('merchant_billing')
       .select('stripe_subscription_id')
-      .eq('id', merchantId)
+      .eq('merchant_id', merchantId)
       .single();
 
-    if (merchant?.stripe_subscription_id && merchant.stripe_subscription_id.startsWith('sub_')) {
+    if (billing?.stripe_subscription_id && billing.stripe_subscription_id.startsWith('sub_')) {
       try {
         const Stripe = require('stripe');
         const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
           apiVersion: '2023-10-16', // using fallback or latest
         });
-        await stripe.subscriptions.cancel(merchant.stripe_subscription_id);
-        console.log(`Canceled Stripe subscription ${merchant.stripe_subscription_id} for manual activation`);
+        await stripe.subscriptions.cancel(billing.stripe_subscription_id);
+        console.log(`Canceled Stripe subscription ${billing.stripe_subscription_id} for manual activation`);
       } catch (stripeError) {
         console.error('Failed to cancel old stripe subscription:', stripeError);
         // We continue anyway, so the merchant gets activated locally.
@@ -49,12 +49,12 @@ export async function POST(req: Request) {
     const currentPeriodEnd = new Date();
     currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + parseInt(months, 10));
 
+    // Update merchant status
     const { error } = await adminSupabase
       .from('merchants_loyality')
       .update({
         is_active: true,
         subscription_status: 'active',
-        stripe_subscription_id: 'manual_invoice',
         current_period_end: currentPeriodEnd.toISOString(),
       })
       .eq('id', merchantId);
@@ -62,6 +62,14 @@ export async function POST(req: Request) {
     if (error) {
       return NextResponse.json({ error: error.message }, { status: 500 });
     }
+
+    // Update billing record
+    await adminSupabase
+      .from('merchant_billing')
+      .upsert({
+        merchant_id: merchantId,
+        stripe_subscription_id: 'manual_invoice'
+      }, { onConflict: 'merchant_id' });
 
     return NextResponse.json({ success: true, current_period_end: currentPeriodEnd.toISOString() });
   } catch (error: any) {

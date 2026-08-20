@@ -23,7 +23,7 @@ export async function POST(req: Request) {
     // 1. Get Merchant info
     const { data: merchantData, error: mError } = await adminSupabase
       .from('merchants_loyality')
-      .select('*')
+      .select('*, merchant_billing(stripe_subscription_id)')
       .eq('slug', decodeURIComponent(slug).toLowerCase())
       .single();
 
@@ -49,6 +49,10 @@ export async function POST(req: Request) {
       adminSupabase.from('staff_loyality').select('*').eq('merchant_id', merchantData.id),
       adminSupabase.from('messages_loyality').select('*').eq('merchant_id', merchantData.id).order('created_at', { ascending: false }),
     ]);
+
+    if (merchantData) {
+      merchantData.stripe_subscription_id = merchantData.merchant_billing?.[0]?.stripe_subscription_id || merchantData.merchant_billing?.stripe_subscription_id || null;
+    }
 
     return NextResponse.json({
       success: true,
