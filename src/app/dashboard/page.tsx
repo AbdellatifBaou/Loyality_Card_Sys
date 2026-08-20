@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Unlock, Lock, LogOut, BarChart2, Store, DollarSign, Download, FileText } from 'lucide-react';
-import { supabase } from '@/lib/supabase';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 export default function DashboardPage() {
@@ -180,12 +179,21 @@ export default function DashboardPage() {
   const deleteCustomer = async (customer: any) => {
     setDeleting(true);
     try {
-      // Must delete stamps first (FK constraint)
-      await supabase.from('stamps_loyality').delete().eq('customer_id', customer.id);
-      await supabase.from('customers_loyality').delete().eq('id', customer.id);
-      setCustomers(prev => prev.filter(c => c.id !== customer.id));
-      setCustomerCount(prev => prev - 1);
-      setConfirmDelete(null);
+      const response = await fetch('/api/admin/delete-customer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ customerId: customer.id })
+      });
+      const result = await response.json();
+      if (result.success) {
+        setCustomers(prev => prev.filter(c => c.id !== customer.id));
+        setCustomerCount(prev => prev - 1);
+        setConfirmDelete(null);
+      } else {
+        alert('Fehler beim Löschen: ' + result.error);
+      }
+    } catch (err: any) {
+      alert('Netzwerkfehler beim Löschen: ' + err.message);
     } finally {
       setDeleting(false);
     }
