@@ -16,11 +16,13 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   const [loading, setLoading] = useState(true);
   const [merchant, setMerchant] = useState<any>(null);
   const [preMerchant, setPreMerchant] = useState<any>(null);
+  const [preLoading, setPreLoading] = useState(true);
   
   useEffect(() => {
     async function loadPreMerchant() {
       const { data } = await supabase.from('merchants_loyality').select('*').eq('slug', slug).single();
       if (data) setPreMerchant(data);
+      setPreLoading(false);
     }
     loadPreMerchant();
   }, [slug]);
@@ -586,6 +588,13 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   };
 
   if (!isAuthorized) {
+    if (preLoading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-black">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-white/50"></div>
+        </div>
+      );
+    }
     return (
       <main className="min-h-screen flex items-center justify-center p-4" style={{ background: '#050505' }}>
         <div className="w-full max-w-md p-8 rounded-[40px] relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #0A0A0A 0%, #111111 100%)', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
@@ -601,14 +610,14 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                 type={showLoginPassword ? "text" : "password"}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-black/50 border border-[#D4AF37]/20 rounded-2xl px-6 py-4 text-center text-white outline-none focus:border-[#D4AF37] transition-all"
+                className="w-full bg-black/50 border border-white/20 rounded-2xl px-6 py-4 text-center text-white outline-none focus:border-white/50 transition-all"
                 placeholder="Passwort"
                 autoFocus
               />
               <button 
                 type="button"
                 onClick={() => setShowLoginPassword(!showLoginPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-[#D4AF37] transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 transition-colors"
               >
                 {showLoginPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
@@ -649,7 +658,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     return (
       <main className="min-h-screen flex items-center justify-center p-6" style={{ background: '#050505' }}>
         <div className="w-full max-w-4xl p-8 md:p-10 rounded-[40px] text-center" style={{ background: 'linear-gradient(145deg, #0A0A0A 0%, #111111 100%)', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
-          <div className="mx-auto w-20 h-20 bg-[#D4AF37]/10 rounded-full flex items-center justify-center mb-6">
+          <div className="mx-auto w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mb-6">
             <Lock style={{ color: primaryColor }} size={40} />
           </div>
           <h2 className="text-3xl font-bold text-white mb-4">Dashboard Gesperrt</h2>
@@ -658,7 +667,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             Schalte jetzt detaillierte Statistiken, Kundenverwaltung und Mitarbeiter-PINs frei!
           </p>
 
-          <div className="mb-8 rounded-2xl overflow-hidden border-2 border-[#D4AF37]/50 shadow-[0_0_40px_rgba(212,175,55,0.15)] mx-auto max-w-2xl relative">
+          <div className="mb-8 rounded-2xl overflow-hidden border-2 border-white/20 shadow-none mx-auto max-w-2xl relative">
             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent flex items-end justify-center pb-6 z-10">
             </div>
             <img src="/dashboard-preview.jpg" alt="Dashboard Preview" className="w-full h-auto" />
@@ -932,7 +941,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                           {idx === 0 && s.stampsGiven > 0 ? <span className="text-xl">🏆</span> : <span className="text-xl text-white/20">{idx + 1}.</span>}
                           <div>
                             <p className="text-sm font-bold text-white flex items-center gap-2">{s.name}</p>
-                            <p className="text-xs font-mono text-[#D4AF37] tracking-[0.2em]">{s.pin}</p>
+                            <p className="text-xs font-mono text-white/80 tracking-[0.2em]">{s.pin}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-3">
@@ -997,9 +1006,9 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                     <YAxis stroke="rgba(255,255,255,0.4)" fontSize={12} tickLine={false} axisLine={false} />
                     <Tooltip 
                       contentStyle={{ background: '#111', border: '1px solid rgba(212, 175, 55, 0.3)', borderRadius: '12px' }}
-                      itemStyle={{ color: '#D4AF37' }}
+                      itemStyle={{ color: primaryColor }}
                     />
-                    <Line type="monotone" dataKey="count" name="Vergebene Stempel" stroke="#D4AF37" strokeWidth={3} dot={{ r: 4, fill: '#D4AF37', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                    <Line type="monotone" dataKey="count" name="Vergebene Stempel" stroke={primaryColor} strokeWidth={3} dot={{ r: 4, fill: primaryColor, strokeWidth: 0 }} activeDot={{ r: 6 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -1128,7 +1137,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                     onChange={e => setMsgTitle(e.target.value)}
                     placeholder="z.B. Wochenend-Special! 🍕"
                     required
-                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#D4AF37] transition-all text-sm"
+                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-white/50 transition-all text-sm"
                   />
                 </div>
                 <div>
@@ -1139,7 +1148,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                     placeholder="z.B. Komm dieses Wochenende vorbei und erhalte doppelte Stempel!"
                     required
                     rows={4}
-                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-[#D4AF37] transition-all text-sm resize-none"
+                    className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-white/50 transition-all text-sm resize-none"
                   />
                 </div>
                 
@@ -1303,9 +1312,9 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                           className="p-4 rounded-xl text-left border transition-all hover:scale-[1.02] active:scale-95 relative overflow-hidden"
                           style={{ background: 'rgba(212,175,55,0.1)', borderColor: 'rgba(212,175,55,0.5)' }}
                         >
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-[#D4AF37] mb-1">Gold</p>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-white/80 mb-1">Gold</p>
                           <p className="text-2xl font-bold text-white mb-2">89€<span className="text-sm text-white/50 font-normal">/Monat</span></p>
-                          <div className="flex items-center gap-2 text-sm text-[#D4AF37] mt-4 font-bold">
+                          <div className="flex items-center gap-2 text-sm text-white/80 mt-4 font-bold">
                             {billingLoading ? <RefreshCw className="animate-spin" size={16} /> : <><CreditCard size={16} /> Reaktivieren</>}
                           </div>
                         </button>
@@ -1323,7 +1332,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           <div className="space-y-6">
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
               <h2 className="text-xl font-bold text-white mb-2">Push-Nachrichten anpassen</h2>
-              <p className="text-white/60 text-sm mb-6">Passe die automatisierten Nachrichten an, die deine Kunden direkt auf ihr Handy bekommen. Du kannst <code className="bg-black/30 px-2 py-0.5 rounded text-[#D4AF37]">{'{points}'}</code> als Platzhalter für die aktuelle Stempel-Anzahl verwenden.</p>
+              <p className="text-white/60 text-sm mb-6">Passe die automatisierten Nachrichten an, die deine Kunden direkt auf ihr Handy bekommen. Du kannst <code className="bg-black/30 px-2 py-0.5 rounded text-white/80">{'{points}'}</code> als Platzhalter für die aktuelle Stempel-Anzahl verwenden.</p>
 
               <div className="space-y-8">
                 {/* Stamp Message */}
@@ -1345,7 +1354,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         value={pushSettings.stamp_header || ''}
                         onChange={(e) => setPushSettings({...pushSettings, stamp_header: e.target.value})}
                         placeholder="{points} von 9 Stempeln 🍕" 
-                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-[#D4AF37]" 
+                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50" 
                       />
                     </div>
                     <div>
@@ -1354,7 +1363,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         value={pushSettings.stamp_body || ''}
                         onChange={(e) => setPushSettings({...pushSettings, stamp_body: e.target.value})}
                         placeholder="Du hast {points} Stempel gesammelt. Weiter so!" 
-                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-[#D4AF37] min-h-[80px]" 
+                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50 min-h-[80px]" 
                       />
                     </div>
                   </div>
@@ -1379,7 +1388,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         value={pushSettings.reward_header || ''}
                         onChange={(e) => setPushSettings({...pushSettings, reward_header: e.target.value})}
                         placeholder="Belohnung bereit! ✨" 
-                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-[#D4AF37]" 
+                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50" 
                       />
                     </div>
                     <div>
@@ -1388,7 +1397,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         value={pushSettings.reward_body || ''}
                         onChange={(e) => setPushSettings({...pushSettings, reward_body: e.target.value})}
                         placeholder="Herzlichen Glückwunsch! Du hast deine Stempelkarte voll. Zeige sie beim nächsten Mal vor." 
-                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-[#D4AF37] min-h-[80px]" 
+                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50 min-h-[80px]" 
                       />
                     </div>
                   </div>
@@ -1413,7 +1422,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         value={pushSettings.redeem_header || ''}
                         onChange={(e) => setPushSettings({...pushSettings, redeem_header: e.target.value})}
                         placeholder="Prämie eingelöst! 🍕" 
-                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-[#D4AF37]" 
+                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50" 
                       />
                     </div>
                     <div>
@@ -1422,7 +1431,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         value={pushSettings.redeem_body || ''}
                         onChange={(e) => setPushSettings({...pushSettings, redeem_body: e.target.value})}
                         placeholder="Guten Appetit! Deine Karte wurde auf 0 zurückgesetzt, du kannst nun wieder neu sammeln." 
-                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-[#D4AF37] min-h-[80px]" 
+                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50 min-h-[80px]" 
                       />
                     </div>
                   </div>
@@ -1447,7 +1456,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         value={pushSettings.miss_you_header || ''}
                         onChange={(e) => setPushSettings({...pushSettings, miss_you_header: e.target.value})}
                         placeholder={`Wir vermissen dich bei ${merchant?.name || 'uns'}! 👋`}
-                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-[#D4AF37]" 
+                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50" 
                       />
                     </div>
                     <div>
@@ -1456,7 +1465,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         value={pushSettings.miss_you_body || ''}
                         onChange={(e) => setPushSettings({...pushSettings, miss_you_body: e.target.value})}
                         placeholder="Du warst schon länger nicht mehr da. Komm vorbei und zeige deine Karte — deine Stempel warten!" 
-                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-[#D4AF37] min-h-[80px]" 
+                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50 min-h-[80px]" 
                       />
                     </div>
                   </div>
@@ -1484,7 +1493,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                 <button
                   onClick={savePushSettings}
                   disabled={savingPush}
-                  className="px-6 py-2.5 bg-[#D4AF37] hover:bg-[#C5A030] text-black font-semibold rounded-lg transition-colors flex items-center gap-2"
+                  className="px-6 py-2.5 bg-white/20 hover:bg-white/30 text-black font-semibold rounded-lg transition-colors flex items-center gap-2"
                   style={{ backgroundColor: merchant.primary_color || '#D4AF37', color: '#000' }}
                 >
                   {savingPush ? (
@@ -1644,8 +1653,8 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           <div className="w-full max-w-sm p-8 rounded-[40px] space-y-6 animate-scale-up" style={{ background: '#111', border: '1px solid rgba(212,175,55,0.2)' }} onClick={e => e.stopPropagation()}>
             <h3 className="text-xl font-bold text-white">Mitarbeiter hinzufügen</h3>
             <form onSubmit={addStaff} className="space-y-4">
-              <input value={newStaffName} onChange={e => setNewStaffName(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-[#D4AF37] transition-all" placeholder="Name (z.B. Latif)" />
-              <input value={newStaffPin} onChange={e => setNewStaffPin(e.target.value)} maxLength={6} className="w-full bg-black/50 border border-white/10 rounded-2xl px-6 py-4 text-white font-mono tracking-[0.5em] text-center outline-none focus:border-[#D4AF37] transition-all" placeholder="PIN" />
+              <input value={newStaffName} onChange={e => setNewStaffName(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-white/50 transition-all" placeholder="Name (z.B. Latif)" />
+              <input value={newStaffPin} onChange={e => setNewStaffPin(e.target.value)} maxLength={6} className="w-full bg-black/50 border border-white/10 rounded-2xl px-6 py-4 text-white font-mono tracking-[0.5em] text-center outline-none focus:border-white/50 transition-all" placeholder="PIN" />
               <button 
                 type="submit" 
                 disabled={isAddingStaff}

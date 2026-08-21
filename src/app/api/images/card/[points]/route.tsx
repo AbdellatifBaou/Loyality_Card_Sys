@@ -1,5 +1,6 @@
 import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
+import { supabase } from '@/lib/supabase';
 
 export const runtime = 'edge';
 export const revalidate = 0;
@@ -13,9 +14,27 @@ export async function GET(
     const points = parseInt(pointsStr, 10);
     const validPoints = isNaN(points) ? 0 : Math.max(0, Math.min(10, points));
 
-    const GOLD       = '#D4AF37';
-    const GOLD_LIGHT = '#FFE066';
-    const GOLD_DIM   = 'rgba(212,175,55,0.5)';
+    const { searchParams } = new URL(_req.url);
+    const merchantSlug = searchParams.get('merchant');
+    let primaryColor = '#D4AF37';
+    let stampSymbol = '🍕';
+
+    if (merchantSlug) {
+      const { data } = await supabase.from('merchants_loyality').select('primary_color, stamp_symbol').eq('slug', merchantSlug).single();
+      if (data?.primary_color) primaryColor = data.primary_color;
+      if (data?.stamp_symbol) stampSymbol = data.stamp_symbol;
+    }
+
+    const GOLD       = primaryColor;
+    const GOLD_LIGHT = primaryColor;
+    const hexToRgb = (hex: string) => {
+      const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+      hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+      const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+      return result ? `${parseInt(result[1], 16)}, ${parseInt(result[2], 16)}, ${parseInt(result[3], 16)}` : '212,175,55';
+    };
+    const rgb = hexToRgb(primaryColor);
+    const GOLD_DIM   = `rgba(${rgb},0.5)`;
 
     // Max circle size fitting 5 per row in 1000px with 24px gaps and 40px side padding
     // 5 × 164 + 4 × 24 + 2 × 40 = 996px ≈ 1000px
@@ -37,17 +56,17 @@ export async function GET(
             flexShrink: 0,
             background: stamped
               ? `radial-gradient(circle at 35% 28%, ${GOLD_LIGHT}, ${GOLD}, #5C3D08)`
-              : 'rgba(212,175,55,0.07)',
+              : `rgba(${rgb},0.07)`,
             border: stamped
               ? `4px solid ${GOLD_LIGHT}`
               : `3px solid ${GOLD_DIM}`,
             boxShadow: stamped
-              ? `0 0 40px rgba(212,175,55,0.9), 0 0 12px rgba(212,175,55,0.6), inset 0 4px 0 rgba(255,255,255,0.3)`
+              ? `0 0 40px rgba(${rgb},0.9), 0 0 12px rgba(${rgb},0.6), inset 0 4px 0 rgba(255,255,255,0.3)`
               : `inset 0 3px 8px rgba(0,0,0,0.5)`,
           }}
         >
           {stamped ? (
-            <span style={{ fontSize: '72px', lineHeight: 1 }}>🍕</span>
+            <span style={{ fontSize: '72px', lineHeight: 1 }}>{stampSymbol}</span>
           ) : idx === 9 ? (
             <span style={{ fontSize: '72px', lineHeight: 1 }}>🎁</span>
           ) : (
@@ -82,7 +101,7 @@ export async function GET(
             top: '50%', left: '50%',
             width: '900px', height: '600px',
             borderRadius: '50%',
-            background: 'radial-gradient(ellipse, rgba(212,175,55,0.06) 0%, transparent 65%)',
+            background: 'radial-gradient(ellipse, rgba(${rgb},0.06) 0%, transparent 65%)',
             transform: 'translate(-50%, -50%)',
           }} />
 

@@ -41,11 +41,13 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
   const [authError, setAuthError] = useState('');
   const [merchantConfig, setMerchantConfig] = useState<any>(null);
   const [preMerchant, setPreMerchant] = useState<any>(null);
+  const [preLoading, setPreLoading] = useState(true);
   
   useEffect(() => {
     async function loadPreMerchant() {
       const { data } = await supabase.from('merchants_loyality').select('*').eq('slug', slug).single();
       if (data) setPreMerchant(data);
+      setPreLoading(false);
     }
     loadPreMerchant();
   }, [slug]);
@@ -270,6 +272,13 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
     } catch {}
   };
   if (!isAuthenticated) {
+    if (preLoading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-black">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-white/50"></div>
+        </div>
+      );
+    }
     return (
       <main
         className="min-h-screen flex flex-col items-center justify-center p-4 animate-fade-in"
