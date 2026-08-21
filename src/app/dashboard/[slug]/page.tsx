@@ -580,7 +580,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           <div className="text-center mb-8">
             <img src="/Marketif_LOGO_Symbol.png" alt="Marketif" className="h-14 w-auto mx-auto mb-6 opacity-90" style={{ filter: 'brightness(0) invert(1)' }} />
             <h1 className="text-2xl font-bold text-white mb-2">Dashboard Login</h1>
-            <p className="text-white/40 text-sm">Bitte gib das Passwort für <span style={{ color: primaryColor }}>{slug}</span> ein.</p>
+            <p className="text-white/40 text-sm">Bitte gib das Passwort für <span className="text-[#D4AF37]">{slug}</span> ein.</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="relative">
