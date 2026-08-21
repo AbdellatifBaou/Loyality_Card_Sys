@@ -36,6 +36,14 @@ export default function DashboardPage() {
   const [failedFinancesData, setFailedFinancesData] = useState<any[]>([]);
   const [financesLoading, setFinancesLoading] = useState(false);
 
+  const [showCreateMerchant, setShowCreateMerchant] = useState(false);
+  const [newMerchantName, setNewMerchantName] = useState('');
+  const [newMerchantColor, setNewMerchantColor] = useState('#D4AF37');
+  const [newMerchantPackage, setNewMerchantPackage] = useState('custom');
+  const [newMerchantPrice, setNewMerchantPrice] = useState('49');
+  const [creatingMerchant, setCreatingMerchant] = useState(false);
+  const [createdMerchantResult, setCreatedMerchantResult] = useState<any>(null);
+
   const fetchFinances = async (year: number) => {
     setFinancesLoading(true);
     try {
@@ -218,6 +226,35 @@ export default function DashboardPage() {
     }
   };
 
+  const handleCreateMerchant = async () => {
+    if (!newMerchantName || !newMerchantColor) return;
+    setCreatingMerchant(true);
+    try {
+      const response = await fetch('/api/admin/create-merchant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          password: '2025', 
+          name: newMerchantName, 
+          primaryColor: newMerchantColor, 
+          packageType: newMerchantPackage, 
+          customPrice: newMerchantPackage === 'custom' ? newMerchantPrice : null 
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setCreatedMerchantResult(data.merchant);
+        fetchData();
+      } else {
+        alert('Fehler: ' + data.error);
+      }
+    } catch (e: any) {
+      alert('Systemfehler: ' + e.message);
+    } finally {
+      setCreatingMerchant(false);
+    }
+  };
+
   const handleManualActivation = async () => {
     if (!manualActivationMerchant) return;
     setManualActivating(true);
@@ -366,10 +403,19 @@ export default function DashboardPage() {
 
             {/* Customer Management */}
             <div className="rounded-3xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-              <div className="p-6 border-b border-white/5 flex items-center gap-3">
-                <Store size={20} className="text-white/60" />
-                <h2 className="text-lg font-bold text-white">Partner-Händler</h2>
-                <span className="ml-auto text-xs text-white/40 font-medium">{merchantCount} Gesamt</span>
+              <div className="p-6 border-b border-white/5 flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Store size={20} className="text-white/60" />
+                  <h2 className="text-lg font-bold text-white">Partner-Händler</h2>
+                  <span className="text-xs text-white/40 font-medium ml-2">{merchantCount} Gesamt</span>
+                </div>
+                <button 
+                  onClick={() => setShowCreateMerchant(true)}
+                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <Users size={16} />
+                  Neuen Händler anlegen
+                </button>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
@@ -872,6 +918,120 @@ export default function DashboardPage() {
                 {manualActivating ? 'Bitte warten...' : 'Freischalten'}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+      {/* Create Merchant Modal */}
+      {showCreateMerchant && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-[#111111] border border-white/10 rounded-3xl p-8 max-w-md w-full my-8">
+            <h3 className="text-xl font-bold text-white mb-2">Neuen Händler anlegen</h3>
+            <p className="text-white/60 text-sm mb-6">
+              Lege einen neuen Händler für das betreute Onboarding an.
+            </p>
+
+            {createdMerchantResult ? (
+              <div className="space-y-6">
+                <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-2xl">
+                  <p className="text-green-500 font-bold mb-2">Händler erfolgreich erstellt!</p>
+                  <div className="space-y-2 mt-4 text-sm">
+                    <p className="text-white/60">Dashboard-Link:</p>
+                    <a href={`/dashboard/${createdMerchantResult.slug}`} target="_blank" rel="noreferrer" className="text-blue-400 block break-all">
+                      https://treue.marketif.de/dashboard/{createdMerchantResult.slug}
+                    </a>
+                    <p className="text-white/60 mt-4">Scanner-Link:</p>
+                    <a href={`/${createdMerchantResult.slug}`} target="_blank" rel="noreferrer" className="text-blue-400 block break-all">
+                      https://treue.marketif.de/{createdMerchantResult.slug}
+                    </a>
+                    <p className="text-white/60 mt-4">Mitarbeiter/Admin PIN:</p>
+                    <p className="text-2xl font-mono text-white tracking-widest">{createdMerchantResult.pin}</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => {
+                    setShowCreateMerchant(false);
+                    setCreatedMerchantResult(null);
+                    setNewMerchantName('');
+                  }}
+                  className="w-full py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-colors"
+                >
+                  Schließen
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-xs font-medium text-white/50 mb-2">Firmenname</label>
+                  <input 
+                    type="text"
+                    value={newMerchantName}
+                    onChange={(e) => setNewMerchantName(e.target.value)}
+                    placeholder="z.B. Aroma Café"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
+                  />
+                </div>
+                
+                <div>
+                  <label className="block text-xs font-medium text-white/50 mb-2">Hauptfarbe (Hex)</label>
+                  <div className="flex gap-3">
+                    <input 
+                      type="color"
+                      value={newMerchantColor}
+                      onChange={(e) => setNewMerchantColor(e.target.value)}
+                      className="w-12 h-12 rounded-xl cursor-pointer bg-transparent border-0 p-0"
+                    />
+                    <input 
+                      type="text"
+                      value={newMerchantColor}
+                      onChange={(e) => setNewMerchantColor(e.target.value)}
+                      className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-white/50 mb-2">Paket</label>
+                  <select 
+                    value={newMerchantPackage}
+                    onChange={(e) => setNewMerchantPackage(e.target.value)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
+                  >
+                    <option className="bg-[#111111] text-white" value="silber">Silber Paket</option>
+                    <option className="bg-[#111111] text-white" value="gold">Gold Paket</option>
+                    <option className="bg-[#111111] text-white" value="custom">Individuelles Paket (Custom)</option>
+                  </select>
+                </div>
+
+                {newMerchantPackage === 'custom' && (
+                  <div>
+                    <label className="block text-xs font-medium text-white/50 mb-2">Individueller Preis (€ monatlich)</label>
+                    <input 
+                      type="number"
+                      value={newMerchantPrice}
+                      onChange={(e) => setNewMerchantPrice(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
+                    />
+                  </div>
+                )}
+
+                <div className="flex gap-4 mt-8 pt-4 border-t border-white/10">
+                  <button
+                    onClick={() => setShowCreateMerchant(false)}
+                    className="flex-1 py-3 text-white/60 font-medium hover:text-white transition-colors"
+                    disabled={creatingMerchant}
+                  >
+                    Abbrechen
+                  </button>
+                  <button
+                    onClick={handleCreateMerchant}
+                    disabled={creatingMerchant || !newMerchantName}
+                    className="flex-1 py-3 bg-[#D4AF37] text-black font-bold rounded-xl hover:bg-[#c4a130] transition-colors disabled:opacity-50"
+                  >
+                    {creatingMerchant ? 'Erstelle...' : 'Händler erstellen'}
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       )}
