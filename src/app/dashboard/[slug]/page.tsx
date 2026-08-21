@@ -580,7 +580,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           <div className="text-center mb-8">
             <img src="/Marketif_LOGO_Symbol.png" alt="Marketif" className="h-14 w-auto mx-auto mb-6 opacity-90" style={{ filter: 'brightness(0) invert(1)' }} />
             <h1 className="text-2xl font-bold text-white mb-2">Dashboard Login</h1>
-            <p className="text-white/40 text-sm">Bitte gib das Passwort für <span className="text-[#D4AF37]">{slug}</span> ein.</p>
+            <p className="text-white/40 text-sm">Bitte gib das Passwort für <span style={{ color: primaryColor }}>{slug}</span> ein.</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="relative">
@@ -601,7 +601,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
               </button>
             </div>
             {authError && <p className="text-red-500 text-xs text-center">{authError}</p>}
-            <button type="submit" className="w-full py-4 rounded-2xl font-bold uppercase tracking-widest text-black transition-all active:scale-95" style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}>
+            <button type="submit" className="w-full py-4 rounded-2xl font-bold uppercase tracking-widest text-black transition-all active:scale-95" style={{ backgroundColor: primaryColor }}>
               Anmelden
             </button>
           </form>
@@ -640,7 +640,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       <main className="min-h-screen flex items-center justify-center p-6" style={{ background: '#050505' }}>
         <div className="w-full max-w-4xl p-8 md:p-10 rounded-[40px] text-center" style={{ background: 'linear-gradient(145deg, #0A0A0A 0%, #111111 100%)', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
           <div className="mx-auto w-20 h-20 bg-[#D4AF37]/10 rounded-full flex items-center justify-center mb-6">
-            <Lock className="text-[#D4AF37]" size={40} />
+            <Lock style={{ color: primaryColor }} size={40} />
           </div>
           <h2 className="text-3xl font-bold text-white mb-4">Dashboard Gesperrt</h2>
           <p className="text-white/60 mb-8 max-w-2xl mx-auto leading-relaxed">
@@ -664,7 +664,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
               onClick={handle1ClickUpgrade}
               disabled={billingLoading}
               className="block w-full py-4 rounded-2xl font-bold text-black transition-all hover:scale-[1.02] active:scale-95 flex items-center justify-center gap-3" 
-              style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}
+              style={{ backgroundColor: primaryColor }}
             >
               {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : <><Activity size={20} /> Jetzt für +{PRICING.gold.price - PRICING.silber.price}€/Monat auf Gold upgraden</>}
             </button>
@@ -734,51 +734,55 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           <button 
             onClick={() => setActiveTab('overview')}
             disabled={merchant?.is_active === false}
-            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : activeTab === 'overview' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : 'border-transparent text-white/40 hover:text-white/70'}`}
+            style={merchant?.is_active !== false ? { borderColor: activeTab === 'overview' ? primaryColor : 'transparent', color: activeTab === 'overview' ? primaryColor : undefined } : {}}
           >
             <div className="flex items-center gap-2"><Activity size={16}/> Übersicht</div>
           </button>
           <button 
             onClick={() => setActiveTab('analytics')}
             disabled={merchant?.is_active === false}
-            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : activeTab === 'analytics' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : 'border-transparent text-white/40 hover:text-white/70'}`}
+            style={merchant?.is_active !== false ? { borderColor: activeTab === 'analytics' ? primaryColor : 'transparent', color: activeTab === 'analytics' ? primaryColor : undefined } : {}}
           >
             <div className="flex items-center gap-2"><BarChart2 size={16}/> Analytics</div>
           </button>
           <button 
             onClick={() => setActiveTab('marketing')}
             disabled={merchant?.is_active === false}
-            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : activeTab === 'marketing' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : 'border-transparent text-white/40 hover:text-white/70'}`}
+            style={merchant?.is_active !== false ? { borderColor: activeTab === 'marketing' ? primaryColor : 'transparent', color: activeTab === 'marketing' ? primaryColor : undefined } : {}}
           >
             <div className="flex items-center gap-2"><Megaphone size={16}/> Marketing</div>
           </button>
           <button 
             onClick={() => setActiveTab('billing')}
-            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${activeTab === 'billing' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${'border-transparent text-white/40 hover:text-white/70'}`}
+            style={{ borderColor: activeTab === 'billing' ? primaryColor : 'transparent', color: activeTab === 'billing' ? primaryColor : undefined }}
           >
             <div className="flex items-center gap-2"><CreditCard size={16}/> Abo & Abrechnung</div>
           </button>
           <button
             onClick={() => setActiveTab('push')}
             disabled={merchant?.is_active === false}
-            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : activeTab === 'push' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
-            style={merchant?.is_active !== false ? { borderColor: activeTab === 'push' ? (merchant.primary_color || '#D4AF37') : 'transparent', color: activeTab === 'push' ? (merchant.primary_color || '#D4AF37') : undefined } : {}}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : 'border-transparent text-white/40 hover:text-white/70'}`}
+            style={merchant?.is_active !== false ? { borderColor: activeTab === 'push' ? primaryColor : 'transparent', color: activeTab === 'push' ? primaryColor : undefined } : {}}
           >
             Push-Nachrichten
           </button>
           <button 
             onClick={() => setActiveTab('qrcodes')}
             disabled={merchant?.is_active === false}
-            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : activeTab === 'qrcodes' ? `border-[${merchant.primary_color || '#D4AF37'}] text-[${merchant.primary_color || '#D4AF37'}]` : 'border-transparent text-white/40 hover:text-white/70'}`}
-            style={merchant?.is_active !== false ? { borderColor: activeTab === 'qrcodes' ? (merchant.primary_color || '#D4AF37') : 'transparent', color: activeTab === 'qrcodes' ? (merchant.primary_color || '#D4AF37') : undefined } : {}}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : 'border-transparent text-white/40 hover:text-white/70'}`}
+            style={merchant?.is_active !== false ? { borderColor: activeTab === 'qrcodes' ? primaryColor : 'transparent', color: activeTab === 'qrcodes' ? primaryColor : undefined } : {}}
           >
             <div className="flex items-center gap-2"><Download size={16}/> QR-Codes</div>
           </button>
           <button 
             onClick={() => setActiveTab('security')}
             disabled={merchant?.is_active === false}
-            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : activeTab === 'security' ? `border-[${merchant.primary_color || '#D4AF37'}] text-[${merchant.primary_color || '#D4AF37'}]` : 'border-transparent text-white/40 hover:text-white/70'}`}
-            style={merchant?.is_active !== false ? { borderColor: activeTab === 'security' ? (merchant.primary_color || '#D4AF37') : 'transparent', color: activeTab === 'security' ? (merchant.primary_color || '#D4AF37') : undefined } : {}}
+            className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : 'border-transparent text-white/40 hover:text-white/70'}`}
+            style={merchant?.is_active !== false ? { borderColor: activeTab === 'security' ? primaryColor : 'transparent', color: activeTab === 'security' ? primaryColor : undefined } : {}}
           >
             <div className="flex items-center gap-2"><Lock size={16}/> Sicherheit</div>
           </button>
@@ -972,7 +976,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
             <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="flex items-center gap-3 mb-6">
-                <BarChart2 size={20} className="text-[#D4AF37]" />
+                <BarChart2 size={20} style={{ color: primaryColor }} />
                 <h2 className="text-lg font-bold text-white">Stempel nach Wochentag</h2>
               </div>
               <div className="h-[300px] w-full">
@@ -1098,7 +1102,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           <div className="space-y-6 max-w-2xl">
             <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="flex items-center gap-3 mb-6">
-                <Megaphone size={20} className="text-[#D4AF37]" />
+                <Megaphone size={20} style={{ color: primaryColor }} />
                 <h2 className="text-lg font-bold text-white">Nachricht an alle Kunden</h2>
               </div>
               <p className="text-sm text-white/50 mb-6">
@@ -1139,7 +1143,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   type="submit" 
                   disabled={sendingMsg}
                   className="w-full mt-2 py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-black disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95"
-                  style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}
+                  style={{ backgroundColor: primaryColor }}
                 >
                   {sendingMsg ? <RefreshCw className="animate-spin" size={20} /> : <><Send size={20} /> Nachricht Senden</>}
                 </button>
@@ -1176,7 +1180,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           <div className="space-y-6 max-w-2xl">
             <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="flex items-center gap-3 mb-6">
-                <CreditCard size={20} className="text-[#D4AF37]" />
+                <CreditCard size={20} style={{ color: primaryColor }} />
                 <h2 className="text-lg font-bold text-white">Abonnement & Abrechnung</h2>
               </div>
               
@@ -1195,7 +1199,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                     onClick={() => handleStripeReactivate(merchant.package_type || 'silber')}
                     disabled={billingLoading}
                     className="w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-black disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95 bg-white/10 hover:bg-white/20"
-                    style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}
+                    style={{ backgroundColor: primaryColor }}
                   >
                     {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : 'Jetzt Abonnement reaktivieren (Stripe)'}
                   </button>
@@ -1220,7 +1224,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       onClick={handleStripePortal}
                       disabled={billingLoading}
                       className="w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-black disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95"
-                      style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}
+                      style={{ backgroundColor: primaryColor }}
                     >
                       {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : <><ExternalLink size={20} /> Stripe Portal öffnen</>}
                     </button>
@@ -1246,12 +1250,12 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                           onClick={() => handleStripeReactivate('custom')}
                           disabled={billingLoading}
                           className="w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-black disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95"
-                          style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}
+                          style={{ backgroundColor: primaryColor }}
                         >
                           {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : <><CreditCard size={20} /> Abo reaktivieren ({merchant.custom_price}€ / Monat)</>}
                         </button>
                       ) : (
-                        <a href="mailto:kontakt@marketif.de" className="inline-block w-full py-4 rounded-xl font-bold text-center text-black transition-all hover:scale-[1.02] active:scale-95" style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}>
+                        <a href="mailto:kontakt@marketif.de" className="inline-block w-full py-4 rounded-xl font-bold text-center text-black transition-all hover:scale-[1.02] active:scale-95" style={{ backgroundColor: primaryColor }}>
                           Support kontaktieren
                         </a>
                       )}
@@ -1261,7 +1265,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       <p className="text-sm text-white/70 mb-4">
                         Dein Abonnement ist derzeit <span className="text-red-500 font-bold">gekündigt</span>.
                       </p>
-                      <a href="mailto:kontakt@marketif.de" className="inline-block w-full py-4 rounded-xl font-bold text-center text-black transition-all hover:scale-[1.02] active:scale-95" style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}>
+                      <a href="mailto:kontakt@marketif.de" className="inline-block w-full py-4 rounded-xl font-bold text-center text-black transition-all hover:scale-[1.02] active:scale-95" style={{ backgroundColor: primaryColor }}>
                         Support kontaktieren
                       </a>
                     </div>
@@ -1490,7 +1494,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           <div className="space-y-6">
             <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="flex items-center gap-3 mb-6">
-                <Download size={20} className="text-[#D4AF37]" />
+                <Download size={20} style={{ color: primaryColor }} />
                 <h2 className="text-lg font-bold text-white">QR-Codes herunterladen</h2>
               </div>
               <p className="text-white/60 text-sm mb-8">
@@ -1636,7 +1640,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                 type="submit" 
                 disabled={isAddingStaff}
                 className="w-full py-4 rounded-2xl font-bold text-black flex items-center justify-center gap-2 disabled:opacity-50" 
-                style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}
+                style={{ backgroundColor: primaryColor }}
               >
                 {isAddingStaff ? <RefreshCw size={20} className="animate-spin" /> : 'Hinzufügen'}
               </button>
@@ -1714,7 +1718,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   onClick={savePoints}
                   disabled={savingPoints}
                   className="w-full mt-4 py-3 rounded-2xl font-bold text-black text-sm flex items-center justify-center gap-2 disabled:opacity-50"
-                  style={{ background: `linear-gradient(135deg, #B8943B, #E8C968)` }}
+                  style={{ backgroundColor: primaryColor }}
                 >
                   {savingPoints ? <RefreshCw size={16} className="animate-spin" /> : 'Speichern'}
                 </button>
