@@ -65,7 +65,7 @@ export default function DynamicJoinPage({ params }: { params: Promise<{ slug: st
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center" style={{ background: '#0A0A0A' }}>
-        <Loader2 className="animate-spin" style={{ color: '#C8A84B' }} size={32} />
+        <Loader2 className="animate-spin text-white/50" size={32} />
       </div>
     );
   }

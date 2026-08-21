@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, use, useCallback } from 'react';
 import { Html5QrcodeScanner, Html5QrcodeScanType } from 'html5-qrcode';
+import { supabase } from '@/lib/supabase';
 import { CheckCircle2, XCircle, Loader2, LogOut, Download, Flashlight, Keyboard, WifiOff, Clock, RefreshCw, AlertTriangle } from 'lucide-react';
 
 const QUEUE_KEY = 'offline_stamp_queue';
@@ -39,6 +40,17 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [authError, setAuthError] = useState('');
   const [merchantConfig, setMerchantConfig] = useState<any>(null);
+  const [preMerchant, setPreMerchant] = useState<any>(null);
+  
+  useEffect(() => {
+    async function loadPreMerchant() {
+      const { data } = await supabase.from('merchants_loyality').select('*').eq('slug', slug).single();
+      if (data) setPreMerchant(data);
+    }
+    loadPreMerchant();
+  }, [slug]);
+
+  const primaryColor = merchantConfig?.primary_color || preMerchant?.primary_color || '#D4AF37';
 
   const [scanStatus, setScanStatus] = useState<'idle' | 'loading' | 'success' | 'error' | 'queued'>('idle');
   const [message, setMessage] = useState('');
@@ -257,9 +269,6 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
       }
     } catch {}
   };
-
-  const primaryColor = merchantConfig?.primary_color || '#D4AF37';
-
   if (!isAuthenticated) {
     return (
       <main
@@ -287,7 +296,7 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
               maxLength={6}
               value={pin}
               onChange={(e) => setPin(e.target.value)}
-              className="w-full bg-black/50 border border-[#D4AF37]/20 rounded-2xl px-4 py-5 text-center text-3xl tracking-[0.5em] text-[#D4AF37] outline-none focus:border-[#D4AF37] transition-all placeholder:text-[#D4AF37]/20"
+              className="w-full bg-black/50 border rounded-2xl px-4 py-5 text-center text-3xl tracking-[0.5em] outline-none transition-all" style={{ borderColor: `${primaryColor}33`, color: primaryColor }}
               placeholder="••••"
               autoFocus
             />
@@ -296,21 +305,21 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
               type="submit"
               disabled={pin.length < 4 || isAuthenticating}
               className="w-full font-black py-5 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
-              style={{ background: 'linear-gradient(135deg, #B8943B 0%, #E8C968 50%, #B8943B 100%)', color: '#000' }}
+              style={{ backgroundColor: primaryColor, color: '#000' }}
             >
               {isAuthenticating ? <Loader2 className="animate-spin" /> : 'Öffnen'}
             </button>
           </form>
 
           {!isStandalone && (
-            <button onClick={handleInstall} className="w-full mt-6 py-3 rounded-2xl border border-white/10 text-white/50 text-sm font-medium flex items-center justify-center gap-2 hover:border-[#D4AF37]/30 hover:text-white/70 transition-all">
+            <button onClick={handleInstall} className="w-full mt-6 py-3 rounded-2xl border border-white/10 text-white/50 text-sm font-medium flex items-center justify-center gap-2 hover: hover:text-white/70 transition-all">
               <Download size={16} /> App installieren
             </button>
           )}
 
           {showIOSHint && (
             <div className="fixed inset-0 z-50 flex items-end justify-center p-4 bg-black/80" onClick={() => setShowIOSHint(false)}>
-              <div className="w-full max-w-md p-6 rounded-3xl bg-[#111] border border-[#D4AF37]/30" onClick={e => e.stopPropagation()}>
+              <div className="w-full max-w-md p-6 rounded-3xl bg-[#111] border " onClick={e => e.stopPropagation()}>
                 <h3 className="text-white font-bold text-lg mb-4">App installieren</h3>
                 {isIOS ? (
                   <div className="space-y-3 text-sm text-white/70">
@@ -325,7 +334,7 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
                     <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5"><span className="text-xl">3</span><span>Tippe auf <strong className="text-white">"Installieren"</strong></span></div>
                   </div>
                 )}
-                <button onClick={() => setShowIOSHint(false)} className="w-full mt-5 py-3 rounded-2xl bg-gradient-to-r from-[#B8943B] to-[#E8C968] text-black font-bold">Verstanden</button>
+                <button onClick={() => setShowIOSHint(false)} className="w-full mt-5 py-3 rounded-2xl text-black font-bold" style={{ backgroundColor: primaryColor }}>Verstanden</button>
               </div>
             </div>
           )}
@@ -357,7 +366,7 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
     <div className="min-h-screen w-full" style={{ background: '#050505' }}>
       {/* Offline banner */}
       {!isOnline && (
-        <div className="w-full flex items-center justify-center gap-2 py-2 px-4 text-xs font-bold tracking-wide bg-amber-500/20 border-b border-amber-500/30 text-amber-400">
+        <div className="w-full flex items-center justify-center gap-2 py-2 px-4 text-xs font-bold tracking-wide border-b" style={{ backgroundColor: `${primaryColor}33`, borderColor: `${primaryColor}4D`, color: primaryColor }}>
           <WifiOff size={12} />
           Offline – Scans werden lokal gespeichert
         </div>
@@ -377,7 +386,7 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
               <button
                 onClick={() => syncQueue(pin)}
                 disabled={!isOnline || isSyncing}
-                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border border-amber-500/40 bg-amber-500/10 text-amber-400 text-xs font-bold disabled:opacity-50 transition-all active:scale-95"
+                className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold disabled:opacity-50 transition-all active:scale-95" style={{ borderColor: `${primaryColor}66`, backgroundColor: `${primaryColor}1A`, color: primaryColor }}
                 title="Ausstehende Scans synchronisieren"
               >
                 {isSyncing ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
@@ -395,18 +404,18 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
             <div className="w-full space-y-4">
               <div className="flex gap-2">
                 <div className="flex flex-1 bg-white/5 p-1 rounded-2xl border border-white/10">
-                  <button onClick={() => setStampAmount(1)} className={`flex-1 py-3 rounded-xl text-sm font-bold ${stampAmount === 1 ? 'bg-[#D4AF37] text-black' : 'text-white/40'}`}>+1</button>
-                  <button onClick={() => setStampAmount(2)} className={`flex-1 py-3 rounded-xl text-sm font-bold ${stampAmount === 2 ? 'bg-[#D4AF37] text-black' : 'text-white/40'}`}>+2</button>
+                  <button onClick={() => setStampAmount(1)} className={`flex-1 py-3 rounded-xl text-sm font-bold ${stampAmount === 1 ? 'text-black' : 'text-white/40'}`} style={stampAmount === 1 ? { backgroundColor: primaryColor } : {}}>+1</button>
+                  <button onClick={() => setStampAmount(2)} className={`flex-1 py-3 rounded-xl text-sm font-bold ${stampAmount === 2 ? 'text-black' : 'text-white/40'}`} style={stampAmount === 2 ? { backgroundColor: primaryColor } : {}}>+2</button>
                 </div>
                 <button
                   onClick={() => setShowManualInput(!showManualInput)}
-                  className={`p-3 rounded-2xl border transition-all flex items-center justify-center ${showManualInput ? 'bg-[#D4AF37] text-black border-[#D4AF37]' : 'bg-white/5 text-white/60 border-white/10'}`}
+                  className={`p-3 rounded-2xl border transition-all flex items-center justify-center ${!showManualInput && 'bg-white/5 text-white/60 border-white/10'}`} style={showManualInput ? { backgroundColor: primaryColor, borderColor: primaryColor, color: '#000' } : {}}
                 >
                   <Keyboard size={20} />
                 </button>
                 <button
                   onClick={toggleTorch}
-                  className={`p-3 rounded-2xl border transition-all flex items-center justify-center ${torchOn ? 'bg-[#D4AF37] text-black border-[#D4AF37]' : 'bg-white/5 text-white/60 border-white/10'}`}
+                  className={`p-3 rounded-2xl border transition-all flex items-center justify-center ${!torchOn && 'bg-white/5 text-white/60 border-white/10'}`} style={torchOn ? { backgroundColor: primaryColor, borderColor: primaryColor, color: '#000' } : {}}
                 >
                   <Flashlight size={20} />
                 </button>
@@ -424,7 +433,7 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
                   />
                   <button
                     onClick={() => { if (manualId) processScan(manualId, null); }}
-                    className="bg-[#D4AF37] text-black px-6 py-3 rounded-xl font-bold active:scale-95 transition-all"
+                    className="text-black px-6 py-3 rounded-xl font-bold active:scale-95 transition-all" style={{ backgroundColor: primaryColor }}
                   >
                     OK
                   </button>
@@ -457,13 +466,13 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
 
           {scanStatus === 'queued' && (
             <div className="text-center animate-fade-in w-full">
-              <div className="w-16 h-16 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center mx-auto mb-4">
-                <Clock className="w-8 h-8 text-amber-400" />
+              <div className="w-16 h-16 rounded-full border flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: `${primaryColor}33`, borderColor: `${primaryColor}66`, color: primaryColor }}>
+                <Clock className="w-8 h-8 " />
               </div>
               <h2 className="text-2xl font-bold text-white mb-2">Offline gespeichert</h2>
               <p className="text-white/60 text-sm mb-6">{message}</p>
-              <div className="p-4 rounded-2xl border border-amber-500/20 bg-amber-500/10">
-                <p className="text-amber-400 font-bold text-sm">{pendingCount} Scan{pendingCount !== 1 ? 's' : ''} warte{pendingCount === 1 ? 't' : 'n'} auf Synchronisierung</p>
+              <div className="p-4 rounded-2xl border" style={{ borderColor: `${primaryColor}33`, backgroundColor: `${primaryColor}1A` }}>
+                <p className=" font-bold text-sm">{pendingCount} Scan{pendingCount !== 1 ? 's' : ''} warte{pendingCount === 1 ? 't' : 'n'} auf Synchronisierung</p>
               </div>
             </div>
           )}

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, use } from 'react';
 import { Users, Pizza, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock, BarChart2, Megaphone, Send, ExternalLink, Eye, EyeOff, CheckCircle, Save } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 import { PRICING } from '@/lib/pricing';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
@@ -14,6 +15,17 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   
   const [loading, setLoading] = useState(true);
   const [merchant, setMerchant] = useState<any>(null);
+  const [preMerchant, setPreMerchant] = useState<any>(null);
+  
+  useEffect(() => {
+    async function loadPreMerchant() {
+      const { data } = await supabase.from('merchants_loyality').select('*').eq('slug', slug).single();
+      if (data) setPreMerchant(data);
+    }
+    loadPreMerchant();
+  }, [slug]);
+
+  const primaryColor = merchant?.primary_color || preMerchant?.primary_color || '#D4AF37';
   const [customerCount, setCustomerCount] = useState(0);
   const [earnCount, setEarnCount] = useState(0);
   const [redeemCount, setRedeemCount] = useState(0);
@@ -580,9 +592,10 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           <div className="text-center mb-8">
             <img src="/Marketif_LOGO_Symbol.png" alt="Marketif" className="h-14 w-auto mx-auto mb-6 opacity-90" style={{ filter: 'brightness(0) invert(1)' }} />
             <h1 className="text-2xl font-bold text-white mb-2">Dashboard Login</h1>
-            <p className="text-white/40 text-sm">Bitte gib das Passwort für <span className="text-[#D4AF37]">{slug}</span> ein.</p>
+            <p className="text-white/40 text-sm">Bitte gib das Passwort für <span style={{ color: primaryColor }}>{slug}</span> ein.</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
+<style>{`input:focus { border-color: ${primaryColor} !important; }`}</style>
             <div className="relative">
               <input
                 type={showLoginPassword ? "text" : "password"}
@@ -601,7 +614,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
               </button>
             </div>
             {authError && <p className="text-red-500 text-xs text-center">{authError}</p>}
-            <button type="submit" className="w-full py-4 rounded-2xl font-bold uppercase tracking-widest text-black transition-all active:scale-95" style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}>
+            <button type="submit" className="w-full py-4 rounded-2xl font-bold uppercase tracking-widest text-black transition-all active:scale-95" style={{ backgroundColor: primaryColor }}>
               Anmelden
             </button>
           </form>
@@ -632,9 +645,6 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       setBillingLoading(false);
     }
   };
-
-  const primaryColor = merchant?.primary_color || '#D4AF37';
-
   if (merchant?.package_type?.toLowerCase() === 'silber') {
     return (
       <main className="min-h-screen flex items-center justify-center p-6" style={{ background: '#050505' }}>
