@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og';
 import { NextRequest } from 'next/server';
 import { supabase } from '@/lib/supabase';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 export const revalidate = 0;
 
 export async function GET(
@@ -18,11 +18,15 @@ export async function GET(
     const merchantSlug = searchParams.get('merchant');
     let primaryColor = '#D4AF37';
     let stampSymbol = '🍕';
-    let dbError = '';
 
     if (merchantSlug) {
-      const { data, error } = await supabase.from('merchants_loyality').select('primary_color, stamp_symbol').eq('slug', merchantSlug).single();
-      if (error) dbError = error.message || JSON.stringify(error);
+      // Use service role key to avoid RLS / Anon key edge case issues
+      const { createClient } = require('@supabase/supabase-js');
+      const adminSupabase = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      );
+      const { data } = await adminSupabase.from('merchants_loyality').select('primary_color, stamp_symbol').eq('slug', merchantSlug).single();
       if (data?.primary_color) primaryColor = data.primary_color;
       if (data?.stamp_symbol) stampSymbol = data.stamp_symbol;
     }
