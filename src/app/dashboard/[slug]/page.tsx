@@ -601,7 +601,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
               </button>
             </div>
             {authError && <p className="text-red-500 text-xs text-center">{authError}</p>}
-            <button type="submit" className="w-full py-4 rounded-2xl font-bold uppercase tracking-widest text-black transition-all active:scale-95" style={{ backgroundColor: primaryColor }}>
+            <button type="submit" className="w-full py-4 rounded-2xl font-bold uppercase tracking-widest text-black transition-all active:scale-95" style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}>
               Anmelden
             </button>
           </form>
