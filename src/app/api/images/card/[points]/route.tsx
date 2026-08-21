@@ -18,9 +18,11 @@ export async function GET(
     const merchantSlug = searchParams.get('merchant');
     let primaryColor = '#D4AF37';
     let stampSymbol = '🍕';
+    let dbError = '';
 
     if (merchantSlug) {
-      const { data } = await supabase.from('merchants_loyality').select('primary_color, stamp_symbol').eq('slug', merchantSlug).single();
+      const { data, error } = await supabase.from('merchants_loyality').select('primary_color, stamp_symbol').eq('slug', merchantSlug).single();
+      if (error) dbError = error.message || JSON.stringify(error);
       if (data?.primary_color) primaryColor = data.primary_color;
       if (data?.stamp_symbol) stampSymbol = data.stamp_symbol;
     }
