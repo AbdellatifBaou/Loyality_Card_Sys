@@ -44,6 +44,9 @@ export default function DashboardPage() {
   const [creatingMerchant, setCreatingMerchant] = useState(false);
   const [createdMerchantResult, setCreatedMerchantResult] = useState<any>(null);
 
+  const [confirmDeleteMerchant, setConfirmDeleteMerchant] = useState<any>(null);
+  const [deletingMerchant, setDeletingMerchant] = useState(false);
+
   const fetchFinances = async (year: number) => {
     setFinancesLoading(true);
     try {
@@ -252,6 +255,34 @@ export default function DashboardPage() {
       alert('Systemfehler: ' + e.message);
     } finally {
       setCreatingMerchant(false);
+    }
+  };
+
+  const handleDeleteMerchant = async () => {
+    if (!confirmDeleteMerchant) return;
+    setDeletingMerchant(true);
+    try {
+      const response = await fetch('/api/admin/delete-merchant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          password: '2025', 
+          merchantId: confirmDeleteMerchant.id
+        })
+      });
+      const data = await response.json();
+      if (data.success) {
+        setAllMerchants(prev => prev.filter(m => m.id !== confirmDeleteMerchant.id));
+        setTopMerchants(prev => prev.filter(m => m.id !== confirmDeleteMerchant.id));
+        setMerchantCount(prev => prev - 1);
+        setConfirmDeleteMerchant(null);
+      } else {
+        alert('Fehler: ' + data.error);
+      }
+    } catch (e: any) {
+      alert('Systemfehler beim Löschen: ' + e.message);
+    } finally {
+      setDeletingMerchant(false);
     }
   };
 
@@ -490,13 +521,22 @@ export default function DashboardPage() {
                             {new Date(m.created_at).toLocaleDateString('de-DE')}
                           </td>
                           <td className="p-4 text-right">
-                            <button 
-                              onClick={() => setManualActivationMerchant(m)}
-                              title="Manuell Freischalten / Rechnung"
-                              className="p-2 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors border border-blue-500/20"
-                            >
-                              <Unlock size={14} />
-                            </button>
+                            <div className="flex items-center justify-end gap-2">
+                              <button 
+                                onClick={() => setManualActivationMerchant(m)}
+                                title="Manuell Freischalten / Rechnung"
+                                className="p-2 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors border border-blue-500/20"
+                              >
+                                <Unlock size={14} />
+                              </button>
+                              <button
+                                onClick={() => setConfirmDeleteMerchant(m)}
+                                title="Händler komplett löschen"
+                                className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors border border-red-500/20"
+                              >
+                                <Trash2 size={14} />
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       ));
@@ -1032,6 +1072,46 @@ export default function DashboardPage() {
                 </div>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Delete Modal */}
+      {confirmDeleteMerchant && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm animate-fade-in">
+          <div className="bg-[#111111] border border-red-500/30 w-full max-w-md rounded-3xl p-6 shadow-2xl relative">
+            <button 
+              onClick={() => setConfirmDeleteMerchant(null)}
+              className="absolute top-4 right-4 text-white/40 hover:text-white transition-colors"
+            >
+              <X size={20} />
+            </button>
+            <div className="flex flex-col items-center text-center mb-6 mt-4">
+              <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4 text-red-500">
+                <Trash2 size={32} />
+              </div>
+              <h2 className="text-xl font-bold text-white mb-2">Händler wirklich löschen?</h2>
+              <p className="text-white/60 text-sm leading-relaxed">
+                Willst du den Händler <span className="font-bold text-red-400">{confirmDeleteMerchant.name}</span> wirklich unwiderruflich löschen? Alle Daten (Kunden, Stempel, Logins, Zahlungen) werden sofort vernichtet.
+              </p>
+            </div>
+            
+            <div className="flex gap-4">
+              <button
+                onClick={() => setConfirmDeleteMerchant(null)}
+                className="flex-1 py-3 bg-white/5 border border-white/10 text-white font-medium rounded-xl hover:bg-white/10 transition-colors"
+                disabled={deletingMerchant}
+              >
+                Abbrechen
+              </button>
+              <button
+                onClick={handleDeleteMerchant}
+                disabled={deletingMerchant}
+                className="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {deletingMerchant ? <RefreshCw className="animate-spin" size={18} /> : 'Ja, komplett löschen'}
+              </button>
+            </div>
           </div>
         </div>
       )}
