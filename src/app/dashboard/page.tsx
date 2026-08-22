@@ -3,8 +3,22 @@
 import { useState, useEffect } from 'react';
 import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Unlock, Lock, LogOut, BarChart2, Store, DollarSign, Download, FileText, X } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import { ADMIN_DICT } from '@/locales/admin';
 
 export default function DashboardPage() {
+  const [adminLang, setAdminLang] = useState('de');
+  const t = ADMIN_DICT[adminLang as keyof typeof ADMIN_DICT] || ADMIN_DICT.de;
+
+  useEffect(() => {
+    if (localStorage.getItem('admin_lang')) {
+      setAdminLang(localStorage.getItem('admin_lang') as string);
+    }
+  }, []);
+
+  const handleLangChange = (l: string) => {
+    setAdminLang(l);
+    localStorage.setItem('admin_lang', l);
+  };
   const [password, setPassword] = useState('');
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [authError, setAuthError] = useState('');
@@ -82,7 +96,7 @@ export default function DashboardPage() {
       setIsAuthorized(true);
       localStorage.setItem('admin_auth', 'true');
     } else {
-      setAuthError('Falsches Passwort');
+      setAuthError(t.wrongPassword);
     }
   };
 
@@ -372,19 +386,19 @@ export default function DashboardPage() {
             onClick={() => setActiveTab('overview')}
             className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${activeTab === 'overview' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
           >
-            <div className="flex items-center gap-2"><Activity size={16}/> Übersicht</div>
+            <div className="flex items-center gap-2"><Activity size={16}/> {t.tabOverview}</div>
           </button>
           <button 
             onClick={() => setActiveTab('analytics')}
             className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${activeTab === 'analytics' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
           >
-            <div className="flex items-center gap-2"><BarChart2 size={16}/> B2B Analytics</div>
+            <div className="flex items-center gap-2"><BarChart2 size={16}/> {t.tabAnalytics}</div>
           </button>
           <button 
             onClick={() => setActiveTab('finances')}
             className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${activeTab === 'finances' ? 'border-[#D4AF37] text-[#D4AF37]' : 'border-transparent text-white/40 hover:text-white/70'}`}
           >
-            <div className="flex items-center gap-2"><DollarSign size={16}/> Finanzen</div>
+            <div className="flex items-center gap-2"><DollarSign size={16}/> {t.tabFinances}</div>
           </button>
         </div>
 
@@ -416,7 +430,7 @@ export default function DashboardPage() {
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 bg-green-500/10 rounded-2xl border border-green-500/20"><Coffee size={22} className="text-green-500" /></div>
-                  <h2 className="text-white/60 font-medium text-sm">Vergebene Stempel</h2>
+                  <h2 className="text-white/60 font-medium text-sm">{t.stampsGiven}</h2>
                 </div>
                 <p className="text-4xl font-black text-white">{earnCount}</p>
               </div>
@@ -449,14 +463,14 @@ export default function DashboardPage() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr style={{ background: 'rgba(255,255,255,0.03)' }} className="text-white/50 text-xs uppercase tracking-wider">
-                      <th className="p-4 font-medium">Händler</th>
+                      <th className="p-4 font-medium">{t.merchant}</th>
                       <th className="p-4 font-medium">Slug</th>
                       <th className="p-4 font-medium">Paket</th>
-                      <th className="p-4 font-medium">Kunden</th>
-                      <th className="p-4 font-medium">Status</th>
+                      <th className="p-4 font-medium">{t.customers}</th>
+                      <th className="p-4 font-medium">{t.status}</th>
                       <th className="p-4 font-medium">Abo & Zahlung</th>
                       <th className="p-4 font-medium">Registriert</th>
-                      <th className="p-4 font-medium">Aktionen</th>
+                      <th className="p-4 font-medium">{t.actions}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -779,9 +793,9 @@ export default function DashboardPage() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr style={{ background: 'rgba(255,255,255,0.03)' }} className="text-white/50 text-xs uppercase tracking-wider">
-                      <th className="p-4 font-medium">Datum</th>
+                      <th className="p-4 font-medium">{t.date}</th>
                       <th className="p-4 font-medium">Kunde / E-Mail</th>
-                      <th className="p-4 font-medium">Betrag</th>
+                      <th className="p-4 font-medium">{t.amount}</th>
                       <th className="p-4 font-medium text-right">Aktion</th>
                     </tr>
                   </thead>
@@ -827,9 +841,9 @@ export default function DashboardPage() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr style={{ background: 'rgba(239, 68, 68, 0.1)' }} className="text-red-400/80 text-xs uppercase tracking-wider">
-                      <th className="p-4 font-medium">Datum</th>
+                      <th className="p-4 font-medium">{t.date}</th>
                       <th className="p-4 font-medium">Kunde / E-Mail</th>
-                      <th className="p-4 font-medium">Betrag</th>
+                      <th className="p-4 font-medium">{t.amount}</th>
                       <th className="p-4 font-medium text-right">Fehlversuche</th>
                     </tr>
                   </thead>
@@ -962,7 +976,7 @@ export default function DashboardPage() {
       {showCreateMerchant && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
           <div className="bg-[#111111] border border-white/10 rounded-3xl p-8 max-w-md w-full my-8">
-            <h3 className="text-xl font-bold text-white mb-2">Neuen Händler anlegen</h3>
+            <h3 className="text-xl font-bold text-white mb-2">{t.createMerchant}</h3>
             <p className="text-white/60 text-sm mb-6">
               Lege einen neuen Händler für das betreute Onboarding an.
             </p>
@@ -1011,7 +1025,7 @@ export default function DashboardPage() {
                 </div>
                 
                 <div>
-                  <label className="block text-xs font-medium text-white/50 mb-2">Hauptfarbe (Hex)</label>
+                  <label className="block text-xs font-medium text-white/50 mb-2">{t.primaryColor}</label>
                   <div className="flex gap-3">
                     <input 
                       type="color"
@@ -1084,7 +1098,7 @@ export default function DashboardPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-white/50 mb-2">Stempel-Symbol (Emoji)</label>
+                  <label className="block text-xs font-medium text-white/50 mb-2">{t.stampSymbol}</label>
                   <div className="space-y-2">
                     <select 
                       value={!['☕️','🥐','🍔','🍕','✂️','💅','💆‍♀️','🍺','🍹','🛍️','🎁','⭐'].includes(newMerchantSymbol) ? 'custom' : newMerchantSymbol}
@@ -1121,7 +1135,7 @@ export default function DashboardPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-white/50 mb-2">Sprache (Kunden-Schnittstelle)</label>
+                  <label className="block text-xs font-medium text-white/50 mb-2">{t.language}</label>
                   <select 
                     value={newMerchantLanguage}
                     onChange={(e) => setNewMerchantLanguage(e.target.value)}
@@ -1134,7 +1148,7 @@ export default function DashboardPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-white/50 mb-2">Paket</label>
+                  <label className="block text-xs font-medium text-white/50 mb-2">{t.package}</label>
                   <select 
                     value={newMerchantPackage}
                     onChange={(e) => setNewMerchantPackage(e.target.value)}
