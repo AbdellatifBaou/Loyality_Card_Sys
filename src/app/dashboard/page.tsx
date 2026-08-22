@@ -43,6 +43,7 @@ export default function DashboardPage() {
   const [newMerchantPrice, setNewMerchantPrice] = useState('49');
   const [newMerchantLogo, setNewMerchantLogo] = useState('');
   const [newMerchantSymbol, setNewMerchantSymbol] = useState('☕️');
+  const [newMerchantLanguage, setNewMerchantLanguage] = useState('de');
   const [creatingMerchant, setCreatingMerchant] = useState(false);
   const [createdMerchantResult, setCreatedMerchantResult] = useState<any>(null);
 
@@ -238,7 +239,7 @@ export default function DashboardPage() {
       const response = await fetch('/api/admin/create-merchant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: '2025', name: newMerchantName, primaryColor: newMerchantColor, logoUrl: newMerchantLogo, stampSymbol: newMerchantSymbol, packageType: newMerchantPackage, customPrice: newMerchantPackage === 'custom' ? parseFloat(newMerchantPrice) : null })
+        body: JSON.stringify({ password: '2025', name: newMerchantName, primaryColor: newMerchantColor, logoUrl: newMerchantLogo, stampSymbol: newMerchantSymbol, language: newMerchantLanguage, packageType: newMerchantPackage, customPrice: newMerchantPackage === 'custom' ? parseFloat(newMerchantPrice) : null })
       });
       const data = await response.json();
       if (data.success) {
@@ -1117,6 +1118,19 @@ export default function DashboardPage() {
                       />
                     )}
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-white/50 mb-2">Sprache (Kunden-Schnittstelle)</label>
+                  <select 
+                    value={newMerchantLanguage}
+                    onChange={(e) => setNewMerchantLanguage(e.target.value)}
+                    className="w-full bg-[#111111] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
+                  >
+                    <option value="de">Deutsch</option>
+                    <option value="en">Englisch</option>
+                    <option value="fr">Französisch</option>
+                  </select>
                 </div>
 
                 <div>

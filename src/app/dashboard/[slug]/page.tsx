@@ -6,6 +6,33 @@ import { supabase } from '@/lib/supabase';
 import { PRICING } from '@/lib/pricing';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
+const DICT = {
+  de: {
+    defaultStampHeader1: " von 9 Stempeln ",
+    defaultStampBody: "Du hast {points} Stempel gesammelt.",
+    redeemHeader: "Prämie eingelöst! ",
+    redeemBody: "Viel Spaß mit deiner Prämie!",
+    rewardHeader: "Belohnung bereit! ✨",
+    rewardBody: "Dein gratis Geschenk wartet auf dich!"
+  },
+  en: {
+    defaultStampHeader1: " of 9 stamps ",
+    defaultStampBody: "You have collected {points} stamps.",
+    redeemHeader: "Reward redeemed! ",
+    redeemBody: "Enjoy your reward!",
+    rewardHeader: "Reward ready! ✨",
+    rewardBody: "Your free gift is waiting for you!"
+  },
+  fr: {
+    defaultStampHeader1: " sur 9 tampons ",
+    defaultStampBody: "Vous avez collecté {points} tampons.",
+    redeemHeader: "Récompense réclamée! ",
+    redeemBody: "Profitez de votre récompense!",
+    rewardHeader: "Récompense prête! ✨",
+    rewardBody: "Votre cadeau gratuit vous attend!"
+  }
+};
+
 export default function MerchantDashboardPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug: rawSlug } = use(params);
   const slug = decodeURIComponent(rawSlug).toLowerCase();
@@ -170,12 +197,12 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
 
       setMerchant(merchantData);
       setPushSettings({
-        stamp_header: merchantData?.push_settings?.stamp_header || `{points} von 9 Stempeln ${merchantData?.stamp_symbol || '✨'}`,
-        stamp_body: merchantData?.push_settings?.stamp_body || 'Du hast {points} Stempel gesammelt. Weiter so!',
-        reward_header: merchantData?.push_settings?.reward_header || 'Belohnung bereit! ✨',
+        stamp_header: merchantData?.push_settings?.stamp_header || `${DICT[(merchantData?.language || merchant?.language || 'de') as keyof typeof DICT]?.defaultStampHeader1 || ' von 9 Stempeln '} ${merchantData?.stamp_symbol || '✨'}`,
+        stamp_body: merchantData?.push_settings?.stamp_body || `${DICT[(merchantData?.language || merchant?.language || 'de') as keyof typeof DICT]?.defaultStampBody || 'Du hast {points} Stempel gesammelt.'} Weiter so!`,
+        reward_header: merchantData?.push_settings?.reward_header || DICT[(merchantData?.language || merchant?.language || 'de') as keyof typeof DICT]?.rewardHeader || 'Belohnung bereit! ✨',
         reward_body: merchantData?.push_settings?.reward_body || merchantData?.reward_text || 'Herzlichen Glückwunsch! Du hast deine Stempelkarte voll. Zeige sie beim nächsten Mal vor.',
-        redeem_header: merchantData?.push_settings?.redeem_header || `Prämie eingelöst! ${merchantData?.stamp_symbol || '✨'}`,
-        redeem_body: merchantData?.push_settings?.redeem_body || 'Viel Spaß mit deiner Prämie! Deine Karte wurde auf 0 zurückgesetzt, du kannst nun wieder neu sammeln.',
+        redeem_header: merchantData?.push_settings?.redeem_header || `${DICT[(merchantData?.language || merchant?.language || 'de') as keyof typeof DICT]?.redeemHeader || 'Prämie eingelöst! '}${merchantData?.stamp_symbol || '✨'}`,
+        redeem_body: merchantData?.push_settings?.redeem_body || `${DICT[(merchantData?.language || merchant?.language || 'de') as keyof typeof DICT]?.redeemBody || 'Viel Spaß mit deiner Prämie!'} Deine Karte wurde auf 0 zurückgesetzt, du kannst nun wieder neu sammeln.`,
         miss_you_header: merchantData?.push_settings?.miss_you_header || `Wir vermissen dich bei ${merchantData?.name || 'uns'}! 👋`,
         miss_you_body: merchantData?.push_settings?.miss_you_body || 'Du warst schon länger nicht mehr da. Komm vorbei und zeige deine Karte — deine Stempel warten!'
       });
@@ -1377,7 +1404,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       <input 
                         type="text" 
                         className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50"
-                        placeholder={`{points} von 9 Stempeln ${merchant?.stamp_symbol || '✨'}`} 
+                        placeholder={`{points}${DICT[(merchantData?.language || merchant?.language || 'de') as keyof typeof DICT]?.defaultStampHeader1 || ' von 9 Stempeln '} ${merchant?.stamp_symbol || '✨'}`} 
                         value={pushSettings.stamp_header || ''}
                         onChange={(e) => setPushSettings({...pushSettings, stamp_header: e.target.value})}
                       />
@@ -1446,7 +1473,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         type="text" 
                         value={pushSettings.redeem_header || ''}
                         onChange={(e) => setPushSettings({...pushSettings, redeem_header: e.target.value})}
-                        placeholder={`Prämie eingelöst! `} 
+                        placeholder={`${DICT[(merchantData?.language || merchant?.language || 'de') as keyof typeof DICT]?.redeemHeader || 'Prämie eingelöst! '}`} 
                         className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50" 
                       />
                     </div>

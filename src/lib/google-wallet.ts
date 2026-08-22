@@ -4,6 +4,43 @@ import jwt from 'jsonwebtoken';
 import fs from 'fs';
 
 // Increment this whenever the card image design changes — forces Google Wallet to re-fetch
+
+const DICT = {
+  de: {
+    stamp: "Stempel",
+    address: "Adresse",
+    status: "Status",
+    redeemHeader: "Prämie eingelöst! ",
+    rewardHeader: "Belohnung bereit! ✨",
+    defaultStampHeader1: " von 9 Stempeln ",
+    defaultStampBodyNear: "Nur noch 1 Stempel bis zu deiner Gratisbelohnung! 🎉",
+    defaultStampBody: "Du hast ",
+    defaultStampBody2: " Stempel gesammelt. Weiter so!"
+  },
+  en: {
+    stamp: "Stamps",
+    address: "Address",
+    status: "Status",
+    redeemHeader: "Reward redeemed! ",
+    rewardHeader: "Reward ready! ✨",
+    defaultStampHeader1: " of 9 stamps ",
+    defaultStampBodyNear: "Only 1 stamp left until your free reward! 🎉",
+    defaultStampBody: "You have collected ",
+    defaultStampBody2: " stamps. Keep it up!"
+  },
+  fr: {
+    stamp: "Tampons",
+    address: "Adresse",
+    status: "Statut",
+    redeemHeader: "Récompense réclamée! ",
+    rewardHeader: "Récompense prête! ✨",
+    defaultStampHeader1: " sur 9 tampons ",
+    defaultStampBodyNear: "Plus qu'1 tampon avant votre récompense gratuite! 🎉",
+    defaultStampBody: "Vous avez collecté ",
+    defaultStampBody2: " tampons. Continuez comme ça!"
+  }
+};
+
 const IMAGE_VERSION = '10';
 
 // Normalize App URL: remove trailing slash if present
@@ -128,6 +165,8 @@ export const walletClient = google.walletobjects({
  * Creates a generic LoyaltyClass for the Marketif Loyalty system
  */
 export async function createLoyaltyClass(classId: string, merchant: any) {
+  const lang = merchant.language || 'de';
+  const t = DICT[lang as keyof typeof DICT] || DICT.de;
 
   const sharedFields = {
     issuerName: merchant.name,
@@ -196,7 +235,7 @@ export async function generateLoyaltyObjectJwt(classId: string, objectId: string
       alternateText: objectId.substring(0, 8),
     },
     loyaltyPoints: {
-      label: 'Stempel',
+      label: t.stamp,
       balance: {
         int: points,
       },
@@ -211,12 +250,12 @@ export async function generateLoyaltyObjectJwt(classId: string, objectId: string
     textModulesData: [
       {
         id: 'address',
-        header: 'Adresse',
+        header: t.address,
         body: merchant.address || 'Adresse unbekannt',
       },
       {
         id: 'status',
-        header: 'Status',
+        header: t.status,
         body: `Willkommen bei ${merchant.name}! 👋`,
       },
     ],
@@ -247,6 +286,8 @@ export async function generateLoyaltyObjectJwt(classId: string, objectId: string
  * Updates an existing LoyaltyObject (e.g. after adding a stamp)
  */
 export async function updateLoyaltyObjectPoints(objectId: string, points: number, isRedeem: boolean = false, merchant: any) {
+  const lang = merchant?.language || 'de';
+  const t = DICT[lang as keyof typeof DICT] || DICT.de;
   try {
     const issuerId = process.env.GOOGLE_ISSUER_ID;
     const isPublicUrl = appUrl && !appUrl.includes('localhost');
@@ -258,7 +299,7 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
     const updatedObject: any = {
       loyaltyPoints: {
         balance: { int: points },
-        label: 'Stempel',
+        label: t.stamp,
       },
       ...(isPublicUrl
         ? { heroImage: { sourceUri: { uri: heroImageUri } } }
@@ -266,12 +307,12 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
       textModulesData: [
         {
           id: 'address',
-          header: 'Adresse',
+          header: t.address,
           body: merchant?.address || 'Adresse unbekannt',
         },
         {
           id: 'status',
-          header: 'Status',
+          header: t.status,
           body: isRedeem
             ? 'Prämie erfolgreich eingelöst! 🎉'
             : points >= 9
@@ -291,7 +332,7 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
     if (isRedeem) {
       updatedObject.messages = [
         {
-          header: push.redeem_header || `Prämie eingelöst! `,
+          header: push.redeem_header || t.redeemHeader,
           body: push.redeem_body || 'Viel Spaß mit deiner Prämie! Deine Karte wurde auf 0 zurückgesetzt, du kannst nun wieder neu sammeln.',
           id: `REDEEM_MESSAGE_${Date.now()}`,
           messageType: 'TEXT_AND_NOTIFY'
@@ -308,7 +349,7 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
       };
       updatedObject.messages = [
         {
-          header: push.reward_header || 'Belohnung bereit! ✨',
+          header: push.reward_header || t.rewardHeader,
           body: push.reward_body || merchant?.reward_text || 'Herzlichen Glückwunsch! Du hast deine Stempelkarte voll. Zeige sie beim nächsten Mal vor.',
           id: `REWARD_READY_MESSAGE_${Date.now()}`,
           messageType: 'TEXT_AND_NOTIFY'
@@ -316,10 +357,10 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
       ];
     } else {
       // For regular stamps: send a silent notify to force the pass to refresh
-      const defaultStampHeader = `${points} von 9 Stempeln 🍕`;
+      const defaultStampHeader = `${points}${t.defaultStampHeader1}${merchant?.stamp_symbol || '✨'}`;
       const defaultStampBody = points >= 8
-            ? 'Nur noch 1 Stempel bis zu deiner Gratisbelohnung! 🎉'
-            : `Du hast ${points} Stempel gesammelt. Weiter so!`;
+            ? t.defaultStampBodyNear
+            : `${t.defaultStampBody}${points}${t.defaultStampBody2}`;
             
       const customHeader = push.stamp_header ? push.stamp_header.replace(/{points}/g, points.toString()) : defaultStampHeader;
       const customBody = push.stamp_body ? push.stamp_body.replace(/{points}/g, points.toString()) : defaultStampBody;

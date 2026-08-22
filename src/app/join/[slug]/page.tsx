@@ -5,6 +5,40 @@ import { Loader2, CheckCircle2, ArrowRight, MapPin, Pizza, Star } from 'lucide-r
 import { supabase } from '@/lib/supabase';
 import { use } from 'react';
 
+
+const DICT = {
+  de: {
+    merchantNotFound: "Händler nicht gefunden.",
+    errorCreating: "Fehler beim Erstellen der Karte",
+    exclusiveLoyalty: "{t.exclusiveLoyalty}",
+    exclusiveBenefits1: "Exklusive",
+    exclusiveBenefits2: "Vorteile & Specials",
+    ready: "{t.ready}",
+    addToWallet: "{t.addToWallet}",
+    defaultReward: "10 Stempel = 1 GRATIS Lieblingsgericht",
+  },
+  en: {
+    merchantNotFound: "Merchant not found.",
+    errorCreating: "Error creating pass",
+    exclusiveLoyalty: "Exclusive Loyalty Program",
+    exclusiveBenefits1: "Exclusive",
+    exclusiveBenefits2: "Benefits & Specials",
+    ready: "Ready...",
+    addToWallet: "Add to Wallet",
+    defaultReward: "10 stamps = 1 FREE reward",
+  },
+  fr: {
+    merchantNotFound: "Commerçant non trouvé.",
+    errorCreating: "Erreur lors de la création de la carte",
+    exclusiveLoyalty: "Programme de Fidélité Exclusif",
+    exclusiveBenefits1: "Avantages",
+    exclusiveBenefits2: "Exclusifs & Spéciaux",
+    ready: "Prêt...",
+    addToWallet: "Ajouter au Wallet",
+    defaultReward: "10 tampons = 1 récompense GRATUITE",
+  }
+};
+
 export default function DynamicJoinPage({ params }: { params: Promise<{ slug: string }> }) {
   const unwrappedParams = use(params);
   const slug = unwrappedParams.slug;
@@ -50,7 +84,7 @@ export default function DynamicJoinPage({ params }: { params: Promise<{ slug: st
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Fehler beim Erstellen der Karte');
+        throw new Error(data.error || DICT[(merchant?.language || 'de') as keyof typeof DICT]?.errorCreating || 'Error');
       }
 
       window.location.href = data.url;
@@ -81,7 +115,9 @@ export default function DynamicJoinPage({ params }: { params: Promise<{ slug: st
   const address = merchant.address || null;
   const primaryColor = merchant.primary_color || '#3b82f6'; // Fallback blue
   const logoUrl = merchant.logo_url || '/Aroma_logo.png'; // Fallback
-  const rewardText = merchant.reward_text || '10 Stempel = 1 GRATIS Lieblingsgericht';
+  const lang = merchant.language || 'de';
+  const t = DICT[lang as keyof typeof DICT] || DICT.de;
+  const rewardText = merchant.reward_text || t.defaultReward;
 
   return (
     <main
@@ -162,7 +198,7 @@ export default function DynamicJoinPage({ params }: { params: Promise<{ slug: st
               <Star size={20} style={{ color: primaryColor }} />
             </div>
             <div>
-              <p className="font-bold text-white text-xs leading-snug">Exklusive<br/>Vorteile & Specials</p>
+              <p className="font-bold text-white text-xs leading-snug">{t.exclusiveBenefits1}<br/>{t.exclusiveBenefits2}</p>
             </div>
           </div>
         </div>
