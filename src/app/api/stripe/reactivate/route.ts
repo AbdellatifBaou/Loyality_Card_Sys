@@ -41,10 +41,10 @@ export async function POST(req: Request) {
       });
       customerId = newCustomer.id;
 
-      const { error: insertError } = await adminSupabase.from('merchant_billing').insert({
+      const { error: insertError } = await adminSupabase.from('merchant_billing').upsert({
         merchant_id: merchant.id,
         stripe_customer_id: customerId,
-      });
+      }, { onConflict: 'merchant_id' });
       
       if (insertError) {
         return NextResponse.json({ error: 'Fehler beim Verknüpfen des Stripe-Kunden' }, { status: 500 });
