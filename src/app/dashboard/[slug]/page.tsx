@@ -1404,7 +1404,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       <input 
                         type="text" 
                         className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50"
-                        placeholder={`{points}${DICT[(merchantData?.language || merchant?.language || 'de') as keyof typeof DICT]?.defaultStampHeader1 || ' von 9 Stempeln '} ${merchant?.stamp_symbol || '✨'}`} 
+                        placeholder={`{points}${DICT[(merchant?.language || merchant?.language || 'de') as keyof typeof DICT]?.defaultStampHeader1 || ' von 9 Stempeln '} ${merchant?.stamp_symbol || '✨'}`} 
                         value={pushSettings.stamp_header || ''}
                         onChange={(e) => setPushSettings({...pushSettings, stamp_header: e.target.value})}
                       />
@@ -1473,7 +1473,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         type="text" 
                         value={pushSettings.redeem_header || ''}
                         onChange={(e) => setPushSettings({...pushSettings, redeem_header: e.target.value})}
-                        placeholder={`${DICT[(merchantData?.language || merchant?.language || 'de') as keyof typeof DICT]?.redeemHeader || 'Prämie eingelöst! '}`} 
+                        placeholder={`${DICT[(merchant?.language || merchant?.language || 'de') as keyof typeof DICT]?.redeemHeader || 'Prämie eingelöst! '}`} 
                         className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50" 
                       />
                     </div>
