@@ -46,19 +46,41 @@ export async function POST(req: Request) {
           const ext = contentType.split('/')[1] || 'png';
           const fileName = `${slug}-${Date.now()}.${ext}`;
           
-          const blob = new Blob([buffer], { type: contentType });
+          const uploadUrl = new URL(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/logos/${fileName}`);
           
-          const { error: uploadError } = await adminSupabase.storage
-            .from('logos')
-            .upload(fileName, blob, {
-              contentType: contentType,
-              upsert: true
+          // Use native https to bypass Coolify SSL certificate issues
+          const https = require('https');
+          const uploadPromise = new Promise((resolve, reject) => {
+            const req = https.request(uploadUrl, {
+              method: 'POST',
+              headers: {
+                'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY!,
+                'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
+                'Content-Type': contentType,
+                'Content-Length': buffer.length
+              },
+              rejectUnauthorized: false
+            }, (res: any) => {
+              let data = '';
+              res.on('data', (chunk: any) => data += chunk);
+              res.on('end', () => {
+                if (res.statusCode >= 200 && res.statusCode < 300) {
+                  resolve(true);
+                } else {
+                  reject(new Error(`Status ${res.statusCode}: ${data}`));
+                }
+              });
             });
-            
-          if (!uploadError) {
+            req.on('error', reject);
+            req.write(buffer);
+            req.end();
+          });
+
+          try {
+            await uploadPromise;
             const { data: publicUrlData } = adminSupabase.storage.from('logos').getPublicUrl(fileName);
             finalLogoUrl = publicUrlData.publicUrl;
-          } else {
+          } catch (uploadError) {
             console.error('Logo upload error:', uploadError);
           }
         }
