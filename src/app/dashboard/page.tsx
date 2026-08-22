@@ -1061,8 +1061,8 @@ export default function DashboardPage() {
                             const ctx = canvas.getContext('2d');
                             if (ctx) {
                               ctx.drawImage(img, 0, 0, width, height);
-                              // compress as webp or jpeg
-                              const dataUrl = canvas.toDataURL('image/webp', 0.8);
+                              // compress as png (Satori doesn't support webp)
+                              const dataUrl = canvas.toDataURL('image/png');
                               setNewMerchantLogo(dataUrl);
                             }
                           };
