@@ -1263,7 +1263,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       Dein Abonnement ist <span className="text-green-500 font-bold">aktiv</span>. Du kannst deine Zahlungsdaten, Rechnungen und dein Abo im Stripe-Kundenportal verwalten.
                     </p>
                   )}
-                  {merchant?.stripe_subscription_id !== 'manual_invoice' ? (
+                  {merchant?.stripe_subscription_id && merchant?.stripe_subscription_id !== 'manual_invoice' ? (
                     <button 
                       onClick={handleStripePortal}
                       disabled={billingLoading}
