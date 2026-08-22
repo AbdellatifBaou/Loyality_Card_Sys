@@ -1062,7 +1062,7 @@ export default function DashboardPage() {
                             if (ctx) {
                               ctx.drawImage(img, 0, 0, width, height);
                               // compress as webp or jpeg
-                              const dataUrl = canvas.toDataURL('image/png', 0.8);
+                              const dataUrl = canvas.toDataURL('image/webp', 0.8);
                               setNewMerchantLogo(dataUrl);
                             }
                           };
