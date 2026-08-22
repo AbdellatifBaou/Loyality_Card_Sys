@@ -17,17 +17,23 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   const [merchant, setMerchant] = useState<any>(null);
   const [preMerchant, setPreMerchant] = useState<any>(null);
   const [preLoading, setPreLoading] = useState(true);
+  const [notFound, setNotFound] = useState(false);
   
   useEffect(() => {
     async function loadPreMerchant() {
       const { data } = await supabase.from('merchants_loyality').select('*').eq('slug', slug).single();
-      if (data) setPreMerchant(data);
+      if (data) {
+        setPreMerchant(data);
+      } else {
+        setNotFound(true);
+      }
       setPreLoading(false);
     }
     loadPreMerchant();
   }, [slug]);
 
   const primaryColor = merchant?.primary_color || preMerchant?.primary_color || '#D4AF37';
+
   const [customerCount, setCustomerCount] = useState(0);
   const [earnCount, setEarnCount] = useState(0);
   const [redeemCount, setRedeemCount] = useState(0);
@@ -155,6 +161,12 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         staff: staffData,
         messages: fetchedMessages
       } = resData.data;
+
+      if (!merchantData) {
+        setNotFound(true);
+        setLoading(false);
+        return;
+      }
 
       setMerchant(merchantData);
       setPushSettings({
@@ -587,7 +599,20 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     }
   };
 
+  if (notFound) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-[#050505]">
+        <div className="text-center p-8 bg-[#111] border border-[#333] rounded-3xl max-w-sm mx-4">
+          <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
+          <h1 className="text-2xl font-bold text-white mb-2">Händler nicht gefunden</h1>
+          <p className="text-gray-400">Dieser Händler existiert nicht (mehr).</p>
+        </div>
+      </div>
+    );
+  }
+
   if (!isAuthorized) {
+
     if (preLoading) {
       return (
         <div className="min-h-screen flex items-center justify-center bg-black">
