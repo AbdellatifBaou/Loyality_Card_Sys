@@ -144,7 +144,7 @@ export default function DynamicJoinPage({ params }: { params: Promise<{ slug: st
             }}
           >
             <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl" style={{ background: `${primaryColor}1A`, border: `1px solid ${primaryColor}33` }}>
-              {merchant.stamp_symbol || '🍕'}
+              {merchant.stamp_symbol || '✨'}
             </div>
             <div>
               <p className="font-bold text-white text-xs leading-snug">{rewardText}</p>

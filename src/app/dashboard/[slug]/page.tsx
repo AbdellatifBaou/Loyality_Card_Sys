@@ -170,12 +170,12 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
 
       setMerchant(merchantData);
       setPushSettings({
-        stamp_header: merchantData?.push_settings?.stamp_header || '{points} von 9 Stempeln 🍕',
+        stamp_header: merchantData?.push_settings?.stamp_header || `{points} von 9 Stempeln ${merchantData?.stamp_symbol || '✨'}`,
         stamp_body: merchantData?.push_settings?.stamp_body || 'Du hast {points} Stempel gesammelt. Weiter so!',
         reward_header: merchantData?.push_settings?.reward_header || 'Belohnung bereit! ✨',
         reward_body: merchantData?.push_settings?.reward_body || merchantData?.reward_text || 'Herzlichen Glückwunsch! Du hast deine Stempelkarte voll. Zeige sie beim nächsten Mal vor.',
-        redeem_header: merchantData?.push_settings?.redeem_header || 'Prämie eingelöst! 🍕',
-        redeem_body: merchantData?.push_settings?.redeem_body || 'Guten Appetit! Deine Karte wurde auf 0 zurückgesetzt, du kannst nun wieder neu sammeln.',
+        redeem_header: merchantData?.push_settings?.redeem_header || `Prämie eingelöst! ${merchantData?.stamp_symbol || '✨'}`,
+        redeem_body: merchantData?.push_settings?.redeem_body || 'Viel Spaß mit deiner Prämie! Deine Karte wurde auf 0 zurückgesetzt, du kannst nun wieder neu sammeln.',
         miss_you_header: merchantData?.push_settings?.miss_you_header || `Wir vermissen dich bei ${merchantData?.name || 'uns'}! 👋`,
         miss_you_body: merchantData?.push_settings?.miss_you_body || 'Du warst schon länger nicht mehr da. Komm vorbei und zeige deine Karte — deine Stempel warten!'
       });
@@ -1160,7 +1160,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                     type="text"
                     value={msgTitle}
                     onChange={e => setMsgTitle(e.target.value)}
-                    placeholder="z.B. Wochenend-Special! 🍕"
+                    placeholder={`z.B. Wochenend-Special! `}
                     required
                     className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-white/50 transition-all text-sm"
                   />
@@ -1376,10 +1376,10 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       <label className="block text-xs font-medium text-white/60 mb-1">Titel</label>
                       <input 
                         type="text" 
+                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50"
+                        placeholder={`{points} von 9 Stempeln ${merchant?.stamp_symbol || '✨'}`} 
                         value={pushSettings.stamp_header || ''}
                         onChange={(e) => setPushSettings({...pushSettings, stamp_header: e.target.value})}
-                        placeholder="{points} von 9 Stempeln 🍕" 
-                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50" 
                       />
                     </div>
                     <div>
@@ -1446,7 +1446,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         type="text" 
                         value={pushSettings.redeem_header || ''}
                         onChange={(e) => setPushSettings({...pushSettings, redeem_header: e.target.value})}
-                        placeholder="Prämie eingelöst! 🍕" 
+                        placeholder={`Prämie eingelöst! `} 
                         className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50" 
                       />
                     </div>
@@ -1455,7 +1455,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       <textarea 
                         value={pushSettings.redeem_body || ''}
                         onChange={(e) => setPushSettings({...pushSettings, redeem_body: e.target.value})}
-                        placeholder="Guten Appetit! Deine Karte wurde auf 0 zurückgesetzt, du kannst nun wieder neu sammeln." 
+                        placeholder="Viel Spaß mit deiner Prämie! Deine Karte wurde auf 0 zurückgesetzt, du kannst nun wieder neu sammeln." 
                         className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50 min-h-[80px]" 
                       />
                     </div>

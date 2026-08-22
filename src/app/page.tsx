@@ -135,7 +135,7 @@ export default function LandingPage() {
                         <div className="text-xs font-bold uppercase tracking-widest" style={{color:'#D4AF37'}}>Treuekarte</div>
                       </div>
                       <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{background:'rgba(212,175,55,0.2)',border:'1px solid rgba(212,175,55,0.3)'}}>
-                        <span style={{color:'#D4AF37',fontSize:'1.2rem'}}>🍕</span>
+                        <span style={{color:'#D4AF37',fontSize:'1.2rem'}}>✨</span>
                       </div>
                     </div>
                   </div>

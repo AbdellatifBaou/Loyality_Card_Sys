@@ -17,7 +17,7 @@ export async function GET(
     const { searchParams } = new URL(_req.url);
     const merchantSlug = searchParams.get('merchant');
     let primaryColor = '#D4AF37';
-    let stampSymbol = '🍕';
+    let stampSymbol = '✨';
 
     if (merchantSlug) {
       // Use service role key to avoid RLS / Anon key edge case issues

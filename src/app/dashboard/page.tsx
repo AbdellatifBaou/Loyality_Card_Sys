@@ -1084,24 +1084,39 @@ export default function DashboardPage() {
 
                 <div>
                   <label className="block text-xs font-medium text-white/50 mb-2">Stempel-Symbol (Emoji)</label>
-                  <select 
-                    value={newMerchantSymbol}
-                    onChange={(e) => setNewMerchantSymbol(e.target.value)}
-                    className="w-full bg-[#111111] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
-                  >
-                    <option value="☕️">☕️ Kaffeetasse (Café)</option>
-                    <option value="🥐">🥐 Croissant (Bäckerei)</option>
-                    <option value="🍔">🍔 Burger (Restaurant/Imbiss)</option>
-                    <option value="🍕">🍕 Pizza (Pizzeria)</option>
-                    <option value="✂️">✂️ Schere (Friseur/Barbershop)</option>
-                    <option value="💅">💅 Nagellack (Nagelstudio)</option>
-                    <option value="💆‍♀️">💆‍♀️ Massage (Spa/Kosmetik)</option>
-                    <option value="🍺">🍺 Bier (Bar/Pub)</option>
-                    <option value="🍹">🍹 Cocktail (Bar)</option>
-                    <option value="🛍️">🛍️ Einkaufstasche (Einzelhandel)</option>
-                    <option value="🎁">🎁 Geschenk (Allgemein)</option>
-                    <option value="⭐">⭐ Stern (Allgemein)</option>
-                  </select>
+                  <div className="space-y-2">
+                    <select 
+                      value={!['☕️','🥐','🍔','🍕','✂️','💅','💆‍♀️','🍺','🍹','🛍️','🎁','⭐'].includes(newMerchantSymbol) ? 'custom' : newMerchantSymbol}
+                      onChange={(e) => {
+                        if (e.target.value === 'custom') setNewMerchantSymbol('✨');
+                        else setNewMerchantSymbol(e.target.value);
+                      }}
+                      className="w-full bg-[#111111] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
+                    >
+                      <option value="☕️">☕️ Kaffeetasse (Café)</option>
+                      <option value="🥐">🥐 Croissant (Bäckerei)</option>
+                      <option value="🍔">🍔 Burger (Restaurant/Imbiss)</option>
+                      <option value="🍕">🍕 Pizza (Pizzeria)</option>
+                      <option value="✂️">✂️ Schere (Friseur/Barbershop)</option>
+                      <option value="💅">💅 Nagellack (Nagelstudio)</option>
+                      <option value="💆‍♀️">💆‍♀️ Massage (Spa/Kosmetik)</option>
+                      <option value="🍺">🍺 Bier (Bar/Pub)</option>
+                      <option value="🍹">🍹 Cocktail (Bar)</option>
+                      <option value="🛍️">🛍️ Einkaufstasche (Einzelhandel)</option>
+                      <option value="🎁">🎁 Geschenk (Allgemein)</option>
+                      <option value="⭐">⭐ Stern (Allgemein)</option>
+                      <option value="custom">✍️ Eigenes Emoji eingeben...</option>
+                    </select>
+                    {(!['☕️','🥐','🍔','🍕','✂️','💅','💆‍♀️','🍺','🍹','🛍️','🎁','⭐'].includes(newMerchantSymbol)) && (
+                      <input 
+                        type="text"
+                        placeholder="Füge dein Emoji ein..."
+                        value={newMerchantSymbol}
+                        onChange={(e) => setNewMerchantSymbol(e.target.value)}
+                        className="w-full bg-[#1A1A1A] border border-[#D4AF37]/50 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
+                      />
+                    )}
+                  </div>
                 </div>
 
                 <div>

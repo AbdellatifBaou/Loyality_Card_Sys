@@ -291,8 +291,8 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
     if (isRedeem) {
       updatedObject.messages = [
         {
-          header: push.redeem_header || 'Prämie eingelöst! 🍕',
-          body: push.redeem_body || 'Guten Appetit! Deine Karte wurde auf 0 zurückgesetzt, du kannst nun wieder neu sammeln.',
+          header: push.redeem_header || `Prämie eingelöst! `,
+          body: push.redeem_body || 'Viel Spaß mit deiner Prämie! Deine Karte wurde auf 0 zurückgesetzt, du kannst nun wieder neu sammeln.',
           id: `REDEEM_MESSAGE_${Date.now()}`,
           messageType: 'TEXT_AND_NOTIFY'
         }
