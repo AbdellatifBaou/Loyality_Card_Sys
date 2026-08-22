@@ -10,7 +10,7 @@ function getAdminSupabase() {
 
 export async function POST(req: Request) {
   try {
-    const { password, name, primaryColor, packageType, customPrice, stampSymbol, logoUrl } = await req.json();
+    const { password, name, primaryColor, packageType, customPrice, stampSymbol, logoBase64 } = await req.json();
 
     if (password !== '2025') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -31,6 +31,40 @@ export async function POST(req: Request) {
       slug = `${slug}-${Math.floor(1000 + Math.random() * 9000)}`;
     }
 
+    // Ensure bucket exists and upload logo if provided
+    let finalLogoUrl = null;
+    if (logoBase64) {
+      try {
+        await adminSupabase.storage.createBucket('logos', { public: true });
+      } catch (e) {}
+
+      try {
+        const matches = logoBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+        if (matches && matches.length === 3) {
+          const contentType = matches[1];
+          const buffer = Buffer.from(matches[2], 'base64');
+          const ext = contentType.split('/')[1] || 'png';
+          const fileName = `${slug}-${Date.now()}.${ext}`;
+          
+          const { error: uploadError } = await adminSupabase.storage
+            .from('logos')
+            .upload(fileName, buffer, {
+              contentType: contentType,
+              upsert: true
+            });
+            
+          if (!uploadError) {
+            const { data: publicUrlData } = adminSupabase.storage.from('logos').getPublicUrl(fileName);
+            finalLogoUrl = publicUrlData.publicUrl;
+          } else {
+            console.error('Logo upload error:', uploadError);
+          }
+        }
+      } catch (uploadEx) {
+        console.error('Logo upload exception:', uploadEx);
+      }
+    }
+
     // Insert Merchant
     const { data: newMerchant, error: insertError } = await adminSupabase
       .from('merchants_loyality')
@@ -38,6 +72,8 @@ export async function POST(req: Request) {
         name: name,
         slug: slug,
         primary_color: primaryColor,
+        stamp_symbol: stampSymbol || '☕️',
+        logo_url: finalLogoUrl,
         is_active: true,
         subscription_status: 'active',
         package_type: packageType,

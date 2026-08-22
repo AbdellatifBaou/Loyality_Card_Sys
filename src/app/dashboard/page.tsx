@@ -1028,15 +1028,58 @@ export default function DashboardPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-white/50 mb-2">Logo URL (Bildlink)</label>
+                  <label className="block text-xs font-medium text-white/50 mb-2">Logo hochladen</label>
                   <input 
-                    type="text"
-                    value={newMerchantLogo}
-                    onChange={(e) => setNewMerchantLogo(e.target.value)}
-                    placeholder="z.B. https://mein-shop.de/logo.png"
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const reader = new FileReader();
+                        reader.onload = (event) => {
+                          const img = new Image();
+                          img.onload = () => {
+                            const canvas = document.createElement('canvas');
+                            let width = img.width;
+                            let height = img.height;
+                            const maxSize = 500;
+                            
+                            if (width > height) {
+                              if (width > maxSize) {
+                                height *= maxSize / width;
+                                width = maxSize;
+                              }
+                            } else {
+                              if (height > maxSize) {
+                                width *= maxSize / height;
+                                height = maxSize;
+                              }
+                            }
+                            
+                            canvas.width = width;
+                            canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            if (ctx) {
+                              ctx.drawImage(img, 0, 0, width, height);
+                              // compress as webp or jpeg
+                              const dataUrl = canvas.toDataURL('image/png', 0.8);
+                              setNewMerchantLogo(dataUrl);
+                            }
+                          };
+                          img.src = event.target?.result as string;
+                        };
+                        reader.readAsDataURL(file);
+                      }
+                    }}
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
                   />
-                  <p className="text-[10px] text-white/30 mt-1">Optional. Am besten ein transparentes PNG im quadratischen Format.</p>
+                  {newMerchantLogo && (
+                    <div className="mt-2 text-green-400 text-xs flex items-center">
+                      <span className="w-2 h-2 rounded-full bg-green-400 mr-2"></span>
+                      Bild erfolgreich geladen & optimiert
+                    </div>
+                  )}
+                  <p className="text-[10px] text-white/30 mt-1">Lade dein Logo hoch (wird automatisch zugeschnitten und optimiert).</p>
                 </div>
 
                 <div>
