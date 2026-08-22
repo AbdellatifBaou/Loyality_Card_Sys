@@ -10,7 +10,7 @@ function getAdminSupabase() {
 
 export async function POST(req: Request) {
   try {
-    const { password, name, primaryColor, packageType, customPrice } = await req.json();
+    const { password, name, primaryColor, packageType, customPrice, stampSymbol, logoUrl } = await req.json();
 
     if (password !== '2025') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

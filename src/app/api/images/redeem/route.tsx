@@ -1,14 +1,36 @@
 import { ImageResponse } from 'next/og';
+import { NextRequest } from 'next/server';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 export const revalidate = 0;
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '');
 
-  const GOLD       = '#D4AF37';
-  const GOLD_LIGHT = '#FFE066';
-  const GOLD_DIM   = 'rgba(212,175,55,0.4)';
+  const { searchParams } = new URL(req.url);
+  const merchantSlug = searchParams.get('merchant');
+  let primaryColor = '#D4AF37';
+
+  if (merchantSlug) {
+    const { createClient } = require('@supabase/supabase-js');
+    const adminSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+    const { data } = await adminSupabase.from('merchants_loyality').select('primary_color').eq('slug', merchantSlug).single();
+    if (data?.primary_color) primaryColor = data.primary_color;
+  }
+
+  const GOLD       = primaryColor;
+  const GOLD_LIGHT = primaryColor;
+  const hexToRgb = (hex: string) => {
+    const shorthandRegex = /^#?([a-f\d])([a-f\d])([a-f\d])$/i;
+    hex = hex.replace(shorthandRegex, (m, r, g, b) => r + r + g + g + b + b);
+    const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+    return result ? `${parseInt(result[1], 16)},${parseInt(result[2], 16)},${parseInt(result[3], 16)}` : '212,175,55';
+  };
+  const rgb = hexToRgb(primaryColor);
+  const GOLD_DIM   = `rgba(${rgb},0.4)`;
 
   return new ImageResponse(
     (

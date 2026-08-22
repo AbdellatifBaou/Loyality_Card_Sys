@@ -5,7 +5,11 @@ export const revalidate = 86400;
 
 // Generates a properly square, padded logo for Google Wallet
 // Google Wallet crops programLogo to a circle — padding prevents cut-off
-export async function GET() {
+export async function GET(req: Request) {
+  const { searchParams } = new URL(req.url);
+  const customUrl = searchParams.get('url');
+  const customBg = searchParams.get('bg') || '0A0A0A';
+
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '');
 
   return new ImageResponse(
@@ -17,7 +21,7 @@ export async function GET() {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: '#0A0A0A',
+          background: #,
           borderRadius: '50%',
           padding: '36px',
         }}

@@ -134,7 +134,9 @@ export async function createLoyaltyClass(classId: string, merchant: any) {
     programName: `${merchant.name} Treueprogramm`,
     programLogo: {
       sourceUri: {
-        uri: merchant.logo_url || `${appUrl}/api/images/logo`,
+        uri: merchant.logo_url 
+          ? `${appUrl}/api/images/logo?url=${encodeURIComponent(merchant.logo_url)}&bg=${merchant.primary_color?.replace('#', '') || '0A0A0A'}`
+          : `${appUrl}/api/images/logo`,
       },
     },
     hexBackgroundColor: merchant.primary_color || '#1A3828',

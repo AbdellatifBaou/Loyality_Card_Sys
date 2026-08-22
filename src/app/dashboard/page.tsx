@@ -41,6 +41,8 @@ export default function DashboardPage() {
   const [newMerchantColor, setNewMerchantColor] = useState('#D4AF37');
   const [newMerchantPackage, setNewMerchantPackage] = useState('custom');
   const [newMerchantPrice, setNewMerchantPrice] = useState('49');
+  const [newMerchantLogo, setNewMerchantLogo] = useState('');
+  const [newMerchantSymbol, setNewMerchantSymbol] = useState('☕️');
   const [creatingMerchant, setCreatingMerchant] = useState(false);
   const [createdMerchantResult, setCreatedMerchantResult] = useState<any>(null);
 
@@ -236,13 +238,7 @@ export default function DashboardPage() {
       const response = await fetch('/api/admin/create-merchant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          password: '2025', 
-          name: newMerchantName, 
-          primaryColor: newMerchantColor, 
-          packageType: newMerchantPackage, 
-          customPrice: newMerchantPackage === 'custom' ? newMerchantPrice : null 
-        })
+        body: JSON.stringify({ password: '2025', name: newMerchantName, primaryColor: newMerchantColor, logoUrl: newMerchantLogo, stampSymbol: newMerchantSymbol, packageType: newMerchantPackage, customPrice: newMerchantPackage === 'custom' ? parseFloat(newMerchantPrice) : null })
       });
       const data = await response.json();
       if (data.success) {
@@ -992,6 +988,8 @@ export default function DashboardPage() {
                     setShowCreateMerchant(false);
                     setCreatedMerchantResult(null);
                     setNewMerchantName('');
+                    setNewMerchantLogo('');
+                    setNewMerchantSymbol('☕️');
                   }}
                   className="w-full py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-colors"
                 >
@@ -1027,6 +1025,40 @@ export default function DashboardPage() {
                       className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-white/50 mb-2">Logo URL (Bildlink)</label>
+                  <input 
+                    type="text"
+                    value={newMerchantLogo}
+                    onChange={(e) => setNewMerchantLogo(e.target.value)}
+                    placeholder="z.B. https://mein-shop.de/logo.png"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
+                  />
+                  <p className="text-[10px] text-white/30 mt-1">Optional. Am besten ein transparentes PNG im quadratischen Format.</p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-white/50 mb-2">Stempel-Symbol (Emoji)</label>
+                  <select 
+                    value={newMerchantSymbol}
+                    onChange={(e) => setNewMerchantSymbol(e.target.value)}
+                    className="w-full bg-[#111111] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
+                  >
+                    <option value="☕️">☕️ Kaffeetasse (Café)</option>
+                    <option value="🥐">🥐 Croissant (Bäckerei)</option>
+                    <option value="🍔">🍔 Burger (Restaurant/Imbiss)</option>
+                    <option value="🍕">🍕 Pizza (Pizzeria)</option>
+                    <option value="✂️">✂️ Schere (Friseur/Barbershop)</option>
+                    <option value="💅">💅 Nagellack (Nagelstudio)</option>
+                    <option value="💆‍♀️">💆‍♀️ Massage (Spa/Kosmetik)</option>
+                    <option value="🍺">🍺 Bier (Bar/Pub)</option>
+                    <option value="🍹">🍹 Cocktail (Bar)</option>
+                    <option value="🛍️">🛍️ Einkaufstasche (Einzelhandel)</option>
+                    <option value="🎁">🎁 Geschenk (Allgemein)</option>
+                    <option value="⭐">⭐ Stern (Allgemein)</option>
+                  </select>
                 </div>
 
                 <div>
