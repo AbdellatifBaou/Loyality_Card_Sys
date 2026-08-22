@@ -76,8 +76,8 @@ export async function GET(
           ) : idx === 9 ? (
             <span style={{ fontSize: '72px', lineHeight: 1 }}>🎁</span>
           ) : (
-            <span style={{ color: GOLD_DIM, fontSize: '28px', fontWeight: 'bold' }}>
-              {idx + 1}
+            <span style={{ fontSize: '50px', lineHeight: 1, opacity: 0.2 }}>
+              {stampSymbol}
             </span>
           )}
         </div>

@@ -135,16 +135,16 @@ export default function DynamicJoinPage({ params }: { params: Promise<{ slug: st
 
 
         {/* Info Cards */}
-        <div className="w-full max-w-md px-6 grid grid-cols-2 gap-3 mb-10 mt-6">
-          <div
-            className="p-5 rounded-3xl flex flex-col gap-3"
-            style={{
-              background: 'rgba(255,255,255,0.02)',
-              border: '1px solid rgba(255,255,255,0.05)',
+        <div className="grid grid-cols-2 gap-4 mb-10 w-full max-w-sm">
+          <div 
+            className="p-4 rounded-3xl flex flex-col items-start gap-4"
+            style={{ 
+              background: '#0F0F0F',
+              border: '1px solid #222'
             }}
           >
-            <div className="w-10 h-10 rounded-2xl flex items-center justify-center" style={{ background: `${primaryColor}1A`, border: `1px solid ${primaryColor}33` }}>
-              <Pizza size={20} style={{ color: primaryColor }} />
+            <div className="w-10 h-10 rounded-2xl flex items-center justify-center text-xl" style={{ background: `${primaryColor}1A`, border: `1px solid ${primaryColor}33` }}>
+              {merchant.stamp_symbol || '🍕'}
             </div>
             <div>
               <p className="font-bold text-white text-xs leading-snug">{rewardText}</p>
