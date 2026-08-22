@@ -43,22 +43,26 @@ export async function POST(req: Request) {
         if (matches && matches.length === 3) {
           const contentType = matches[1];
           const buffer = Buffer.from(matches[2], 'base64');
-          const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
           const ext = contentType.split('/')[1] || 'png';
           const fileName = `${slug}-${Date.now()}.${ext}`;
           
-          const { error: uploadError } = await adminSupabase.storage
-            .from('logos')
-            .upload(fileName, arrayBuffer, {
-              contentType: contentType,
-              upsert: true
-            });
-            
-          if (!uploadError) {
+          const uploadUrl = `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/logos/${fileName}`;
+          
+          const uploadResponse = await fetch(uploadUrl, {
+            method: 'POST',
+            headers: {
+              'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY!,
+              'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
+              'Content-Type': contentType,
+            },
+            body: buffer
+          });
+          
+          if (uploadResponse.ok) {
             const { data: publicUrlData } = adminSupabase.storage.from('logos').getPublicUrl(fileName);
             finalLogoUrl = publicUrlData.publicUrl;
           } else {
-            console.error('Logo upload error:', uploadError);
+            console.error('Logo upload error:', await uploadResponse.text());
           }
         }
       } catch (uploadEx) {
