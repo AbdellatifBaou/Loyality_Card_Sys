@@ -31,61 +31,12 @@ export async function POST(req: Request) {
       slug = `${slug}-${Math.floor(1000 + Math.random() * 9000)}`;
     }
 
-    // Ensure bucket exists and upload logo if provided
+    // We completely bypass Supabase Storage and save the base64 string directly into the DB.
     let finalLogoUrl = null;
     if (logoBase64) {
-      try {
-        await adminSupabase.storage.createBucket('logos', { public: true });
-      } catch (e) {}
-
-      try {
-        const matches = logoBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
-        if (matches && matches.length === 3) {
-          const contentType = matches[1];
-          const buffer = Buffer.from(matches[2], 'base64');
-          const ext = contentType.split('/')[1] || 'png';
-          const fileName = `${slug}-${Date.now()}.${ext}`;
-          
-          const uploadUrl = new URL(`${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/logos/${fileName}`);
-          
-          // Use native https to bypass Coolify SSL certificate issues
-          const https = require('https');
-          const uploadPromise = new Promise((resolve, reject) => {
-            const req = https.request(uploadUrl, {
-              method: 'POST',
-              headers: {
-                'apikey': process.env.SUPABASE_SERVICE_ROLE_KEY!,
-                'Authorization': `Bearer ${process.env.SUPABASE_SERVICE_ROLE_KEY!}`,
-                'Content-Type': contentType,
-                'Content-Length': buffer.length
-              },
-              rejectUnauthorized: false
-            }, (res: any) => {
-              let data = '';
-              res.on('data', (chunk: any) => data += chunk);
-              res.on('end', () => {
-                if (res.statusCode >= 200 && res.statusCode < 300) {
-                  resolve(true);
-                } else {
-                  reject(new Error(`Status ${res.statusCode}: ${data}`));
-                }
-              });
-            });
-            req.on('error', reject);
-            req.write(buffer);
-            req.end();
-          });
-
-          try {
-            await uploadPromise;
-            const { data: publicUrlData } = adminSupabase.storage.from('logos').getPublicUrl(fileName);
-            finalLogoUrl = publicUrlData.publicUrl;
-          } catch (uploadError) {
-            console.error('Logo upload error:', uploadError);
-          }
-        }
-      } catch (uploadEx) {
-        console.error('Logo upload exception:', uploadEx);
+      const matches = logoBase64.match(/^data:([A-Za-z-+\/]+);base64,(.+)$/);
+      if (matches) {
+        finalLogoUrl = logoBase64;
       }
     }
 

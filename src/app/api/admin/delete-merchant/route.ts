@@ -38,25 +38,10 @@ export async function POST(req: Request) {
     const { data: merchantData } = await adminSupabase.from('merchants_loyality').select('logo_url').eq('id', merchantId).single();
 
     // 5. Delete merchant
-    const { error: merchantError } = await adminSupabase
-      .from('merchants_loyality')
-      .delete()
-      .eq('id', merchantId);
+    const { error: dbError } = await adminSupabase.from('merchants_loyality').delete().eq('id', merchantId);
 
-    if (merchantError) throw merchantError;
-
-    // 6. Delete logo if exists
-    if (merchantData?.logo_url) {
-      try {
-        const urlObj = new URL(merchantData.logo_url);
-        const pathParts = urlObj.pathname.split('/');
-        const fileName = pathParts[pathParts.length - 1];
-        if (fileName) {
-          await adminSupabase.storage.from('logos').remove([fileName]);
-        }
-      } catch (e) {
-        console.error('Failed to delete logo', e);
-      }
+    if (dbError) {
+      return NextResponse.json({ success: false, error: dbError.message });
     }
 
     return NextResponse.json({ success: true });

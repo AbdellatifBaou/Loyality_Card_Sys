@@ -1,14 +1,31 @@
 import { ImageResponse } from 'next/og';
+import { createClient } from '@supabase/supabase-js';
 
 export const runtime = 'edge';
 export const revalidate = 86400;
 
-// Generates a properly square, padded logo for Google Wallet
-// Google Wallet crops programLogo to a circle — padding prevents cut-off
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
-  const customUrl = searchParams.get('url');
-  const customBg = searchParams.get('bg') || '0A0A0A';
+  const slug = searchParams.get('slug');
+  let customUrl = searchParams.get('url');
+  let customBg = searchParams.get('bg') || '0A0A0A';
+
+  if (slug && !customUrl) {
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    );
+    const { data } = await supabase
+      .from('merchants_loyality')
+      .select('logo_url, primary_color')
+      .eq('slug', slug)
+      .single();
+      
+    if (data) {
+      customUrl = data.logo_url;
+      customBg = (data.primary_color || '0A0A0A').replace('#', '');
+    }
+  }
 
   const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '');
 
