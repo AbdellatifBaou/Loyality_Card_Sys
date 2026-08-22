@@ -43,12 +43,13 @@ export async function POST(req: Request) {
         if (matches && matches.length === 3) {
           const contentType = matches[1];
           const buffer = Buffer.from(matches[2], 'base64');
+          const arrayBuffer = buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength);
           const ext = contentType.split('/')[1] || 'png';
           const fileName = `${slug}-${Date.now()}.${ext}`;
           
           const { error: uploadError } = await adminSupabase.storage
             .from('logos')
-            .upload(fileName, buffer, {
+            .upload(fileName, arrayBuffer, {
               contentType: contentType,
               upsert: true
             });

@@ -34,6 +34,9 @@ export async function POST(req: Request) {
     // 4. Delete billing
     await adminSupabase.from('merchant_billing').delete().eq('merchant_id', merchantId);
 
+    // Get the merchant to see if they have a logo
+    const { data: merchantData } = await adminSupabase.from('merchants_loyality').select('logo_url').eq('id', merchantId).single();
+
     // 5. Delete merchant
     const { error: merchantError } = await adminSupabase
       .from('merchants_loyality')
@@ -41,6 +44,20 @@ export async function POST(req: Request) {
       .eq('id', merchantId);
 
     if (merchantError) throw merchantError;
+
+    // 6. Delete logo if exists
+    if (merchantData?.logo_url) {
+      try {
+        const urlObj = new URL(merchantData.logo_url);
+        const pathParts = urlObj.pathname.split('/');
+        const fileName = pathParts[pathParts.length - 1];
+        if (fileName) {
+          await adminSupabase.storage.from('logos').remove([fileName]);
+        }
+      } catch (e) {
+        console.error('Failed to delete logo', e);
+      }
+    }
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
