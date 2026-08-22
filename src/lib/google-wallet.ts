@@ -217,6 +217,8 @@ export async function createLoyaltyClass(classId: string, merchant: any) {
  * Generates the JWT link to "Add to Google Wallet"
  */
 export async function generateLoyaltyObjectJwt(classId: string, objectId: string, points: number, merchant: any) {
+  const lang = merchant?.language || 'de';
+  const t = DICT[lang as keyof typeof DICT] || DICT.de;
   const credentials = getCredentials();
 
   // Ensure private key has proper newlines for JWT signing
