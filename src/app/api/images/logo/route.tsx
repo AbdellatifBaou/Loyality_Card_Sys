@@ -21,13 +21,13 @@ export async function GET(req: Request) {
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          background: #,
+          background: `#${customBg}`,
           borderRadius: '50%',
           padding: '36px',
         }}
       >
         <img
-          src={`${appUrl}/Aroma_logo.png`}
+          src={customUrl || `${appUrl}/Aroma_logo.png`}
           width={216}
           height={216}
           style={{ objectFit: 'contain' }}
