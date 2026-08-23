@@ -572,7 +572,7 @@ export default function DashboardPage() {
             <div className="rounded-3xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="p-6 border-b border-white/5 flex items-center gap-3">
                 <Activity size={20} className="text-white/60" />
-                <h2 className="text-lg font-bold text-white">Letzte Aktivitäten</h2>
+                <h2 className="text-lg font-bold text-white">{t.recentActivity}</h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
@@ -1022,12 +1022,12 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-white/50 mb-2">Firmenname</label>
+                  <label className="block text-xs font-medium text-white/50 mb-2">{t.merchantName}</label>
                   <input 
                     type="text"
                     value={newMerchantName}
                     onChange={(e) => setNewMerchantName(e.target.value)}
-                    placeholder="z.B. Aroma Café"
+                    placeholder={t.merchantNamePlaceholder}
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
                   />
                 </div>
@@ -1051,7 +1051,7 @@ export default function DashboardPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-white/50 mb-2">Logo hochladen</label>
+                  <label className="block text-xs font-medium text-white/50 mb-2">{t.logoUpload}</label>
                   <input 
                     type="file"
                     accept="image/*"
@@ -1164,7 +1164,7 @@ export default function DashboardPage() {
                   >
                     <option className="bg-[#111111] text-white" value="silber">Silber Paket</option>
                     <option className="bg-[#111111] text-white" value="gold">Gold Paket</option>
-                    <option className="bg-[#111111] text-white" value="custom">Individuelles Paket (Custom)</option>
+                    <option className="bg-[#111111] text-white" value="custom">{t.customPackage}</option>
                   </select>
                 </div>
 
@@ -1216,7 +1216,7 @@ export default function DashboardPage() {
               <div className="w-16 h-16 bg-red-500/10 rounded-full flex items-center justify-center mb-4 text-red-500">
                 <Trash2 size={32} />
               </div>
-              <h2 className="text-xl font-bold text-white mb-2">Händler wirklich löschen?</h2>
+              <h2 className="text-xl font-bold text-white mb-2">{t.confirmDeleteMerchant}</h2>
               <p className="text-white/60 text-sm leading-relaxed">
                 Willst du den Händler <span className="font-bold text-red-400">{confirmDeleteMerchant.name}</span> wirklich unwiderruflich löschen? Alle Daten (Kunden, Stempel, Logins, Zahlungen) werden sofort vernichtet.
               </p>

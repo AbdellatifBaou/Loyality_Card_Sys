@@ -626,13 +626,16 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     }
   };
 
+  const lang = preMerchant?.language || 'de';
+  const t = MERCHANT_DICT[lang as keyof typeof MERCHANT_DICT] || MERCHANT_DICT.de;
+
   if (notFound) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-[#050505]">
         <div className="text-center p-8 bg-[#111] border border-[#333] rounded-3xl max-w-sm mx-4">
           <AlertTriangle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-          <h1 className="text-2xl font-bold text-white mb-2">Händler nicht gefunden</h1>
-          <p className="text-gray-400">Dieser Händler existiert nicht (mehr).</p>
+          <h1 className="text-2xl font-bold text-white mb-2">{t.merchantNotFound}</h1>
+          <p className="text-gray-400">{t.merchantNotFoundDesc}</p>
         </div>
       </div>
     );
@@ -652,8 +655,8 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         <div className="w-full max-w-md p-8 rounded-[40px] relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #0A0A0A 0%, #111111 100%)', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
           <div className="text-center mb-8">
             <img src="/Marketif_LOGO_Symbol.png" alt="Marketif" className="h-14 w-auto mx-auto mb-6 opacity-90" style={{ filter: 'brightness(0) invert(1)' }} />
-            <h1 className="text-2xl font-bold text-white mb-2">Dashboard Login</h1>
-            <p className="text-white/40 text-sm">Bitte gib das Passwort für <span style={{ color: primaryColor }}>{slug}</span> ein.</p>
+            <h1 className="text-2xl font-bold text-white mb-2">{t.dashboardLogin}</h1>
+            <p className="text-white/40 text-sm">{t.enterPasswordFor}<span style={{ color: primaryColor }}>{slug}</span> ein.</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
 <style>{`input:focus { border-color: ${primaryColor} !important; }`}</style>
@@ -663,7 +666,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="w-full bg-black/50 border border-white/20 rounded-2xl px-6 py-4 text-center text-white outline-none focus:border-white/50 transition-all"
-                placeholder="Passwort"
+                placeholder={t.passwordPlaceholder}
                 autoFocus
               />
               <button 
@@ -713,7 +716,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           <div className="mx-auto w-20 h-20 bg-white/10 rounded-full flex items-center justify-center mb-6">
             <Lock style={{ color: primaryColor }} size={40} />
           </div>
-          <h2 className="text-3xl font-bold text-white mb-4">Dashboard Gesperrt</h2>
+          <h2 className="text-3xl font-bold text-white mb-4">{t.dashboardLocked}</h2>
           <p className="text-white/60 mb-8 max-w-2xl mx-auto leading-relaxed">
             Als Nutzer des Silber-Pakets hast du keinen Zugriff auf das Analytics-Dashboard.
             Schalte jetzt detaillierte Statistiken, Kundenverwaltung und Mitarbeiter-PINs frei!
@@ -873,28 +876,28 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20"><Users size={22} className="text-blue-500" /></div>
-                  <h2 className="text-white/60 font-medium text-sm">Aktive Karten</h2>
+                  <h2 className="text-white/60 font-medium text-sm">{t.activeCards}</h2>
                 </div>
                 <p className="text-4xl font-black text-white">{customerCount}</p>
               </div>
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 bg-purple-500/10 rounded-2xl border border-purple-500/20"><UserPlus size={22} className="text-purple-500" /></div>
-                  <h2 className="text-white/60 font-medium text-sm">Kunden (Dieser Monat)</h2>
+                  <h2 className="text-white/60 font-medium text-sm">{t.customersThisMonth}</h2>
                 </div>
                 <p className="text-4xl font-black text-white">{currentMonthCustomers}</p>
               </div>
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 bg-green-500/10 rounded-2xl border border-green-500/20"><Pizza size={22} className="text-green-500" /></div>
-                  <h2 className="text-white/60 font-medium text-sm">Gesammelte Stempel</h2>
+                  <h2 className="text-white/60 font-medium text-sm">{t.stampsCollected}</h2>
                 </div>
                 <p className="text-4xl font-black text-white">{earnCount}</p>
               </div>
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 rounded-2xl" style={{ background: `${primaryColor}1A`, border: `1px solid ${primaryColor}33` }}><Gift size={22} style={{ color: primaryColor }} /></div>
-                  <h2 className="text-white/60 font-medium text-sm">Prämien ausgegeben</h2>
+                  <h2 className="text-white/60 font-medium text-sm">{t.rewardsGiven}</h2>
                 </div>
                 <p className="text-4xl font-black text-white">{redeemCount}</p>
               </div>
@@ -906,7 +909,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                 <div className="rounded-3xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                   <div className="p-6 border-b border-white/5 flex items-center gap-3">
                     <CreditCard size={20} className="text-white/60" />
-                    <h2 className="text-lg font-bold text-white">Kundenkarten</h2>
+                    <h2 className="text-lg font-bold text-white">{t.customerCards}</h2>
                     <span className="ml-auto text-xs text-white/40 font-medium">{customerCount} Gesamt</span>
                   </div>
                   {/* Search & Export */}
@@ -929,9 +932,9 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                     <table className="w-full text-left border-collapse">
                       <thead>
                         <tr style={{ background: 'rgba(255,255,255,0.03)' }} className="text-white/50 text-xs uppercase tracking-wider">
-                          <th className="p-4 font-medium">Kunden-ID</th>
-                          <th className="p-4 font-medium">Stempel</th>
-                          <th className="p-4 font-medium">Fortschritt</th>
+                          <th className="p-4 font-medium">{t.customerId}</th>
+                          <th className="p-4 font-medium">{t.stamps}</th>
+                          <th className="p-4 font-medium">{t.progress}</th>
                           <th className="p-4 font-medium"></th>
                         </tr>
                       </thead>
@@ -979,7 +982,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   <div className="p-6 border-b border-white/5 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <Users size={20} className="text-white/60" />
-                      <h2 className="text-lg font-bold text-white">Mitarbeiter (PINs)</h2>
+                      <h2 className="text-lg font-bold text-white">{t.staffPins}</h2>
                     </div>
                     <button onClick={() => setShowStaffModal(true)} className="p-2 rounded-lg bg-white/5 text-white/60 hover:bg-white/10 transition-all">
                       <UserPlus size={18} />
@@ -999,7 +1002,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         <div className="flex items-center gap-3">
                           <div className="text-right">
                             <p className="text-sm font-bold text-white">{s.stampsGiven || 0}</p>
-                            <p className="text-[10px] text-white/40 uppercase tracking-widest">Stempel</p>
+                            <p className="text-[10px] text-white/40 uppercase tracking-widest">{t.stamps}</p>
                           </div>
                           <button onClick={() => deleteStaff(s.id)} className="text-white/10 hover:text-red-500 transition-colors p-2">
                             <Trash2 size={14} />
@@ -1015,7 +1018,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                 <div className="rounded-3xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                   <div className="p-6 border-b border-white/5 flex items-center gap-3">
                     <Activity size={20} className="text-white/60" />
-                    <h2 className="text-lg font-bold text-white">Aktivität</h2>
+                    <h2 className="text-lg font-bold text-white">{t.activity}</h2>
                   </div>
                   <div className="p-4 space-y-4">
                     {recentActivity.map((a: any) => (
@@ -1140,7 +1143,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   <thead>
                     <tr style={{ background: 'rgba(255,255,255,0.03)' }} className="text-white/50 text-xs uppercase tracking-wider">
                       <th className="p-4 font-medium w-16">Rang</th>
-                      <th className="p-4 font-medium">Kunden-ID</th>
+                      <th className="p-4 font-medium">{t.customerId}</th>
                       <th className="p-4 font-medium text-right">Lifetime Stempel</th>
                     </tr>
                   </thead>
@@ -1410,7 +1413,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-white/60 mb-1">Nachricht</label>
+                      <label className="block text-xs font-medium text-white/60 mb-1">{t.pushMessage}</label>
                       <textarea 
                         value={pushSettings.stamp_body || ''}
                         onChange={(e) => setPushSettings({...pushSettings, stamp_body: e.target.value})}
@@ -1444,7 +1447,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-white/60 mb-1">Nachricht</label>
+                      <label className="block text-xs font-medium text-white/60 mb-1">{t.pushMessage}</label>
                       <textarea 
                         value={pushSettings.reward_body || ''}
                         onChange={(e) => setPushSettings({...pushSettings, reward_body: e.target.value})}
@@ -1478,7 +1481,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-white/60 mb-1">Nachricht</label>
+                      <label className="block text-xs font-medium text-white/60 mb-1">{t.pushMessage}</label>
                       <textarea 
                         value={pushSettings.redeem_body || ''}
                         onChange={(e) => setPushSettings({...pushSettings, redeem_body: e.target.value})}
@@ -1512,7 +1515,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       />
                     </div>
                     <div>
-                      <label className="block text-xs font-medium text-white/60 mb-1">Nachricht</label>
+                      <label className="block text-xs font-medium text-white/60 mb-1">{t.pushMessage}</label>
                       <textarea 
                         value={pushSettings.miss_you_body || ''}
                         onChange={(e) => setPushSettings({...pushSettings, miss_you_body: e.target.value})}
@@ -1703,7 +1706,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       {showStaffModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setShowStaffModal(false)}>
           <div className="w-full max-w-sm p-8 rounded-[40px] space-y-6 animate-scale-up" style={{ background: '#111', border: '1px solid rgba(212,175,55,0.2)' }} onClick={e => e.stopPropagation()}>
-            <h3 className="text-xl font-bold text-white">Mitarbeiter hinzufügen</h3>
+            <h3 className="text-xl font-bold text-white">{t.addStaff}</h3>
             <form onSubmit={addStaff} className="space-y-4">
               <input value={newStaffName} onChange={e => setNewStaffName(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-white/50 transition-all" placeholder="Name (z.B. Latif)" />
               <input value={newStaffPin} onChange={e => setNewStaffPin(e.target.value)} maxLength={6} className="w-full bg-black/50 border border-white/10 rounded-2xl px-6 py-4 text-white font-mono tracking-[0.5em] text-center outline-none focus:border-white/50 transition-all" placeholder="PIN" />
@@ -1730,7 +1733,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             </div>
             <p className="text-white/60 text-sm">Karte {confirmDelete.wallet_object_id?.substring(0, 8)}... unwiderruflich löschen?</p>
             <div className="flex gap-3 pt-2">
-              <button onClick={() => setConfirmDelete(null)} disabled={deleting} className="flex-1 py-4 rounded-2xl border border-white/10 text-white/60 hover:bg-white/5 transition-all">Abbrechen</button>
+              <button onClick={() => setConfirmDelete(null)} disabled={deleting} className="flex-1 py-4 rounded-2xl border border-white/10 text-white/60 hover:bg-white/5 transition-all">{t.cancel}</button>
               <button onClick={() => deleteCustomer(confirmDelete)} disabled={deleting} className="flex-1 py-4 rounded-2xl bg-red-500 text-white font-bold flex items-center justify-center gap-2">
                 {deleting ? <RefreshCw size={16} className="animate-spin" /> : 'Löschen'}
               </button>
