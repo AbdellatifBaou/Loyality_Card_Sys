@@ -1,5 +1,10 @@
 export const MERCHANT_DICT = {
-  de: {\n    defaultStampHeader1: " von 9 Stempeln ",\n    defaultStampBody: "Du hast {points} Stempel gesammelt.",\n    defaultStampBodyEnd: " Weiter so!",\n    rewardHeader: "Belohnung bereit! ✨",\n    redeemHeader: "Prämie eingelöst! ",
+  de: {
+    defaultStampHeader1: " von 9 Stempeln ",
+    defaultStampBody: "Du hast {points} Stempel gesammelt.",
+    defaultStampBodyEnd: " Weiter so!",
+    rewardHeader: "Belohnung bereit! ✨",
+    redeemHeader: "Prämie eingelöst! ",
     merchantNotFound: "Händler nicht gefunden",
     merchantNotFoundDesc: "Dieser Händler existiert nicht (mehr).",
     dashboardLogin: "Dashboard Login",
@@ -170,7 +175,12 @@ export const MERCHANT_DICT = {
     autoByWallets: "automatically by Apple Wallet and Google Wallet",
     generatedWhenNear: "generated as soon as the customer approaches approx. 100 meters.",
     thisNotificationIs: "This notification is",},
-  fr: {\n    defaultStampHeader1: " sur 9 tampons ",\n    defaultStampBody: "Vous avez collecté {points} tampons.",\n    defaultStampBodyEnd: " Continuez comme ça !",\n    rewardHeader: "Récompense prête! ✨",\n    redeemHeader: "Récompense réclamée! ",
+  fr: {
+    defaultStampHeader1: " sur 9 tampons ",
+    defaultStampBody: "Vous avez collecté {points} tampons.",
+    defaultStampBodyEnd: " Continuez comme ça !",
+    rewardHeader: "Récompense prête! ✨",
+    redeemHeader: "Récompense réclamée! ",
     merchantNotFound: "Commerçant introuvable",
     merchantNotFoundDesc: "Ce commerçant n'existe plus.",
     dashboardLogin: "Connexion Dashboard",
