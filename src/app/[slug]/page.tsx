@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef, use, useCallback } from 'react';
 import { Html5QrcodeScanner, Html5QrcodeScanType } from 'html5-qrcode';
 import { supabase } from '@/lib/supabase';
+import { SCANNER_DICT } from '@/locales/admin';
 import { CheckCircle2, XCircle, Loader2, LogOut, Download, Flashlight, Keyboard, WifiOff, Clock, RefreshCw, AlertTriangle } from 'lucide-react';
 
 const QUEUE_KEY = 'offline_stamp_queue';
@@ -51,6 +52,9 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
     }
     loadPreMerchant();
   }, [slug]);
+
+  const lang = merchantConfig?.language || preMerchant?.language || 'de';
+  const t = SCANNER_DICT[lang as keyof typeof SCANNER_DICT] || SCANNER_DICT.de;
 
   const primaryColor = merchantConfig?.primary_color || preMerchant?.primary_color || '#D4AF37';
 
@@ -152,7 +156,7 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
           body: JSON.stringify({ pin, slug })
         });
         const data = await res.json();
-        if (!res.ok) throw new Error(data.error || 'Login fehlgeschlagen');
+        if (!res.ok) throw new Error(data.error || t.loginFailed);
         setMerchantConfig(data.merchant);
         setIsAuthenticated(true);
       } catch (err: any) {
@@ -219,10 +223,10 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
 
       const data = await response.json();
 
-      if (!response.ok) throw new Error(data.error || 'Fehler beim Stempeln');
+      if (!response.ok) throw new Error(data.error || t.errorStamping);
 
       setNewPoints(data.newPoints);
-      setMessage(data.type === 'redeem' ? 'Belohnung erreicht! Punkte wurden zurückgesetzt.' : 'Stempel erfolgreich hinzugefügt!');
+      setMessage(data.type === 'redeem' ? t.rewardReached : t.stampAddedSuccess);
       setScanStatus('success');
 
       if (navigator.vibrate) navigator.vibrate([200]);
@@ -237,7 +241,7 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
       if (isNetworkError) {
         enqueue({ objectId, pin, amount: stampAmount, timestamp: Date.now() });
         setPendingCount(loadQueue().length);
-        setMessage('Offline gespeichert – wird automatisch synchronisiert wenn du wieder online bist.');
+        setMessage(t.offlineSavedDesc);
         setScanStatus('queued');
         if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
       } else {
@@ -294,7 +298,7 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
         >
           <div className="text-center mb-8">
             <h1 className="text-3xl font-extrabold tracking-tight mb-2 text-white">Scanner</h1>
-            <p className="text-[10px] font-bold tracking-[0.3em] uppercase opacity-40 text-white">Terminal für {slug}</p>
+            <p className="text-[10px] font-bold tracking-[0.3em] uppercase opacity-40 text-white">{t.terminalFor} {slug}</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
@@ -316,34 +320,34 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
               className="w-full font-black py-5 rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 disabled:opacity-50"
               style={{ backgroundColor: primaryColor, color: '#000' }}
             >
-              {isAuthenticating ? <Loader2 className="animate-spin" /> : 'Öffnen'}
+              {isAuthenticating ? <Loader2 className="animate-spin" /> : t.open}
             </button>
           </form>
 
           {!isStandalone && (
             <button onClick={handleInstall} className="w-full mt-6 py-3 rounded-2xl border border-white/10 text-white/50 text-sm font-medium flex items-center justify-center gap-2 hover: hover:text-white/70 transition-all">
-              <Download size={16} /> App installieren
+              <Download size={16} /> {t.installApp}
             </button>
           )}
 
           {showIOSHint && (
             <div className="fixed inset-0 z-50 flex items-end justify-center p-4 bg-black/80" onClick={() => setShowIOSHint(false)}>
               <div className="w-full max-w-md p-6 rounded-3xl bg-[#111] border " onClick={e => e.stopPropagation()}>
-                <h3 className="text-white font-bold text-lg mb-4">App installieren</h3>
+                <h3 className="text-white font-bold text-lg mb-4">{t.installApp}</h3>
                 {isIOS ? (
                   <div className="space-y-3 text-sm text-white/70">
-                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5"><span className="text-xl">1</span><span>Tippe auf das <strong className="text-white">Teilen-Symbol</strong> (↑) unten in Safari</span></div>
-                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5"><span className="text-xl">2</span><span>Wähle <strong className="text-white">"Zum Home-Bildschirm"</strong></span></div>
-                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5"><span className="text-xl">3</span><span>Tippe auf <strong className="text-white">"Hinzufügen"</strong></span></div>
+                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5"><span className="text-xl">1</span><span>{t.tapShareIcon.split('(↑)')[0]} <strong className="text-white">(↑)</strong> {t.tapShareIcon.split('(↑)')[1]}</span></div>
+                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5"><span className="text-xl">2</span><span>{t.chooseAddToHome.split("'")[0]} <strong className="text-white">"{t.chooseAddToHome.split("'")[1]}"</strong></span></div>
+                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5"><span className="text-xl">3</span><span>{t.tapAdd.split("'")[0]} <strong className="text-white">"{t.tapAdd.split("'")[1]}"</strong></span></div>
                   </div>
                 ) : (
                   <div className="space-y-3 text-sm text-white/70">
-                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5"><span className="text-xl">1</span><span>Tippe auf die <strong className="text-white">3 Punkte (⋮)</strong> oben rechts in Chrome</span></div>
-                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5"><span className="text-xl">2</span><span>Wähle <strong className="text-white">"App installieren"</strong></span></div>
-                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5"><span className="text-xl">3</span><span>Tippe auf <strong className="text-white">"Installieren"</strong></span></div>
+                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5"><span className="text-xl">1</span><span>{t.tap3Dots.split('(⋮)')[0]} <strong className="text-white">(⋮)</strong> {t.tap3Dots.split('(⋮)')[1]}</span></div>
+                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5"><span className="text-xl">2</span><span>Wähle <strong className="text-white">"{t.installApp}"</strong></span></div>
+                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5"><span className="text-xl">3</span><span>{t.tapInstall.split("'")[0]} <strong className="text-white">"{t.tapInstall.split("'")[1]}"</strong></span></div>
                   </div>
                 )}
-                <button onClick={() => setShowIOSHint(false)} className="w-full mt-5 py-3 rounded-2xl text-black font-bold" style={{ backgroundColor: primaryColor }}>Verstanden</button>
+                <button onClick={() => setShowIOSHint(false)} className="w-full mt-5 py-3 rounded-2xl text-black font-bold" style={{ backgroundColor: primaryColor }}>{t.understood}</button>
               </div>
             </div>
           )}
@@ -359,9 +363,9 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
           <div className="w-16 h-16 bg-red-500/10 text-red-500 rounded-full flex items-center justify-center mx-auto mb-6">
              <AlertTriangle size={32} />
           </div>
-          <h2 className="text-xl font-bold text-white mb-4">Terminal gesperrt</h2>
+          <h2 className="text-xl font-bold text-white mb-4">{t.terminalLocked}</h2>
           <p className="text-white/60 mb-8 text-sm">
-            Dieses Händlerkonto ist derzeit deaktiviert. Bitte logge dich als Administrator in das <strong className="text-white">Dashboard</strong> ein, um das Abonnement zu prüfen und zu erneuern.
+            {t.merchantAccountDeactivated.split('Dashboard')[0]} <strong className="text-white">Dashboard</strong> {t.merchantAccountDeactivated.split('Dashboard')[1]}
           </p>
           <button onClick={() => { setIsAuthenticated(false); setPin(''); }} className="w-full py-4 bg-white/5 text-white rounded-2xl font-bold border border-white/10 hover:bg-white/10 transition-colors">
             Ausloggen
@@ -377,7 +381,7 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
       {!isOnline && (
         <div className="w-full flex items-center justify-center gap-2 py-2 px-4 text-xs font-bold tracking-wide border-b" style={{ backgroundColor: `${primaryColor}33`, borderColor: `${primaryColor}4D`, color: primaryColor }}>
           <WifiOff size={12} />
-          Offline – Scans werden lokal gespeichert
+          {t.offlineScansSavedLocally}
         </div>
       )}
 
@@ -386,7 +390,7 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
           <div>
             <h1 className="text-xl font-bold text-white">{merchantConfig?.name}</h1>
             <p className="text-[10px] font-bold tracking-[0.2em] uppercase" style={{ color: primaryColor }}>
-              {isOnline ? 'Terminal aktiv' : 'Offline-Modus'}
+              {isOnline ? t.terminalActive : t.offlineMode}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -396,10 +400,10 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
                 onClick={() => syncQueue(pin)}
                 disabled={!isOnline || isSyncing}
                 className="flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold disabled:opacity-50 transition-all active:scale-95" style={{ borderColor: `${primaryColor}66`, backgroundColor: `${primaryColor}1A`, color: primaryColor }}
-                title="Ausstehende Scans synchronisieren"
+                title={t.syncPendingScans}
               >
                 {isSyncing ? <Loader2 size={12} className="animate-spin" /> : <RefreshCw size={12} />}
-                {pendingCount} ausstehend
+                {pendingCount} {t.pending}
               </button>
             )}
             <button onClick={() => { setIsAuthenticated(false); setPin(''); }} className="p-3 bg-white/5 rounded-xl border border-white/10">
@@ -434,7 +438,7 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
                 <div className="flex bg-white/5 p-1 rounded-2xl border border-white/10 animate-fade-in">
                   <input
                     type="text"
-                    placeholder="Kunden-ID eingeben..."
+                    placeholder={t.enterCustomerId}
                     value={manualId}
                     onChange={(e) => setManualId(e.target.value)}
                     className="flex-1 bg-transparent px-4 py-3 text-white outline-none font-mono text-sm placeholder:text-white/30"
@@ -462,13 +466,13 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
           {scanStatus === 'success' && (
             <div className="text-center animate-fade-in w-full">
               <CheckCircle2 className="w-16 h-16 text-green-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-white mb-2">Erfolgreich!</h2>
+              <h2 className="text-2xl font-bold text-white mb-2">{t.successTitle}</h2>
               <p className="text-white/70 mb-6">{message}</p>
               <div className="p-6 rounded-[32px] border border-white/10" style={{ background: `${primaryColor}15` }}>
                 <p className="text-5xl font-black mb-1" style={{ color: primaryColor }}>
                   {newPoints} <span className="text-2xl opacity-40">/ 9</span>
                 </p>
-                <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-white/40">Aktueller Punktestand</p>
+                <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-white/40">{t.currentPointBalance}</p>
               </div>
             </div>
           )}
@@ -478,10 +482,10 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
               <div className="w-16 h-16 rounded-full border flex items-center justify-center mx-auto mb-4" style={{ backgroundColor: `${primaryColor}33`, borderColor: `${primaryColor}66`, color: primaryColor }}>
                 <Clock className="w-8 h-8 " />
               </div>
-              <h2 className="text-2xl font-bold text-white mb-2">Offline gespeichert</h2>
+              <h2 className="text-2xl font-bold text-white mb-2">{t.offlineSavedTitle}</h2>
               <p className="text-white/60 text-sm mb-6">{message}</p>
               <div className="p-4 rounded-2xl border" style={{ borderColor: `${primaryColor}33`, backgroundColor: `${primaryColor}1A` }}>
-                <p className=" font-bold text-sm">{pendingCount} Scan{pendingCount !== 1 ? 's' : ''} warte{pendingCount === 1 ? 't' : 'n'} auf Synchronisierung</p>
+                <p className=" font-bold text-sm">{t.scansWaitingForSync(pendingCount)}</p>
               </div>
             </div>
           )}
@@ -489,7 +493,7 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
           {scanStatus === 'error' && (
             <div className="text-center animate-fade-in w-full">
               <XCircle className="w-16 h-16 text-red-500 mx-auto mb-4" />
-              <h2 className="text-2xl font-bold text-white mb-2">Fehler</h2>
+              <h2 className="text-2xl font-bold text-white mb-2">{t.errorTitle}</h2>
               <p className="text-white/70">{message}</p>
             </div>
           )}

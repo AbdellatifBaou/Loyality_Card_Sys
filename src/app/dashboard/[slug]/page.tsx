@@ -802,7 +802,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         {merchant?.is_active === false && (
           <div className="mb-6 p-4 rounded-xl bg-red-500/10 border border-red-500/30 text-red-500 font-medium text-sm flex items-center gap-3">
             <AlertTriangle size={20} />
-            Dein Account ist deaktiviert. Bitte wähle ein Abo oder hinterlege deine Zahlungsdaten, um alle Funktionen und die Scanner-App wieder freizuschalten.
+            {t.accountDeactivatedAlert}
           </div>
         )}
         <div className="flex gap-4 border-b border-white/5 pb-1">
@@ -812,7 +812,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : 'border-transparent text-white/40 hover:text-white/70'}`}
             style={merchant?.is_active !== false ? { borderColor: activeTab === 'overview' ? primaryColor : 'transparent', color: activeTab === 'overview' ? primaryColor : undefined } : {}}
           >
-            <div className="flex items-center gap-2"><Activity size={16}/> Übersicht</div>
+            <div className="flex items-center gap-2"><Activity size={16}/> {t.tabOverview}</div>
           </button>
           <button 
             onClick={() => setActiveTab('analytics')}
@@ -820,7 +820,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : 'border-transparent text-white/40 hover:text-white/70'}`}
             style={merchant?.is_active !== false ? { borderColor: activeTab === 'analytics' ? primaryColor : 'transparent', color: activeTab === 'analytics' ? primaryColor : undefined } : {}}
           >
-            <div className="flex items-center gap-2"><BarChart2 size={16}/> Analytics</div>
+            <div className="flex items-center gap-2"><BarChart2 size={16}/> {t.tabAnalytics}</div>
           </button>
           <button 
             onClick={() => setActiveTab('marketing')}
@@ -828,14 +828,14 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : 'border-transparent text-white/40 hover:text-white/70'}`}
             style={merchant?.is_active !== false ? { borderColor: activeTab === 'marketing' ? primaryColor : 'transparent', color: activeTab === 'marketing' ? primaryColor : undefined } : {}}
           >
-            <div className="flex items-center gap-2"><Megaphone size={16}/> Marketing</div>
+            <div className="flex items-center gap-2"><Megaphone size={16}/> {t.tabMarketing}</div>
           </button>
           <button 
             onClick={() => setActiveTab('billing')}
             className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${'border-transparent text-white/40 hover:text-white/70'}`}
             style={{ borderColor: activeTab === 'billing' ? primaryColor : 'transparent', color: activeTab === 'billing' ? primaryColor : undefined }}
           >
-            <div className="flex items-center gap-2"><CreditCard size={16}/> Abo & Abrechnung</div>
+            <div className="flex items-center gap-2"><CreditCard size={16}/> {t.tabBilling}</div>
           </button>
           <button
             onClick={() => setActiveTab('push')}
@@ -843,7 +843,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : 'border-transparent text-white/40 hover:text-white/70'}`}
             style={merchant?.is_active !== false ? { borderColor: activeTab === 'push' ? primaryColor : 'transparent', color: activeTab === 'push' ? primaryColor : undefined } : {}}
           >
-            Push-Nachrichten
+            {t.tabPush}
           </button>
           <button 
             onClick={() => setActiveTab('qrcodes')}
@@ -851,7 +851,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : 'border-transparent text-white/40 hover:text-white/70'}`}
             style={merchant?.is_active !== false ? { borderColor: activeTab === 'qrcodes' ? primaryColor : 'transparent', color: activeTab === 'qrcodes' ? primaryColor : undefined } : {}}
           >
-            <div className="flex items-center gap-2"><Download size={16}/> QR-Codes</div>
+            <div className="flex items-center gap-2"><Download size={16}/> {t.tabQr}</div>
           </button>
           <button 
             onClick={() => setActiveTab('security')}
@@ -859,7 +859,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             className={`pb-3 px-2 font-medium text-sm border-b-2 transition-all whitespace-nowrap ${merchant?.is_active === false ? 'opacity-50 cursor-not-allowed border-transparent text-white/20' : 'border-transparent text-white/40 hover:text-white/70'}`}
             style={merchant?.is_active !== false ? { borderColor: activeTab === 'security' ? primaryColor : 'transparent', color: activeTab === 'security' ? primaryColor : undefined } : {}}
           >
-            <div className="flex items-center gap-2"><Lock size={16}/> Sicherheit</div>
+            <div className="flex items-center gap-2"><Lock size={16}/> {t.tabSecurity}</div>
           </button>
         </div>
 
@@ -911,7 +911,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   <div className="p-6 border-b border-white/5 flex items-center gap-3">
                     <CreditCard size={20} className="text-white/60" />
                     <h2 className="text-lg font-bold text-white">{t.customerCards}</h2>
-                    <span className="ml-auto text-xs text-white/40 font-medium">{customerCount} Gesamt</span>
+                    <span className="ml-auto text-xs text-white/40 font-medium">{customerCount} {t.total}</span>
                   </div>
                   {/* Search & Export */}
                   <div className="px-6 py-4 border-b border-white/5 flex gap-3">
@@ -919,14 +919,14 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       type="text"
                       value={searchQuery}
                       onChange={e => setSearchQuery(e.target.value)}
-                      placeholder="Kunden-ID suchen…"
+                      placeholder={t.searchCustomerIdPlaceholder}
                       className="flex-1 bg-black/40 border border-white/10 rounded-2xl px-4 py-3 text-sm text-white placeholder-white/20 outline-none focus:border-white/20 transition-all font-mono"
                     />
                     <button
                       onClick={exportToCSV}
                       className="px-4 py-3 bg-white/5 border border-white/10 rounded-2xl text-white/80 text-sm font-medium hover:bg-white/10 transition-colors flex items-center gap-2"
                     >
-                      <Download size={16} /> Export CSV
+                      <Download size={16} /> {t.exportCsv}
                     </button>
                   </div>
                   <div className="overflow-x-auto">
@@ -1011,7 +1011,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         </div>
                       </div>
                     ))}
-                    {staff.length === 0 && <p className="text-center py-4 text-white/20 text-sm italic">Keine Mitarbeiter angelegt.</p>}
+                    {staff.length === 0 && <p className="text-center py-4 text-white/20 text-sm italic">{t.noStaffCreated}</p>}
                   </div>
                 </div>
 
@@ -1029,10 +1029,10 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                           <p className="text-xs text-white/70">
                             <span className="font-bold">
                               {a.type === 'earn' 
-                                ? `+${a.amount} Stempel` 
+                                ? `+${a.amount} ${t.stamps}` 
                                 : a.type === 'correction' 
-                                  ? `${a.amount > 0 ? '+' : ''}${a.amount} Stempel` 
-                                  : 'Prämie eingelöst'}
+                                  ? `${a.amount > 0 ? '+' : ''}${a.amount} ${t.stamps}` 
+                                  : t.rewardRedeemedText}
                             </span>
                           </p>
                           <p className="text-[10px] text-white/30">{new Date(a.created_at).toLocaleString('de-DE')}</p>
@@ -1052,7 +1052,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="flex items-center gap-3 mb-6">
                 <BarChart2 size={20} style={{ color: primaryColor }} />
-                <h2 className="text-lg font-bold text-white">Stempel nach Wochentag</h2>
+                <h2 className="text-lg font-bold text-white">{t.stampsByWeekday}</h2>
               </div>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -1064,7 +1064,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       contentStyle={{ background: '#111', border: '1px solid rgba(212, 175, 55, 0.3)', borderRadius: '12px' }}
                       itemStyle={{ color: primaryColor }}
                     />
-                    <Line type="monotone" dataKey="count" name="Vergebene Stempel" stroke={primaryColor} strokeWidth={3} dot={{ r: 4, fill: primaryColor, strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                    <Line type="monotone" dataKey="count" name={t.stampsGiven} stroke={primaryColor} strokeWidth={3} dot={{ r: 4, fill: primaryColor, strokeWidth: 0 }} activeDot={{ r: 6 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -1073,7 +1073,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="flex items-center gap-3 mb-6">
                 <Clock size={20} className="text-purple-500" />
-                <h2 className="text-lg font-bold text-white">Peak Hours (Uhrzeiten)</h2>
+                <h2 className="text-lg font-bold text-white">{t.peakHours}</h2>
               </div>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -1086,7 +1086,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       itemStyle={{ color: '#a855f7' }}
                       cursor={{ fill: 'rgba(255,255,255,0.05)' }}
                     />
-                    <Bar dataKey="count" name="Stempel" fill="#a855f7" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="count" name={t.stamps} fill="#a855f7" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -1095,7 +1095,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="flex items-center gap-3 mb-6">
                 <Activity size={20} className="text-blue-500" />
-                <h2 className="text-lg font-bold text-white">Gesamtkunden pro Monat</h2>
+                <h2 className="text-lg font-bold text-white">{t.totalCustomersPerMonth}</h2>
               </div>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -1107,7 +1107,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       contentStyle={{ background: '#111', border: '1px solid rgba(59, 130, 246, 0.3)', borderRadius: '12px' }}
                       itemStyle={{ color: '#3b82f6' }}
                     />
-                    <Line type="monotone" dataKey="count" name="Gesamtkunden" stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                    <Line type="monotone" dataKey="count" name={t.totalCustomers} stroke="#3b82f6" strokeWidth={3} dot={{ r: 4, fill: '#3b82f6', strokeWidth: 0 }} activeDot={{ r: 6 }} />
                   </LineChart>
                 </ResponsiveContainer>
               </div>
@@ -1116,7 +1116,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="flex items-center gap-3 mb-6">
                 <UserPlus size={20} className="text-orange-500" />
-                <h2 className="text-lg font-bold text-white">Neue Kunden pro Monat</h2>
+                <h2 className="text-lg font-bold text-white">{t.newCustomersPerMonth}</h2>
               </div>
               <div className="h-[300px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -1128,7 +1128,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       contentStyle={{ background: '#111', border: '1px solid rgba(249, 115, 22, 0.3)', borderRadius: '12px' }}
                       itemStyle={{ color: '#f97316' }}
                     />
-                    <Bar dataKey="count" name="Neue Kunden" fill="#f97316" radius={[4, 4, 0, 0]} />
+                    <Bar dataKey="count" name={t.newCustomers} fill="#f97316" radius={[4, 4, 0, 0]} />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -1137,15 +1137,15 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             <div className="p-6 rounded-3xl lg:col-span-2" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="flex items-center gap-3 mb-6">
                 <Users size={20} className="text-green-500" />
-                <h2 className="text-lg font-bold text-white">Top 30 Kunden (Lifetime Scans)</h2>
+                <h2 className="text-lg font-bold text-white">{t.top30Customers}</h2>
               </div>
               <div className="overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr style={{ background: 'rgba(255,255,255,0.03)' }} className="text-white/50 text-xs uppercase tracking-wider">
-                      <th className="p-4 font-medium w-16">Rang</th>
+                      <th className="p-4 font-medium w-16">{t.rank}</th>
                       <th className="p-4 font-medium">{t.customerId}</th>
-                      <th className="p-4 font-medium text-right">Lifetime Stempel</th>
+                      <th className="p-4 font-medium text-right">{t.lifetimeStampsTitle}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1159,14 +1159,14 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         </td>
                         <td className="p-4 text-right">
                           <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-500/10 text-green-400 font-bold text-sm rounded-lg border border-green-500/20">
-                            {c.lifetimeStamps} Scans
+                            {c.lifetimeStamps} {t.scans}
                           </span>
                         </td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                {topCustomers.length === 0 && <p className="text-center text-white/40 text-sm py-8">Keine Daten verfügbar.</p>}
+                {topCustomers.length === 0 && <p className="text-center text-white/40 text-sm py-8">{t.noDataAvailable}</p>}
               </div>
             </div>
           </div>
@@ -1178,30 +1178,30 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="flex items-center gap-3 mb-6">
                 <Megaphone size={20} style={{ color: primaryColor }} />
-                <h2 className="text-lg font-bold text-white">Nachricht an alle Kunden</h2>
+                <h2 className="text-lg font-bold text-white">{t.messageToAllCustomers}</h2>
               </div>
               <p className="text-sm text-white/50 mb-6">
-                Sende eine Push-Benachrichtigung an alle Kunden, die ihre Karte im Google Wallet gespeichert haben. Ideal für Aktionen, Specials oder Ankündigungen.
+                {t.pushNotificationDesc}
               </p>
               
               <form onSubmit={handleSendMessage} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-white/60 mb-2">Titel der Nachricht</label>
+                  <label className="block text-xs font-medium text-white/60 mb-2">{t.messageTitle}</label>
                   <input
                     type="text"
                     value={msgTitle}
                     onChange={e => setMsgTitle(e.target.value)}
-                    placeholder={`z.B. Wochenend-Special! `}
+                    placeholder={t.messageTitlePlaceholder}
                     required
                     className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-white/50 transition-all text-sm"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-white/60 mb-2">Inhalt</label>
+                  <label className="block text-xs font-medium text-white/60 mb-2">{t.content}</label>
                   <textarea
                     value={msgBody}
                     onChange={e => setMsgBody(e.target.value)}
-                    placeholder="z.B. Komm dieses Wochenende vorbei und erhalte doppelte Stempel!"
+                    placeholder={t.messageContentPlaceholder}
                     required
                     rows={4}
                     className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none focus:border-white/50 transition-all text-sm resize-none"
@@ -1220,7 +1220,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   className="w-full mt-2 py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-black disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95"
                   style={{ backgroundColor: primaryColor }}
                 >
-                  {sendingMsg ? <RefreshCw className="animate-spin" size={20} /> : <><Send size={20} /> Nachricht Senden</>}
+                  {sendingMsg ? <RefreshCw className="animate-spin" size={20} /> : <><Send size={20} /> {t.sendMessage}</>}
                 </button>
               </form>
             </div>
@@ -1229,11 +1229,11 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             <div className="p-6 rounded-3xl mt-8" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="flex items-center gap-3 mb-6">
                 <Clock size={20} className="text-white/60" />
-                <h2 className="text-lg font-bold text-white">Gesendete Nachrichten</h2>
+                <h2 className="text-lg font-bold text-white">{t.sentMessages}</h2>
               </div>
               <div className="space-y-4">
                 {messages.length === 0 ? (
-                  <p className="text-sm text-white/40 italic">Noch keine Nachrichten gesendet.</p>
+                  <p className="text-sm text-white/40 italic">{t.noMessagesSent}</p>
                 ) : (
                   messages.map((msg: any) => (
                     <div key={msg.id} className="p-4 rounded-2xl bg-white/5 border border-white/10">
@@ -1256,7 +1256,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="flex items-center gap-3 mb-6">
                 <CreditCard size={20} style={{ color: primaryColor }} />
-                <h2 className="text-lg font-bold text-white">Abonnement & Abrechnung</h2>
+                <h2 className="text-lg font-bold text-white">{t.billingAndSubscription}</h2>
               </div>
               
               {billingError && (
@@ -1268,7 +1268,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
               {merchant?.is_active === false ? (
                 <>
                   <p className="text-sm text-white/70 mb-6">
-                    Dein Abonnement wurde <span className="text-red-500 font-bold">gesperrt oder ist abgelaufen</span>. Bitte hinterlege ein gültiges Zahlungsmittel, um deinen Account sofort wieder freizuschalten.
+                    {t.subscriptionWas} <span className="text-red-500 font-bold">{t.lockedOrExpired}</span>{t.updatePaymentMethod}
                   </p>
                   <button 
                     onClick={() => handleStripeReactivate(merchant.package_type || 'silber')}
@@ -1276,22 +1276,22 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                     className="w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-black disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95 bg-white/10 hover:bg-white/20"
                     style={{ backgroundColor: primaryColor }}
                   >
-                    {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : 'Jetzt Abonnement reaktivieren (Stripe)'}
+                    {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : '{t.reactivateSubscriptionStripe}'}
                   </button>
                 </>
               ) : merchant?.subscription_status === 'active' || merchant?.subscription_status === 'cancels_at_period_end' ? (
                 <>
                   {merchant?.subscription_status === 'cancels_at_period_end' ? (
                     <p className="text-sm text-white/70 mb-6">
-                      Dein Abonnement ist <span className="text-yellow-500 font-bold">gekündigt</span>, aber noch voll aktiv bis zum <span className="font-bold text-white">{merchant.current_period_end ? new Date(merchant.current_period_end).toLocaleDateString('de-DE') : 'Ende des Abrechnungszeitraums'}</span>. Du kannst es im Stripe-Kundenportal jederzeit wieder reaktivieren.
+                      {t.subscriptionIs} <span className="text-yellow-500 font-bold">{t.cancelled}</span>{t.activeUntil} <span className="font-bold text-white">{merchant.current_period_end ? new Date(merchant.current_period_end).toLocaleDateString('de-DE') : t.endOfBillingPeriod}</span>{t.reactivateAnytime}
                     </p>
                   ) : merchant?.stripe_subscription_id === 'manual_invoice' ? (
                     <p className="text-sm text-white/70 mb-6">
-                      Dein Abonnement ist <span className="text-green-500 font-bold">aktiv</span> bis zum <span className="font-bold text-white">{merchant.current_period_end ? new Date(merchant.current_period_end).toLocaleDateString('de-DE') : 'Ende des Abrechnungszeitraums'}</span>. Die Abrechnung erfolgt per klassischer manueller Rechnung.
+                      {t.subscriptionIs} <span className="text-green-500 font-bold">{t.active}</span> bis zum <span className="font-bold text-white">{merchant.current_period_end ? new Date(merchant.current_period_end).toLocaleDateString('de-DE') : t.endOfBillingPeriod}</span>{t.manualInvoiceBilling}
                     </p>
                   ) : (
                     <p className="text-sm text-white/70 mb-6">
-                      Dein Abonnement ist <span className="text-green-500 font-bold">aktiv</span>. Du kannst deine Zahlungsdaten, Rechnungen und dein Abo im Stripe-Kundenportal verwalten.
+                      {t.subscriptionIs} <span className="text-green-500 font-bold">{t.active}</span>{t.manageInPortal}
                     </p>
                   )}
                   {merchant?.stripe_subscription_id && merchant?.stripe_subscription_id !== 'manual_invoice' ? (
@@ -1301,7 +1301,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       className="w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-black disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95"
                       style={{ backgroundColor: primaryColor }}
                     >
-                      {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : <><ExternalLink size={20} /> Stripe Portal öffnen</>}
+                      {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : <><ExternalLink size={20} /> {t.openStripePortal}</>}
                     </button>
                   ) : (
                     <button 
@@ -1309,7 +1309,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       disabled={billingLoading}
                       className="w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-white disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95 bg-white/10 hover:bg-white/20"
                     >
-                      {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : 'Auf automatische Zahlung (Stripe) umstellen'}
+                      {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : '{t.switchToAutoPayment}'}
                     </button>
                   )}
                 </>
@@ -1318,7 +1318,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   {merchant?.package_type === 'custom' ? (
                     <div className="text-center py-6">
                       <p className="text-sm text-white/70 mb-4">
-                        Dein individuelles Abonnement ist derzeit <span className="text-red-500 font-bold">gekündigt</span>.
+                        {t.customSubscriptionCurrently} <span className="text-red-500 font-bold">{t.cancelled}</span>.
                       </p>
                       {merchant?.custom_price ? (
                         <button 
@@ -1327,7 +1327,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                           className="w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-black disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95"
                           style={{ backgroundColor: primaryColor }}
                         >
-                          {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : <><CreditCard size={20} /> Abo reaktivieren ({merchant.custom_price}€ / Monat)</>}
+                          {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : <><CreditCard size={20} /> {t.reactivateSubscriptionPrefix} {merchant.custom_price}{t.perMonthSuffix}</>}
                         </button>
                       ) : (
                         <a href="mailto:kontakt@marketif.de" className="inline-block w-full py-4 rounded-xl font-bold text-center text-black transition-all hover:scale-[1.02] active:scale-95" style={{ backgroundColor: primaryColor }}>
@@ -1338,7 +1338,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   ) : (!merchant?.package_type) ? (
                     <div className="text-center py-6">
                       <p className="text-sm text-white/70 mb-4">
-                        Dein Abonnement ist derzeit <span className="text-red-500 font-bold">gekündigt</span>.
+                        Dein Abonnement ist derzeit <span className="text-red-500 font-bold">{t.cancelled}</span>.
                       </p>
                       <a href="mailto:kontakt@marketif.de" className="inline-block w-full py-4 rounded-xl font-bold text-center text-black transition-all hover:scale-[1.02] active:scale-95" style={{ backgroundColor: primaryColor }}>
                         Support kontaktieren
@@ -1347,7 +1347,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   ) : (
                     <div>
                       <p className="text-sm text-white/70 mb-6">
-                        Dein Abonnement ist derzeit <span className="text-red-500 font-bold">gekündigt</span>. Wähle ein Paket, um dein Abo zu reaktivieren (keine erneuten Einrichtungskosten).
+                        Dein Abonnement ist derzeit <span className="text-red-500 font-bold">{t.cancelled}</span>. Wähle ein Paket, um dein Abo zu reaktivieren (keine erneuten Einrichtungskosten).
                       </p>
                       <div className="grid grid-cols-2 gap-4">
                         <button 
@@ -1356,10 +1356,10 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                           className="p-4 rounded-xl text-left border transition-all hover:scale-[1.02] active:scale-95"
                           style={{ background: 'rgba(176,176,176,0.1)', borderColor: 'rgba(176,176,176,0.5)' }}
                         >
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-[#B0B0B0] mb-1">Silber</p>
-                          <p className="text-2xl font-bold text-white mb-2">49€<span className="text-sm text-white/50 font-normal">/Monat</span></p>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-[#B0B0B0] mb-1">{t.silver}</p>
+                          <p className="text-2xl font-bold text-white mb-2">49€<span className="text-sm text-white/50 font-normal">{t.perMonth}</span></p>
                           <div className="flex items-center gap-2 text-sm text-[#B0B0B0] mt-4 font-bold">
-                            {billingLoading ? <RefreshCw className="animate-spin" size={16} /> : <><CreditCard size={16} /> Reaktivieren</>}
+                            {billingLoading ? <RefreshCw className="animate-spin" size={16} /> : <><CreditCard size={16} /> {t.reactivate}</>}
                           </div>
                         </button>
                         <button 
@@ -1368,10 +1368,10 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                           className="p-4 rounded-xl text-left border transition-all hover:scale-[1.02] active:scale-95 relative overflow-hidden"
                           style={{ background: 'rgba(212,175,55,0.1)', borderColor: 'rgba(212,175,55,0.5)' }}
                         >
-                          <p className="text-[10px] font-bold uppercase tracking-wider text-white/80 mb-1">Gold</p>
-                          <p className="text-2xl font-bold text-white mb-2">89€<span className="text-sm text-white/50 font-normal">/Monat</span></p>
+                          <p className="text-[10px] font-bold uppercase tracking-wider text-white/80 mb-1">{t.gold}</p>
+                          <p className="text-2xl font-bold text-white mb-2">89€<span className="text-sm text-white/50 font-normal">{t.perMonth}</span></p>
                           <div className="flex items-center gap-2 text-sm text-white/80 mt-4 font-bold">
-                            {billingLoading ? <RefreshCw className="animate-spin" size={16} /> : <><CreditCard size={16} /> Reaktivieren</>}
+                            {billingLoading ? <RefreshCw className="animate-spin" size={16} /> : <><CreditCard size={16} /> {t.reactivate}</>}
                           </div>
                         </button>
                       </div>
@@ -1387,8 +1387,8 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         {activeTab === 'push' && (
           <div className="space-y-6">
             <div className="bg-white/5 border border-white/10 rounded-2xl p-6">
-              <h2 className="text-xl font-bold text-white mb-2">Push-Nachrichten anpassen</h2>
-              <p className="text-white/60 text-sm mb-6">Passe die automatisierten Nachrichten an, die deine Kunden direkt auf ihr Handy bekommen. Du kannst <code className="bg-black/30 px-2 py-0.5 rounded text-white/80">{'{points}'}</code> als Platzhalter für die aktuelle Stempel-Anzahl verwenden.</p>
+              <h2 className="text-xl font-bold text-white mb-2">{t.customizePushMessages}</h2>
+              <p className="text-white/60 text-sm mb-6">{t.pushMessagesDesc}</p>
 
               <div className="space-y-8">
                 {/* Stamp Message */}
@@ -1398,13 +1398,13 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       <CheckCircle className="w-4 h-4 text-blue-400" />
                     </div>
                     <div>
-                      <h3 className="text-white font-medium">Beim Stempeln</h3>
-                      <p className="text-xs text-white/50">Wird gesendet, wenn der Kunde 1-8 Stempel hat.</p>
+                      <h3 className="text-white font-medium">{t.whenStamping}</h3>
+                      <p className="text-xs text-white/50">{t.sentWhen1to8Stamps}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-white/60 mb-1">Titel</label>
+                      <label className="block text-xs font-medium text-white/60 mb-1">{t.title}</label>
                       <input 
                         type="text" 
                         className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50"
@@ -1418,7 +1418,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       <textarea 
                         value={pushSettings.stamp_body || ''}
                         onChange={(e) => setPushSettings({...pushSettings, stamp_body: e.target.value})}
-                        placeholder="Du hast {points} Stempel gesammelt. Weiter so!" 
+                        placeholder={t.stampBodyPlaceholder} 
                         className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50 min-h-[80px]" 
                       />
                     </div>
@@ -1432,13 +1432,13 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       <Gift className="w-4 h-4 text-yellow-400" />
                     </div>
                     <div>
-                      <h3 className="text-white font-medium">Prämie erreicht (9 Stempel)</h3>
-                      <p className="text-xs text-white/50">Wird gesendet, wenn die Karte voll ist.</p>
+                      <h3 className="text-white font-medium">{t.rewardReached}</h3>
+                      <p className="text-xs text-white/50">{t.sentWhenCardFull}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-white/60 mb-1">Titel</label>
+                      <label className="block text-xs font-medium text-white/60 mb-1">{t.title}</label>
                       <input 
                         type="text" 
                         value={pushSettings.reward_header || ''}
@@ -1452,7 +1452,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       <textarea 
                         value={pushSettings.reward_body || ''}
                         onChange={(e) => setPushSettings({...pushSettings, reward_body: e.target.value})}
-                        placeholder="Herzlichen Glückwunsch! Du hast deine Stempelkarte voll. Zeige sie beim nächsten Mal vor." 
+                        placeholder={t.rewardBodyPlaceholder} 
                         className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50 min-h-[80px]" 
                       />
                     </div>
@@ -1466,13 +1466,13 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       <LogOut className="w-4 h-4 text-green-400" />
                     </div>
                     <div>
-                      <h3 className="text-white font-medium">Prämie eingelöst (0 Stempel)</h3>
-                      <p className="text-xs text-white/50">Wird gesendet, wenn die Karte zurückgesetzt wird.</p>
+                      <h3 className="text-white font-medium">{t.rewardRedeemed}</h3>
+                      <p className="text-xs text-white/50">{t.sentWhenCardReset}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-white/60 mb-1">Titel</label>
+                      <label className="block text-xs font-medium text-white/60 mb-1">{t.title}</label>
                       <input 
                         type="text" 
                         value={pushSettings.redeem_header || ''}
@@ -1486,7 +1486,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       <textarea 
                         value={pushSettings.redeem_body || ''}
                         onChange={(e) => setPushSettings({...pushSettings, redeem_body: e.target.value})}
-                        placeholder="Viel Spaß mit deiner Prämie! Deine Karte wurde auf 0 zurückgesetzt, du kannst nun wieder neu sammeln." 
+                        placeholder={t.redeemBodyPlaceholder} 
                         className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50 min-h-[80px]" 
                       />
                     </div>
@@ -1500,13 +1500,13 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       <Clock className="w-4 h-4 text-purple-400" />
                     </div>
                     <div>
-                      <h3 className="text-white font-medium">Kunden-Reaktivierung (Wir vermissen dich)</h3>
-                      <p className="text-xs text-white/50">Wird gesendet, wenn der Kunde 30 Tage lang keinen Stempel erhalten hat.</p>
+                      <h3 className="text-white font-medium">{t.customerReactivation}</h3>
+                      <p className="text-xs text-white/50">{t.sentWhenNoStamp30Days}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-white/60 mb-1">Titel</label>
+                      <label className="block text-xs font-medium text-white/60 mb-1">{t.title}</label>
                       <input 
                         type="text" 
                         value={pushSettings.miss_you_header || ''}
@@ -1520,7 +1520,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       <textarea 
                         value={pushSettings.miss_you_body || ''}
                         onChange={(e) => setPushSettings({...pushSettings, miss_you_body: e.target.value})}
-                        placeholder="Du warst schon länger nicht mehr da. Komm vorbei und zeige deine Karte — deine Stempel warten!" 
+                        placeholder={t.missYouBodyPlaceholder} 
                         className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50 min-h-[80px]" 
                       />
                     </div>
@@ -1534,13 +1534,13 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       <Megaphone className="w-4 h-4 text-cyan-400" />
                     </div>
                     <div>
-                      <h3 className="text-white font-medium">Standort-Erinnerung (100m Nähe)</h3>
-                      <p className="text-xs text-white/50">Wird gesendet, wenn der Kunde in der Nähe deines Ladens ist.</p>
+                      <h3 className="text-white font-medium">{t.locationReminder}</h3>
+                      <p className="text-xs text-white/50">{t.sentWhenNearStore}</p>
                     </div>
                   </div>
                   <div className="bg-white/5 border border-white/10 rounded p-3 text-sm text-white/70">
-                    <p>Diese Benachrichtigung wird <strong>automatisch von Apple Wallet und Google Wallet</strong> generiert, sobald sich der Kunde auf ca. 100 Meter nähert.</p>
-                    <p className="mt-2 text-xs text-white/50">Hinweis: Die Texte für diese standortbasierte Erinnerung werden vom Betriebssystem des Handys festgelegt und können nicht individuell angepasst werden.</p>
+                    <p>{t.thisNotificationIs} <strong>{t.autoByWallets}</strong> {t.generatedWhenNear}</p>
+                    <p className="mt-2 text-xs text-white/50">{t.locationReminderNote}</p>
                   </div>
                 </div>
               </div>
@@ -1557,7 +1557,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   ) : (
                     <Save className="w-4 h-4" />
                   )}
-                  Einstellungen speichern
+                  {t.saveSettings}
                 </button>
               </div>
             </div>
@@ -1570,54 +1570,54 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="flex items-center gap-3 mb-6">
                 <Download size={20} style={{ color: primaryColor }} />
-                <h2 className="text-lg font-bold text-white">QR-Codes herunterladen</h2>
+                <h2 className="text-lg font-bold text-white">{t.downloadQrCodesTitle}</h2>
               </div>
               <p className="text-white/60 text-sm mb-8">
-                Hier kannst du die QR-Codes für dein Treuesystem herunterladen. Drucke sie aus und platziere sie gut sichtbar für deine Kunden und Mitarbeiter.
+                {t.qrCodesDesc}
               </p>
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {/* Customer QR */}
                 <div className="p-6 rounded-2xl flex flex-col items-center text-center" style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <h3 className="text-white font-bold mb-2">1. Für deine Kunden</h3>
-                  <p className="text-white/40 text-xs mb-6">Digitale Kundenkarte holen (Registrierung)</p>
+                  <h3 className="text-white font-bold mb-2">{t.qrForCustomers}</h3>
+                  <p className="text-white/40 text-xs mb-6">{t.qrCustomerSub}</p>
                   
                   <div className="w-48 h-48 bg-white p-2 rounded-xl mb-6">
                     <img src={`/api/qr-code?text=${encodeURIComponent('https://treue.marketif.de/join/' + slug)}`} alt="Customer QR Code" className="w-full h-full object-contain" />
                   </div>
                   
                   <a href={`/api/qr-code?text=${encodeURIComponent('https://treue.marketif.de/join/' + slug)}`} download={`marketif_treue_karte_${slug}.png`} className="w-full py-3 rounded-xl border border-white/10 text-white/80 hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-sm font-medium">
-                    <Download size={16} /> QR-Code als PNG
+                    <Download size={16} /> {t.qrAsPng}
                   </a>
                   <p className="text-xs text-white/30 mt-4 break-all">https://treue.marketif.de/join/{slug}</p>
                 </div>
 
                 {/* Staff QR */}
                 <div className="p-6 rounded-2xl flex flex-col items-center text-center" style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <h3 className="text-white font-bold mb-2">2. Für deine Mitarbeiter</h3>
-                  <p className="text-white/40 text-xs mb-6">Scanner App öffnen (Stempel vergeben)</p>
+                  <h3 className="text-white font-bold mb-2">{t.qrForStaff}</h3>
+                  <p className="text-white/40 text-xs mb-6">{t.qrStaffSub}</p>
                   
                   <div className="w-48 h-48 bg-white p-2 rounded-xl mb-6">
                     <img src={`/api/qr-code?text=${encodeURIComponent('https://treue.marketif.de/' + slug)}`} alt="Scanner QR Code" className="w-full h-full object-contain" />
                   </div>
                   
                   <a href={`/api/qr-code?text=${encodeURIComponent('https://treue.marketif.de/' + slug)}`} download={`marketif_scanner_${slug}.png`} className="w-full py-3 rounded-xl border border-white/10 text-white/80 hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-sm font-medium">
-                    <Download size={16} /> QR-Code als PNG
+                    <Download size={16} /> {t.qrAsPng}
                   </a>
                   <p className="text-xs text-white/30 mt-4 break-all">https://treue.marketif.de/{slug}</p>
                 </div>
 
                 {/* Dashboard QR */}
                 <div className="p-6 rounded-2xl flex flex-col items-center text-center" style={{ background: 'rgba(255,255,255,0.01)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                  <h3 className="text-white font-bold mb-2">3. Für das Dashboard</h3>
-                  <p className="text-white/40 text-xs mb-6">Dein Admin-Bereich (Hier)</p>
+                  <h3 className="text-white font-bold mb-2">{t.qrForDashboard}</h3>
+                  <p className="text-white/40 text-xs mb-6">{t.qrDashboardSub}</p>
                   
                   <div className="w-48 h-48 bg-white p-2 rounded-xl mb-6">
                     <img src={`/api/qr-code?text=${encodeURIComponent('https://treue.marketif.de/dashboard/' + slug)}`} alt="Dashboard QR Code" className="w-full h-full object-contain" />
                   </div>
                   
                   <a href={`/api/qr-code?text=${encodeURIComponent('https://treue.marketif.de/dashboard/' + slug)}`} download={`marketif_dashboard_${slug}.png`} className="w-full py-3 rounded-xl border border-white/10 text-white/80 hover:bg-white/5 transition-all flex items-center justify-center gap-2 text-sm font-medium">
-                    <Download size={16} /> QR-Code als PNG
+                    <Download size={16} /> {t.qrAsPng}
                   </a>
                   <p className="text-xs text-white/30 mt-4 break-all">https://treue.marketif.de/dashboard/{slug}</p>
                 </div>
@@ -1632,14 +1632,14 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="flex items-center gap-3 mb-6">
                 <Lock size={20} style={{ color: merchant?.primary_color || '#D4AF37' }} />
-                <h2 className="text-lg font-bold text-white">Master-PIN ändern</h2>
+                <h2 className="text-lg font-bold text-white">{t.changeMasterPin}</h2>
               </div>
               <p className="text-sm text-white/50 mb-6">
-                Hier kannst du deine Master-PIN ändern. Diese PIN wird benötigt, um dich in dieses Händler-Dashboard einzuloggen.
+                {t.changeMasterPinDesc}
               </p>
               <form onSubmit={handlePinChange} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-medium text-white/60 mb-2">Aktuelle PIN</label>
+                  <label className="block text-xs font-medium text-white/60 mb-2">{t.currentPin}</label>
                   <div className="relative">
                     <input
                       type={showOldPin ? "text" : "password"}
@@ -1659,7 +1659,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   </div>
                 </div>
                 <div>
-                  <label className="block text-xs font-medium text-white/60 mb-2">Neue PIN (mind. 4 Ziffern)</label>
+                  <label className="block text-xs font-medium text-white/60 mb-2">{t.newPinRule}</label>
                   <div className="relative">
                     <input
                       type={showNewPin ? "text" : "password"}
@@ -1693,7 +1693,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   className="w-full py-3 rounded-xl font-bold uppercase tracking-widest text-black transition-all disabled:opacity-50 mt-4" 
                   style={{ background: merchant?.primary_color || '#D4AF37' }}
                 >
-                  {pinChangeStatus.loading ? <RefreshCw className="animate-spin mx-auto" size={16} /> : 'PIN Aktualisieren'}
+                  {pinChangeStatus.loading ? <RefreshCw className="animate-spin mx-auto" size={16} /> : '{t.updatePin}'}
                 </button>
               </form>
             </div>
@@ -1730,9 +1730,9 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           <div className="w-full max-w-sm p-8 rounded-[40px] space-y-4" style={{ background: '#111', border: '1px solid rgba(255,255,255,0.08)' }} onClick={e => e.stopPropagation()}>
             <div className="flex items-center gap-3">
               <AlertTriangle size={24} className="text-red-500" />
-              <h3 className="text-white font-bold text-lg">Kunden löschen?</h3>
+              <h3 className="text-white font-bold text-lg">{t.deleteCustomerTitle}</h3>
             </div>
-            <p className="text-white/60 text-sm">Karte {confirmDelete.wallet_object_id?.substring(0, 8)}... unwiderruflich löschen?</p>
+            <p className="text-white/60 text-sm">{t.card} {confirmDelete.wallet_object_id?.substring(0, 8)}{t.deleteIrrevocably}</p>
             <div className="flex gap-3 pt-2">
               <button onClick={() => setConfirmDelete(null)} disabled={deleting} className="flex-1 py-4 rounded-2xl border border-white/10 text-white/60 hover:bg-white/5 transition-all">{t.cancel}</button>
               <button onClick={() => deleteCustomer(confirmDelete)} disabled={deleting} className="flex-1 py-4 rounded-2xl bg-red-500 text-white font-bold flex items-center justify-center gap-2">
@@ -1757,7 +1757,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             {/* Drawer Header */}
             <div className="p-6 border-b border-white/5 flex items-center justify-between sticky top-0 bg-[#0E0E0E] z-10">
               <div>
-                <h3 className="text-white font-bold text-lg">Kunden-Detail</h3>
+                <h3 className="text-white font-bold text-lg">{t.customerDetail}</h3>
                 <p className="font-mono text-xs text-white/30 mt-0.5">{selectedCustomer.wallet_object_id?.substring(0, 20)}...</p>
               </div>
               <button onClick={() => setSelectedCustomer(null)} className="p-2 rounded-xl bg-white/5 text-white/40 hover:text-white transition-colors">
@@ -1769,7 +1769,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             <div className="p-6 border-b border-white/5">
               <div className="flex items-center gap-2 mb-4">
                 <Edit3 size={16} style={{ color: primaryColor }} />
-                <h4 className="text-sm font-bold text-white">Stempel korrigieren</h4>
+                <h4 className="text-sm font-bold text-white">{t.correctStamps}</h4>
               </div>
               <div className="flex items-center gap-3">
                 <button
@@ -1795,7 +1795,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   className="w-full mt-4 py-3 rounded-2xl font-bold text-black text-sm flex items-center justify-center gap-2 disabled:opacity-50"
                   style={{ backgroundColor: primaryColor }}
                 >
-                  {savingPoints ? <RefreshCw size={16} className="animate-spin" /> : 'Speichern'}
+                  {savingPoints ? <RefreshCw size={16} className="animate-spin" /> : t.save}
                 </button>
               )}
             </div>
@@ -1804,12 +1804,12 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             <div className="p-6 flex-1">
               <div className="flex items-center gap-2 mb-4">
                 <Clock size={16} className="text-white/40" />
-                <h4 className="text-sm font-bold text-white">Stempel-Verlauf</h4>
+                <h4 className="text-sm font-bold text-white">{t.stampHistoryTitle}</h4>
               </div>
               {historyLoading ? (
                 <div className="flex justify-center py-8"><RefreshCw size={24} className="animate-spin text-white/20" /></div>
               ) : stampHistory.length === 0 ? (
-                <p className="text-center text-white/20 text-sm py-8 italic">Keine Aktivität gefunden.</p>
+                <p className="text-center text-white/20 text-sm py-8 italic">{t.noActivityFound}</p>
               ) : (
                 <div className="space-y-3">
                   {stampHistory.map((s: any) => (
@@ -1817,7 +1817,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       <div className={`w-2 h-2 rounded-full shrink-0 ${s.type === 'earn' ? 'bg-green-500' : s.type === 'correction' ? 'bg-blue-500' : 'bg-yellow-500'}`} />
                       <div className="flex-1">
                         <p className={`text-sm font-bold ${s.type === 'earn' ? 'text-green-400' : s.type === 'correction' ? 'text-blue-400' : 'text-yellow-400'}`}>
-                          {s.type === 'earn' ? `+${s.amount} Stempel` : s.type === 'correction' ? `${s.amount > 0 ? '+' : ''}${s.amount} Stempel` : '🎁 Prämie eingelöst'}
+                          {s.type === 'earn' ? `+${s.amount} Stempel` : s.type === 'correction' ? `${s.amount > 0 ? '+' : ''}${s.amount} Stempel` : t.rewardRedeemedIcon}
                         </p>
                         <div className="flex items-center justify-between mt-0.5">
                           <p className="text-[10px] text-white/30">{new Date(s.created_at).toLocaleString('de-DE')}</p>

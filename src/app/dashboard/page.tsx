@@ -424,14 +424,14 @@ export default function DashboardPage() {
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 bg-purple-500/10 rounded-2xl border border-purple-500/20"><Store size={22} className="text-purple-500" /></div>
-                  <h2 className="text-white/60 font-medium text-sm">Händler</h2>
+                  <h2 className="text-white/60 font-medium text-sm">{t.merchants}</h2>
                 </div>
                 <p className="text-4xl font-black text-white">{merchantCount}</p>
               </div>
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 bg-blue-500/10 rounded-2xl border border-blue-500/20"><Users size={22} className="text-blue-500" /></div>
-                  <h2 className="text-white/60 font-medium text-sm">Nutzer</h2>
+                  <h2 className="text-white/60 font-medium text-sm">{t.users}</h2>
                 </div>
                 <p className="text-4xl font-black text-white">{customerCount}</p>
               </div>
@@ -445,7 +445,7 @@ export default function DashboardPage() {
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 rounded-2xl" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}><Gift size={22} style={{ color: '#D4AF37' }} /></div>
-                  <h2 className="text-white/60 font-medium text-sm">Eingelöste Prämien</h2>
+                  <h2 className="text-white/60 font-medium text-sm">{t.rewardsRedeemed}</h2>
                 </div>
                 <p className="text-4xl font-black text-white">{redeemCount}</p>
               </div>
@@ -456,15 +456,15 @@ export default function DashboardPage() {
               <div className="p-6 border-b border-white/5 flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Store size={20} className="text-white/60" />
-                  <h2 className="text-lg font-bold text-white">Partner-Händler</h2>
-                  <span className="text-xs text-white/40 font-medium ml-2">{merchantCount} Gesamt</span>
+                  <h2 className="text-lg font-bold text-white">{t.partnerMerchants}</h2>
+                  <span className="text-xs text-white/40 font-medium ml-2">{merchantCount} {t.total}</span>
                 </div>
                 <button 
                   onClick={() => setShowCreateMerchant(true)}
                   className="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
                 >
                   <Users size={16} />
-                  Neuen Händler anlegen
+                  {t.createMerchantBtn}
                 </button>
               </div>
               <div className="overflow-x-auto">
@@ -472,12 +472,12 @@ export default function DashboardPage() {
                   <thead>
                     <tr style={{ background: 'rgba(255,255,255,0.03)' }} className="text-white/50 text-xs uppercase tracking-wider">
                       <th className="p-4 font-medium">{t.merchant}</th>
-                      <th className="p-4 font-medium">Slug</th>
-                      <th className="p-4 font-medium">Paket</th>
+                      <th className="p-4 font-medium">{t.slug}</th>
+                      <th className="p-4 font-medium">{t.package}</th>
                       <th className="p-4 font-medium">{t.customers}</th>
                       <th className="p-4 font-medium">{t.status}</th>
-                      <th className="p-4 font-medium">Abo & Zahlung</th>
-                      <th className="p-4 font-medium">Registriert</th>
+                      <th className="p-4 font-medium">{t.aboAndPayment}</th>
+                      <th className="p-4 font-medium">{t.registered}</th>
                       <th className="p-4 font-medium">{t.actions}</th>
                     </tr>
                   </thead>
@@ -512,7 +512,7 @@ export default function DashboardPage() {
                           </td>
                           <td className="p-4">
                             <span className="text-white font-bold">{merchantStats.get(m.id) || 0}</span>
-                            <span className="text-white/40 text-xs"> Kunden</span>
+                            <span className="text-white/40 text-xs"> {t.customers}</span>
                           </td>
                           <td className="p-4">
                             {m.is_active === false ? (
@@ -528,11 +528,11 @@ export default function DashboardPage() {
                           <td className="p-4">
                             <div className="flex flex-col gap-1">
                               <span className="text-xs font-bold text-white">
-                                {m.stripe_subscription_id === 'manual_invoice' ? 'Manuelle Rechnung' : (m.stripe_subscription_id ? 'Stripe Abo' : 'Kein Abo')}
+                                {m.stripe_subscription_id === 'manual_invoice' ? t.manualInvoice : (m.stripe_subscription_id ? t.stripeAbo : t.noAbo)}
                               </span>
                               <span className={`text-[10px] font-bold ${m.subscription_status === 'active' || m.subscription_status === 'cancels_at_period_end' ? 'text-green-500' : 'text-red-500'}`}>
-                                {m.subscription_status === 'active' ? 'AKTIV' : m.subscription_status === 'cancels_at_period_end' ? 'GEKÜNDIGT (NOCH AKTIV)' : (m.subscription_status || 'UNBEKANNT').toUpperCase()}
-                                {m.current_period_end && ` (bis ${new Date(m.current_period_end).toLocaleDateString('de-DE')})`}
+                                {m.subscription_status === 'active' ? t.statusActive : m.subscription_status === 'cancels_at_period_end' ? t.statusCanceledActive : (m.subscription_status || 'UNBEKANNT').toUpperCase()}
+                                {m.current_period_end && ` ${t.until} ${new Date(m.current_period_end).toLocaleDateString('de-DE')})`}
                               </span>
                             </div>
                           </td>
@@ -543,14 +543,14 @@ export default function DashboardPage() {
                             <div className="flex items-center justify-end gap-2">
                               <button 
                                 onClick={() => setManualActivationMerchant(m)}
-                                title="Manuell Freischalten / Rechnung"
+                                title={t.manualActivationTooltip}
                                 className="p-2 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors border border-blue-500/20"
                               >
                                 <Unlock size={14} />
                               </button>
                               <button
                                 onClick={() => setConfirmDeleteMerchant(m)}
-                                title="Händler komplett löschen"
+                                title={t.deleteMerchantTooltip}
                                 className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors border border-red-500/20"
                               >
                                 <Trash2 size={14} />
@@ -561,7 +561,7 @@ export default function DashboardPage() {
                       ));
                     })()}
                     {allMerchants.length === 0 && (
-                      <tr><td colSpan={8} className="p-8 text-center text-white/30">Keine Händler gefunden.</td></tr>
+                      <tr><td colSpan={8} className="p-8 text-center text-white/30">{t.noMerchantsFound}</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -578,14 +578,14 @@ export default function DashboardPage() {
                 <table className="w-full text-left border-collapse">
                   <thead>
                     <tr style={{ background: 'rgba(255,255,255,0.03)' }} className="text-white/50 text-xs uppercase tracking-wider">
-                      <th className="p-4 font-medium">Zeitpunkt</th>
-                      <th className="p-4 font-medium">Kunde (ID)</th>
-                      <th className="p-4 font-medium">Aktion</th>
+                      <th className="p-4 font-medium">{t.time}</th>
+                      <th className="p-4 font-medium">{t.customerId}</th>
+                      <th className="p-4 font-medium">{t.action}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {recentActivity.map((activity: any) => {
-                      const merchantName = activity.customers_loyality?.merchants_loyality?.name || 'Händler';
+                      const merchantName = activity.customers_loyality?.merchants_loyality?.name || t.merchant;
                       const merchantColor = activity.customers_loyality?.merchants_loyality?.primary_color || '#D4AF37';
                       
                       return (
@@ -599,15 +599,15 @@ export default function DashboardPage() {
                           <td className="p-4">
                             {activity.type === 'earn' ? (
                               <span className="inline-flex items-center gap-1.5 text-white/70 text-xs font-medium">
-                                <Coffee size={12} className="text-green-500" /> hat <span className="text-white font-bold">+{activity.amount} Stempel</span> vergeben
+                                <Coffee size={12} className="text-green-500" /> {t.gaveXStamps.split("+X")[0]} <span className="text-white font-bold">+{activity.amount} {t.stampsUpper.toLowerCase()}</span> {t.gaveXStamps.split("Stempel ")[1]}
                               </span>
                             ) : activity.type === 'correction' ? (
                               <span className="inline-flex items-center gap-1.5 text-white/70 text-xs font-medium">
-                                <Activity size={12} className="text-blue-500" /> hat <span className="text-blue-400 font-bold">{activity.amount > 0 ? '+' : ''}{activity.amount} Stempel</span> korrigiert
+                                <Activity size={12} className="text-blue-500" /> {t.correctedXStamps.split("X")[0]} <span className="text-blue-400 font-bold">{activity.amount > 0 ? '+' : ''}{activity.amount} {t.stampsUpper.toLowerCase()}</span> {t.correctedXStamps.split("Stempel ")[1]}
                               </span>
                             ) : (
                               <span className="inline-flex items-center gap-1.5 text-white/70 text-xs font-medium">
-                                <Gift size={12} style={{ color: '#D4AF37' }} /> hat eine <span className="text-[#D4AF37] font-bold">Prämie eingelöst</span>
+                                <Gift size={12} style={{ color: '#D4AF37' }} /> <span className="text-[#D4AF37] font-bold">{t.redeemedReward}</span>
                               </span>
                             )}
                           </td>
@@ -615,7 +615,7 @@ export default function DashboardPage() {
                       );
                     })}
                     {recentActivity.length === 0 && (
-                      <tr><td colSpan={3} className="p-8 text-center text-white/30">Keine Aktivitäten gefunden.</td></tr>
+                      <tr><td colSpan={3} className="p-8 text-center text-white/30">{t.noActivityFound}</td></tr>
                     )}
                   </tbody>
                 </table>
@@ -631,7 +631,7 @@ export default function DashboardPage() {
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-3 mb-6">
                   <BarChart2 size={20} className="text-purple-500" />
-                  <h2 className="text-lg font-bold text-white">Merchant-Wachstum</h2>
+                  <h2 className="text-lg font-bold text-white">{t.merchantGrowth}</h2>
                 </div>
                 <div className="h-[300px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
@@ -643,7 +643,7 @@ export default function DashboardPage() {
                         contentStyle={{ background: '#111', border: '1px solid rgba(168, 85, 247, 0.3)', borderRadius: '12px' }}
                         itemStyle={{ color: '#a855f7' }}
                       />
-                      <Line type="monotone" dataKey="count" name="Neue Partner" stroke="#a855f7" strokeWidth={3} dot={{ r: 4, fill: '#a855f7', strokeWidth: 0 }} activeDot={{ r: 6 }} />
+                      <Line type="monotone" dataKey="count" name={t.newPartners} stroke="#a855f7" strokeWidth={3} dot={{ r: 4, fill: '#a855f7', strokeWidth: 0 }} activeDot={{ r: 6 }} />
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
@@ -653,19 +653,19 @@ export default function DashboardPage() {
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.1)' }}>
                 <div className="flex items-center gap-3 mb-6">
                   <AlertTriangle size={20} className="text-red-500" />
-                  <h2 className="text-lg font-bold text-white">Inaktive Partner (&gt; 7 Tage)</h2>
+                  <h2 className="text-lg font-bold text-white">{t.inactivePartners7Days}</h2>
                 </div>
                 {inactiveMerchants.length === 0 ? (
-                  <p className="text-white/40 text-sm">Alle Partner sind aktuell aktiv!</p>
+                  <p className="text-white/40 text-sm">{t.allPartnersActive}</p>
                 ) : (
                   <div className="space-y-3">
                     {inactiveMerchants.map((m: any) => (
                       <div key={m.id} className="flex justify-between items-center p-4 rounded-2xl bg-black/40 border border-red-500/10">
                         <div>
                           <p className="text-sm font-bold text-white">{m.name}</p>
-                          <p className="text-xs text-white/40">Zuletzt aktiv: {m.lastActivity ? m.lastActivity.toLocaleDateString('de-DE') : 'Nie'}</p>
+                          <p className="text-xs text-white/40">{t.lastActive} {m.lastActivity ? m.lastActivity.toLocaleDateString('de-DE') : t.never}</p>
                         </div>
-                        <span className="px-3 py-1 bg-red-500/20 text-red-500 text-xs font-bold rounded-lg uppercase tracking-wider">Inaktiv</span>
+                        <span className="px-3 py-1 bg-red-500/20 text-red-500 text-xs font-bold rounded-lg uppercase tracking-wider">{t.inactive}</span>
                       </div>
                     ))}
                   </div>
@@ -678,10 +678,10 @@ export default function DashboardPage() {
               <div className="p-6 rounded-3xl h-full" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-3 mb-6">
                   <Activity size={20} className="text-green-500" />
-                  <h2 className="text-lg font-bold text-white">Aktivitäts-Heatmap (Top Partner, 30 Tage)</h2>
+                  <h2 className="text-lg font-bold text-white">{t.activityHeatmap}</h2>
                 </div>
                 {topMerchants.length === 0 ? (
-                  <p className="text-white/40 text-sm">Keine Aktivität in den letzten 30 Tagen.</p>
+                  <p className="text-white/40 text-sm">{t.noActivity30Days}</p>
                 ) : (
                   <div className="space-y-3">
                     {topMerchants.map((m: any, idx: number) => {
@@ -695,7 +695,7 @@ export default function DashboardPage() {
                               <span className="text-white/30 font-mono text-xs">{idx + 1}.</span>
                               <p className="text-sm font-bold text-white">{m.name}</p>
                             </div>
-                            <p className="text-sm font-bold text-green-400">+{m.recentStamps} <span className="text-[10px] text-white/30 uppercase">Stempel</span></p>
+                            <p className="text-sm font-bold text-green-400">+{m.recentStamps} <span className="text-[10px] text-white/30 uppercase">{t.stampsUpper}</span></p>
                           </div>
                         </div>
                       );
@@ -715,7 +715,7 @@ export default function DashboardPage() {
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 bg-green-500/10 rounded-2xl border border-green-500/20"><Activity size={22} className="text-green-500" /></div>
-                  <h2 className="text-white/60 font-medium text-sm">Aktueller MRR (Erwartet)</h2>
+                  <h2 className="text-white/60 font-medium text-sm">{t.currentMRRExpected}</h2>
                 </div>
                 {(() => {
                   let mrr = 0;
@@ -728,13 +728,13 @@ export default function DashboardPage() {
                   });
                   return <p className="text-4xl font-black text-white">{mrr}€</p>;
                 })()}
-                <p className="text-xs text-white/40 mt-2">Basierend auf aktiven Paketen in der DB</p>
+                <p className="text-xs text-white/40 mt-2">{t.basedOnActivePackages}</p>
               </div>
 
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
                 <div className="flex items-center gap-4 mb-4">
                   <div className="p-3 rounded-2xl" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}><DollarSign size={22} style={{ color: '#D4AF37' }} /></div>
-                  <h2 className="text-white/60 font-medium text-sm">Bezahlter Jahresumsatz ({financesYear})</h2>
+                  <h2 className="text-white/60 font-medium text-sm">{t.paidAnnualRevenue} ({financesYear})</h2>
                 </div>
                 {financesLoading ? (
                   <div className="h-10 flex items-center"><RefreshCw size={24} className="animate-spin text-white/30" /></div>
@@ -743,7 +743,7 @@ export default function DashboardPage() {
                     {(financesData.reduce((acc, curr) => acc + curr.amount_paid, 0) / 100).toFixed(2)}€
                   </p>
                 )}
-                <p className="text-xs text-white/40 mt-2">Basierend auf Stripe Invoices (Status: Paid)</p>
+                <p className="text-xs text-white/40 mt-2">{t.basedOnStripeInvoices}</p>
               </div>
             </div>
 
@@ -751,7 +751,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between mb-6">
                 <div className="flex items-center gap-3">
                   <FileText size={20} className="text-white/60" />
-                  <h2 className="text-lg font-bold text-white">Stripe Rechnungen</h2>
+                  <h2 className="text-lg font-bold text-white">{t.stripeInvoices}</h2>
                 </div>
                 
                 <div className="flex items-center gap-3">
@@ -792,7 +792,7 @@ export default function DashboardPage() {
                     disabled={financesData.length === 0 || financesLoading}
                     className="flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium bg-white/5 border border-white/10 text-white hover:bg-white/10 transition-all disabled:opacity-50"
                   >
-                    <Download size={16} /> CSV Download
+                    <Download size={16} /> {t.csvDownload}
                   </button>
                 </div>
               </div>
@@ -802,7 +802,7 @@ export default function DashboardPage() {
                   <thead>
                     <tr style={{ background: 'rgba(255,255,255,0.03)' }} className="text-white/50 text-xs uppercase tracking-wider">
                       <th className="p-4 font-medium">{t.date}</th>
-                      <th className="p-4 font-medium">Kunde / E-Mail</th>
+                      <th className="p-4 font-medium">{t.customerEmail}</th>
                       <th className="p-4 font-medium">{t.amount}</th>
                       <th className="p-4 font-medium text-right">Aktion</th>
                     </tr>
@@ -811,13 +811,13 @@ export default function DashboardPage() {
                     {financesLoading ? (
                       <tr><td colSpan={4} className="p-8 text-center text-white/30"><RefreshCw size={24} className="animate-spin mx-auto" /></td></tr>
                     ) : financesData.length === 0 ? (
-                      <tr><td colSpan={4} className="p-8 text-center text-white/30">Keine Zahlungen für dieses Jahr gefunden.</td></tr>
+                      <tr><td colSpan={4} className="p-8 text-center text-white/30">{t.noPaymentsFound}</td></tr>
                     ) : (
                       financesData.map((inv: any) => (
                         <tr key={inv.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
                           <td className="p-4 text-white/70 text-sm">{new Date(inv.created * 1000).toLocaleDateString('de-DE')}</td>
                           <td className="p-4">
-                            <p className="text-sm font-bold text-white">{inv.customer_name || 'Unbekannt'}</p>
+                            <p className="text-sm font-bold text-white">{inv.customer_name || t.unknown}</p>
                             <p className="text-xs text-white/40">{inv.customer_email || '-'}</p>
                           </td>
                           <td className="p-4">
@@ -826,7 +826,7 @@ export default function DashboardPage() {
                           <td className="p-4 text-right">
                             {inv.invoice_pdf && (
                               <a href={inv.invoice_pdf} target="_blank" rel="noopener noreferrer" className="text-xs text-[#D4AF37] hover:underline">
-                                PDF ansehen
+                                {t.viewPdf}
                               </a>
                             )}
                           </td>
@@ -842,7 +842,7 @@ export default function DashboardPage() {
             <div className="p-6 rounded-3xl" style={{ background: 'rgba(239, 68, 68, 0.05)', border: '1px solid rgba(239, 68, 68, 0.2)' }}>
               <div className="flex items-center gap-3 mb-6">
                 <AlertTriangle size={20} className="text-red-500" />
-                <h2 className="text-lg font-bold text-red-500">Fehlgeschlagene Zahlungen (2+ Versuche)</h2>
+                <h2 className="text-lg font-bold text-red-500">{t.failedPaymentsTitle}</h2>
               </div>
               
               <div className="overflow-x-auto">
@@ -850,22 +850,22 @@ export default function DashboardPage() {
                   <thead>
                     <tr style={{ background: 'rgba(239, 68, 68, 0.1)' }} className="text-red-400/80 text-xs uppercase tracking-wider">
                       <th className="p-4 font-medium">{t.date}</th>
-                      <th className="p-4 font-medium">Kunde / E-Mail</th>
+                      <th className="p-4 font-medium">{t.customerEmail}</th>
                       <th className="p-4 font-medium">{t.amount}</th>
-                      <th className="p-4 font-medium text-right">Fehlversuche</th>
+                      <th className="p-4 font-medium text-right">{t.failedAttempts}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {financesLoading ? (
                       <tr><td colSpan={4} className="p-8 text-center text-red-500/50"><RefreshCw size={24} className="animate-spin mx-auto" /></td></tr>
                     ) : failedFinancesData.length === 0 ? (
-                      <tr><td colSpan={4} className="p-8 text-center text-red-500/50">Keine mehrfach fehlgeschlagenen Zahlungen gefunden.</td></tr>
+                      <tr><td colSpan={4} className="p-8 text-center text-red-500/50">{t.noFailedPaymentsFound}</td></tr>
                     ) : (
                       failedFinancesData.map((inv: any) => (
                         <tr key={inv.id} className="border-b border-red-500/10 last:border-0 hover:bg-red-500/5 transition-colors">
                           <td className="p-4 text-red-400/70 text-sm">{new Date(inv.created * 1000).toLocaleDateString('de-DE')}</td>
                           <td className="p-4">
-                            <p className="text-sm font-bold text-red-400">{inv.customer_name || 'Unbekannt'}</p>
+                            <p className="text-sm font-bold text-red-400">{inv.customer_name || t.unknown}</p>
                             <p className="text-xs text-red-400/60">{inv.customer_email || '-'}</p>
                           </td>
                           <td className="p-4">
@@ -905,14 +905,14 @@ export default function DashboardPage() {
               <div className="p-3 bg-red-500/10 rounded-2xl border border-red-500/20">
                 <AlertTriangle size={20} className="text-red-500" />
               </div>
-              <h3 className="text-white font-bold text-lg">Kunden löschen?</h3>
+              <h3 className="text-white font-bold text-lg">{t.deleteCustomerTitle}</h3>
             </div>
             <p className="text-white/60 text-sm">
-              Alle Stempel und Daten für Karte{' '}
+              {t.deleteCustomerDesc1}{' '}
               <span className="font-mono text-white/80 bg-white/5 px-1 rounded">
                 {confirmDelete.wallet_object_id?.substring(0, 12)}...
               </span>{' '}
-              werden dauerhaft gelöscht. Das kann nicht rückgängig gemacht werden.
+              {t.deleteCustomerDesc2}
             </p>
             <div className="flex gap-3 pt-2">
               <button
@@ -938,25 +938,25 @@ export default function DashboardPage() {
       {manualActivationMerchant && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
           <div className="bg-[#111111] border border-white/10 rounded-3xl p-8 max-w-md w-full">
-            <h3 className="text-xl font-bold text-white mb-2">Manuell Freischalten</h3>
+            <h3 className="text-xl font-bold text-white mb-2">{t.manualActivationTitle2}</h3>
             <p className="text-white/60 text-sm mb-6">
-              Hiermit schaltest du den Händler <strong className="text-white">{manualActivationMerchant.name}</strong> für klassische Rechnungszahlung manuell frei.
+              {t.manualActivationDesc1} <strong className="text-white">{manualActivationMerchant.name}</strong> {t.manualActivationDesc2}
             </p>
 
             <div className="space-y-4 mb-8">
               <div>
-                <label className="block text-xs font-medium text-white/50 mb-2">Dauer der Freischaltung</label>
+                <label className="block text-xs font-medium text-white/50 mb-2">{t.activationDuration}</label>
                 <select 
                   value={manualMonths}
                   onChange={(e) => setManualMonths(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
                 >
-                  <option className="bg-[#111111] text-white" value="1">1 Monat</option>
-                  <option className="bg-[#111111] text-white" value="3">3 Monate</option>
-                  <option className="bg-[#111111] text-white" value="6">6 Monate</option>
-                  <option className="bg-[#111111] text-white" value="12">1 Jahr</option>
-                  <option className="bg-[#111111] text-white" value="24">2 Jahre</option>
-                  <option className="bg-[#111111] text-white" value="120">10 Jahre (Lifetime)</option>
+                  <option className="bg-[#111111] text-white" value="1">{t.month1}</option>
+                  <option className="bg-[#111111] text-white" value="3">{t.month3}</option>
+                  <option className="bg-[#111111] text-white" value="6">{t.month6}</option>
+                  <option className="bg-[#111111] text-white" value="12">{t.year1}</option>
+                  <option className="bg-[#111111] text-white" value="24">{t.year2}</option>
+                  <option className="bg-[#111111] text-white" value="120">{t.lifetime}</option>
                 </select>
               </div>
             </div>
@@ -974,7 +974,7 @@ export default function DashboardPage() {
                 disabled={manualActivating}
                 className="flex-1 py-3 bg-blue-500 text-white font-bold rounded-xl hover:bg-blue-600 transition-colors disabled:opacity-50"
               >
-                {manualActivating ? 'Bitte warten...' : 'Freischalten'}
+                {manualActivating ? t.pleaseWait : t.activateBtn}
               </button>
             </div>
           </div>
@@ -984,7 +984,7 @@ export default function DashboardPage() {
       {showCreateMerchant && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
           <div className="bg-[#111111] border border-white/10 rounded-3xl p-8 max-w-md w-full my-8">
-            <h3 className="text-xl font-bold text-white mb-2">{t.createMerchant}</h3>
+            <h3 className="text-xl font-bold text-white mb-2">{t.createMerchantTitle}</h3>
             <p className="text-white/60 text-sm mb-6">
               Lege einen neuen Händler für das betreute Onboarding an.
             </p>
@@ -992,17 +992,17 @@ export default function DashboardPage() {
             {createdMerchantResult ? (
               <div className="space-y-6">
                 <div className="p-4 bg-green-500/10 border border-green-500/20 rounded-2xl">
-                  <p className="text-green-500 font-bold mb-2">Händler erfolgreich erstellt!</p>
+                  <p className="text-green-500 font-bold mb-2">{t.merchantCreatedSuccessTitle}</p>
                   <div className="space-y-2 mt-4 text-sm">
-                    <p className="text-white/60">Dashboard-Link:</p>
+                    <p className="text-white/60">{t.dashboardLink}</p>
                     <a href={`/dashboard/${createdMerchantResult.slug}`} target="_blank" rel="noreferrer" className="text-blue-400 block break-all">
                       https://treue.marketif.de/dashboard/{createdMerchantResult.slug}
                     </a>
-                    <p className="text-white/60 mt-4">Scanner-Link:</p>
+                    <p className="text-white/60 mt-4">{t.scannerLink}</p>
                     <a href={`/${createdMerchantResult.slug}`} target="_blank" rel="noreferrer" className="text-blue-400 block break-all">
                       https://treue.marketif.de/{createdMerchantResult.slug}
                     </a>
-                    <p className="text-white/60 mt-4">Mitarbeiter/Admin PIN:</p>
+                    <p className="text-white/60 mt-4">{t.adminPin}</p>
                     <p className="text-2xl font-mono text-white tracking-widest">{createdMerchantResult.pin}</p>
                   </div>
                 </div>
@@ -1170,7 +1170,7 @@ export default function DashboardPage() {
 
                 {newMerchantPackage === 'custom' && (
                   <div>
-                    <label className="block text-xs font-medium text-white/50 mb-2">Individueller Preis (€ monatlich)</label>
+                    <label className="block text-xs font-medium text-white/50 mb-2">{t.customPrice}</label>
                     <input 
                       type="number"
                       value={newMerchantPrice}
@@ -1193,7 +1193,7 @@ export default function DashboardPage() {
                     disabled={creatingMerchant || !newMerchantName}
                     className="flex-1 py-3 bg-[#D4AF37] text-black font-bold rounded-xl hover:bg-[#c4a130] transition-colors disabled:opacity-50"
                   >
-                    {creatingMerchant ? 'Erstelle...' : 'Händler erstellen'}
+                    {creatingMerchant ? t.creatingBtn : t.createMerchantSubmitBtn}
                   </button>
                 </div>
               </div>
@@ -1218,7 +1218,7 @@ export default function DashboardPage() {
               </div>
               <h2 className="text-xl font-bold text-white mb-2">{t.confirmDeleteMerchant}</h2>
               <p className="text-white/60 text-sm leading-relaxed">
-                Willst du den Händler <span className="font-bold text-red-400">{confirmDeleteMerchant.name}</span> wirklich unwiderruflich löschen? Alle Daten (Kunden, Stempel, Logins, Zahlungen) werden sofort vernichtet.
+                {t.deleteMerchantWarning1} <span className="font-bold text-red-400">{confirmDeleteMerchant.name}</span> {t.deleteMerchantWarning2}
               </p>
             </div>
             
