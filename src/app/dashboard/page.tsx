@@ -63,6 +63,31 @@ export default function DashboardPage() {
 
   const [confirmDeleteMerchant, setConfirmDeleteMerchant] = useState<any>(null);
   const [deletingMerchant, setDeletingMerchant] = useState(false);
+  const [newsMessage, setNewsMessage] = useState('');
+  const [activeNews, setActiveNews] = useState('');
+  const [newsLoading, setNewsLoading] = useState(false);
+
+
+  
+  const handleSendNews = async (isActive: boolean) => {
+    setNewsLoading(true);
+    try {
+      const res = await fetch('/api/admin/news', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: '2025', message: newsMessage, isActive })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setActiveNews(isActive ? newsMessage : '');
+        if (!isActive) setNewsMessage('');
+        alert('Erfolgreich gespeichert!');
+      }
+    } catch(e) {
+      alert('Fehler');
+    }
+    setNewsLoading(false);
+  };
 
   const fetchFinances = async (year: number) => {
     setFinancesLoading(true);

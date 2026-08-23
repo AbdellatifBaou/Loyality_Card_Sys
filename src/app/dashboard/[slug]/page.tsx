@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { Users, Pizza, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock, BarChart2, Megaphone, Send, ExternalLink, Eye, EyeOff, CheckCircle, Save } from 'lucide-react';
+import { Users, Pizza, Gift, Activity, Bell, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock, BarChart2, Megaphone, Send, ExternalLink, Eye, EyeOff, CheckCircle, Save } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { PRICING } from '@/lib/pricing';
 import { MERCHANT_DICT } from '@/locales/merchant';
@@ -82,6 +82,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   const [editPoints, setEditPoints] = useState<number | null>(null);
   const [savingPoints, setSavingPoints] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [systemNews, setSystemNews] = useState('');
   
   // New Analytics State
   const [currentMonthCustomers, setCurrentMonthCustomers] = useState(0);
@@ -197,6 +198,16 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       }
 
       setMerchant(merchantData);
+
+      // Fetch system news
+      try {
+        const newsRes = await fetch('/api/news');
+        const newsData = await newsRes.json();
+        if (newsData.active && newsData.message) {
+          setSystemNews(newsData.message);
+        }
+      } catch (err) {}
+
       setPushSettings({
         stamp_header: merchantData?.push_settings?.stamp_header || `${DICT[(merchantData?.language || merchant?.language || 'de') as keyof typeof DICT]?.defaultStampHeader1 || ' von 9 Stempeln '} ${merchantData?.stamp_symbol || '✨'}`,
         stamp_body: merchantData?.push_settings?.stamp_body || `${DICT[(merchantData?.language || merchant?.language || 'de') as keyof typeof DICT]?.defaultStampBody || 'Du hast {points} Stempel gesammelt.'} Weiter so!`,
@@ -785,6 +796,22 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           </div>
         </header>
 
+          {systemNews && (
+            <div className="bg-indigo-500/20 border border-indigo-500/50 rounded-xl p-4 flex gap-4 items-start animate-fade-in">
+              <div className="p-2 bg-indigo-500/20 rounded-lg text-indigo-400">
+                <Bell size={20} />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-indigo-200 font-bold mb-1">Marketif News</h3>
+                <p className="text-white/80 text-sm whitespace-pre-line">{systemNews}</p>
+              </div>
+              <button onClick={() => setSystemNews('')} className="text-white/40 hover:text-white/80">
+                <X size={20} />
+              </button>
+            </div>
+          )}
+
+
         {/* Payment Warning Banner */}
         {merchant?.subscription_status === 'payment_failed' && (
           <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-2xl flex items-start gap-4">
@@ -805,6 +832,22 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             {t.accountDeactivatedAlert}
           </div>
         )}
+        
+          {systemNews && (
+            <div className="bg-indigo-500/20 border border-indigo-500/50 rounded-xl p-4 flex gap-4 items-start animate-fade-in mb-6">
+              <div className="p-2 bg-indigo-500/20 rounded-lg text-indigo-400">
+                <Bell size={20} />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-indigo-200 font-bold mb-1">Marketif News</h3>
+                <p className="text-white/80 text-sm whitespace-pre-line">{systemNews}</p>
+              </div>
+              <button onClick={() => setSystemNews('')} className="text-white/40 hover:text-white/80">
+                <X size={20} />
+              </button>
+            </div>
+          )}
+
         <div className="flex gap-4 border-b border-white/5 pb-1">
           <button 
             onClick={() => setActiveTab('overview')}
