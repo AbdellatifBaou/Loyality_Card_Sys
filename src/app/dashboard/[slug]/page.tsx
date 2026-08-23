@@ -769,13 +769,6 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           </div>
         </header>
 
-           className="text-white/40 hover:text-white/80">
-                <X size={20} />
-              </button>
-            </div>
-          )}
-
-
         {/* Payment Warning Banner */}
         {merchant?.subscription_status === 'payment_failed' && (
           <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-2xl flex items-start gap-4">
