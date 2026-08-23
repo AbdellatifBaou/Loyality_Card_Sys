@@ -210,7 +210,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
 
       setPushSettings({
         stamp_header: merchantData?.push_settings?.stamp_header || `${(DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultStampHeader1 || ' von 9 Stempeln '} ${merchantData?.stamp_symbol || '✨'}`,
-        stamp_body: merchantData?.push_settings?.stamp_body || `${(DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultStampBody || 'Du hast {points} Stempel gesammelt.'} Weiter so!`,
+        stamp_body: merchantData?.push_settings?.stamp_body || `${(DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultStampBody || 'Du hast {points} Stempel gesammelt.'}${(DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultStampBodyEnd || ' Weiter so!'}`,
         reward_header: merchantData?.push_settings?.reward_header || (DICT as any)[merchantData?.language || merchant?.language || 'de']?.rewardHeader || 'Belohnung bereit! ✨',
         reward_body: merchantData?.push_settings?.reward_body || merchantData?.reward_text || (DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultRewardBody || 'Herzlichen Glückwunsch!',
         redeem_header: merchantData?.push_settings?.redeem_header || `${(DICT as any)[merchantData?.language || merchant?.language || 'de']?.redeemHeader || 'Prämie eingelöst! '}${merchantData?.stamp_symbol || '✨'}`,
