@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Unlock, Lock, LogOut, BarChart2, Store, DollarSign, Download, FileText, X } from 'lucide-react';
+import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Unlock, Lock, LogOut, BarChart2, Store, DollarSign, Download, FileText, X, Edit3 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { ADMIN_DICT } from '@/locales/admin';
 
@@ -269,6 +269,28 @@ export default function DashboardPage() {
     }
   };
 
+  
+  const handleResetPin = async (merchantId: string, currentPin: string) => {
+    const newPin = prompt('Neues 4-stelliges Passwort (PIN) eingeben:', currentPin);
+    if (!newPin || newPin.length !== 4) return;
+    try {
+      const response = await fetch('/api/admin/reset-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: '2025', merchantId, newPin })
+      });
+      const data = await response.json();
+      if (data.success) {
+        alert('Passwort erfolgreich geändert!');
+        fetchData();
+      } else {
+        alert('Fehler: ' + data.error);
+      }
+    } catch (e: any) {
+      alert('Systemfehler: ' + e.message);
+    }
+  };
+
   const handleDeleteMerchant = async () => {
     if (!confirmDeleteMerchant) return;
     setDeletingMerchant(true);
@@ -504,7 +526,16 @@ export default function DashboardPage() {
                               <span className="font-bold text-white">{m.name}</span>
                             </div>
                           </td>
-                          <td className="p-4 font-mono text-xs text-white/40">{m.slug}</td>
+                          <td className="p-4 font-mono text-xs text-white/40">
+                            <div>{m.slug}</div>
+                            <div className="mt-1 flex items-center gap-2 text-[10px] bg-white/5 p-1 rounded inline-flex">
+                              <Lock className="w-3 h-3 text-white/30" />
+                              <strong className="text-white tracking-widest">{m.admin_pin}</strong>
+                              <button onClick={() => handleResetPin(m.id, m.admin_pin)} className="text-[#D4AF37] hover:text-white transition-colors ml-1" title="Passwort ändern">
+                                <Edit3 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </td>
                           <td className="p-4">
                             <span className="text-xs font-bold uppercase tracking-wider px-2 py-1 rounded-lg bg-white/5 border border-white/10 text-white/70">
                               {m.package_type || 'silber'}
