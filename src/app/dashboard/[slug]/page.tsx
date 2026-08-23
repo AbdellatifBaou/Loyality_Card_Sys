@@ -768,7 +768,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                 {merchant?.name || 'Händler'} <span style={{ color: primaryColor }}>Dashboard</span>
               </h1>
               <p className="text-white/50 mt-0.5 font-medium text-sm flex items-center gap-2">
-                <Settings size={14} /> Verwaltung & Statistiken
+                <Settings size={14} /> {t.mgmtStats}
               </p>
             </div>
           </div>

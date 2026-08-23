@@ -356,7 +356,7 @@ export default function DashboardPage() {
           <div className="text-center mb-8">
             <img src="/Marketif_LOGO_Symbol.png" alt="Marketif" className="h-16 w-auto mx-auto mb-6 opacity-90" style={{ filter: 'brightness(0) invert(1)' }} />
             <h1 className="text-2xl font-bold text-white mb-2">Admin Login</h1>
-            <p className="text-white/40 text-sm">Bitte gib das Admin-Passwort ein.</p>
+            <p className="text-white/40 text-sm">{t.enterPasswordDesc}</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
             <input
@@ -1017,7 +1017,7 @@ export default function DashboardPage() {
           <div className="bg-[#111111] border border-white/10 rounded-3xl p-8 max-w-md w-full my-8">
             <h3 className="text-xl font-bold text-white mb-2">{t.createMerchantTitle}</h3>
             <p className="text-white/60 text-sm mb-6">
-              Lege einen neuen Händler für das betreute Onboarding an.
+              {t.createMerchantDesc}
             </p>
 
             {createdMerchantResult ? (
@@ -1133,7 +1133,7 @@ export default function DashboardPage() {
                       Bild erfolgreich geladen & optimiert
                     </div>
                   )}
-                  <p className="text-[10px] text-white/30 mt-1">Lade dein Logo hoch (wird automatisch zugeschnitten und optimiert).</p>
+                  <p className="text-[10px] text-white/30 mt-1">{t.logoUploadSub}</p>
                 </div>
 
                 <div>
