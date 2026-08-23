@@ -4,10 +4,10 @@ import { useState, useEffect, use } from 'react';
 import { Users, Pizza, Gift, Activity, Bell, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock, BarChart2, Megaphone, Send, ExternalLink, Eye, EyeOff, CheckCircle, Save } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { PRICING } from '@/lib/pricing';
-import { MERCHANT_DICT } from '@/locales/merchant';
+import { MERCHANT_MERCHANT_DICT } from '@/locales/merchant';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
-const DICT = {
+const MERCHANT_DICT = {
   de: {
     defaultStampHeader1: " von 9 Stempeln ",
     defaultStampBody: "Du hast {points} Stempel gesammelt.",
@@ -209,14 +209,14 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       } catch (err) {}
 
       setPushSettings({
-        stamp_header: merchantData?.push_settings?.stamp_header || `${(DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultStampHeader1 || ' von 9 Stempeln '} ${merchantData?.stamp_symbol || '✨'}`,
-        stamp_body: merchantData?.push_settings?.stamp_body || `${(DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultStampBody || 'Du hast {points} Stempel gesammelt.'}${(DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultStampBodyEnd || ' Weiter so!'}`,
-        reward_header: merchantData?.push_settings?.reward_header || (DICT as any)[merchantData?.language || merchant?.language || 'de']?.rewardHeader || 'Belohnung bereit! ✨',
-        reward_body: merchantData?.push_settings?.reward_body || merchantData?.reward_text || (DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultRewardBody || 'Herzlichen Glückwunsch!',
-        redeem_header: merchantData?.push_settings?.redeem_header || `${(DICT as any)[merchantData?.language || merchant?.language || 'de']?.redeemHeader || 'Prämie eingelöst! '}${merchantData?.stamp_symbol || '✨'}`,
-        redeem_body: merchantData?.push_settings?.redeem_body || `${(DICT as any)[merchantData?.language || merchant?.language || 'de']?.redeemBody || 'Viel Spaß mit deiner Prämie!'} ${(DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultRedeemBodyEnd || ' Deine Karte wurde auf 0 zurückgesetzt.'}`,
-        miss_you_header: merchantData?.push_settings?.miss_you_header || `${(DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultMissYouHeader || 'Wir vermissen dich bei'} ${merchantData?.name || 'uns'}! 👋`,
-        miss_you_body: merchantData?.push_settings?.miss_you_body || (DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultMissYouBody || 'Du warst schon länger nicht mehr da.'
+        stamp_header: merchantData?.push_settings?.stamp_header || `${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultStampHeader1 || ' von 9 Stempeln '} ${merchantData?.stamp_symbol || '✨'}`,
+        stamp_body: merchantData?.push_settings?.stamp_body || `${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultStampBody || 'Du hast {points} Stempel gesammelt.'}${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultStampBodyEnd || ' Weiter so!'}`,
+        reward_header: merchantData?.push_settings?.reward_header || (MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.rewardHeader || 'Belohnung bereit! ✨',
+        reward_body: merchantData?.push_settings?.reward_body || merchantData?.reward_text || (MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultRewardBody || 'Herzlichen Glückwunsch!',
+        redeem_header: merchantData?.push_settings?.redeem_header || `${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.redeemHeader || 'Prämie eingelöst! '}${merchantData?.stamp_symbol || '✨'}`,
+        redeem_body: merchantData?.push_settings?.redeem_body || `${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.redeemBody || 'Viel Spaß mit deiner Prämie!'} ${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultRedeemBodyEnd || ' Deine Karte wurde auf 0 zurückgesetzt.'}`,
+        miss_you_header: merchantData?.push_settings?.miss_you_header || `${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultMissYouHeader || 'Wir vermissen dich bei'} ${merchantData?.name ||Wir vermissen dich bei ! 👋`,
+        miss_you_body: merchantData?.push_settings?.miss_you_body || (MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultMissYouBody || 'Du warst schon länger nicht mehr da.'
       });
       setCustomerCount(cc || 0);
       setEarnCount(earnStamps?.length || 0);
@@ -371,7 +371,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         new Date(c.created_at).toLocaleString('de-DE'), 
         c.wallet_object_id || ''
       ].join(','))
-    ].join('\n');
+    ].join('Wir vermissen dich bei ! 👋n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -606,7 +606,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     const rows = customers.map((c: any) =>
       `"${c.wallet_object_id}",${c.points},"${new Date(c.created_at).toLocaleDateString('de-DE')}"`
     );
-    const csv = [header, ...rows].join('\n');
+    const csv = [header, ...rows].join('Wir vermissen dich bei ! 👋n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -639,7 +639,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   };
 
   const lang = preMerchant?.language || 'de';
-  const t = MERCHANT_DICT[lang as keyof typeof MERCHANT_DICT] || MERCHANT_DICT.de;
+  const t = MERCHANT_MERCHANT_DICT[lang as keyof typeof MERCHANT_MERCHANT_DICT] || MERCHANT_MERCHANT_DICT.de;
 
   if (notFound) {
     return (
@@ -1451,7 +1451,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       <input 
                         type="text" 
                         className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50"
-                        placeholder={`{points}${DICT[(merchant?.language || merchant?.language || 'de') as keyof typeof DICT]?.defaultStampHeader1 || ' von 9 Stempeln '} ${merchant?.stamp_symbol || '✨'}`} 
+                        placeholder={`{points}${MERCHANT_DICT[(merchant?.language || merchant?.language || 'de') as keyof typeof MERCHANT_DICT]?.defaultStampHeader1 || ' von 9 Stempeln '} ${merchant?.stamp_symbol || '✨'}`} 
                         value={pushSettings.stamp_header || ''}
                         onChange={(e) => setPushSettings({...pushSettings, stamp_header: e.target.value})}
                       />
@@ -1520,7 +1520,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         type="text" 
                         value={pushSettings.redeem_header || ''}
                         onChange={(e) => setPushSettings({...pushSettings, redeem_header: e.target.value})}
-                        placeholder={`${DICT[(merchant?.language || merchant?.language || 'de') as keyof typeof DICT]?.redeemHeader || 'Prämie eingelöst! '}`} 
+                        placeholder={`${MERCHANT_DICT[(merchant?.language || merchant?.language || 'de') as keyof typeof MERCHANT_DICT]?.redeemHeader || 'Prämie eingelöst! '}`} 
                         className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50" 
                       />
                     </div>
@@ -1554,7 +1554,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         type="text" 
                         value={pushSettings.miss_you_header || ''}
                         onChange={(e) => setPushSettings({...pushSettings, miss_you_header: e.target.value})}
-                        placeholder={`Wir vermissen dich bei ${merchant?.name || 'uns'}! 👋`}
+                        placeholder={`Wir vermissen dich bei ${merchant?.name ||Wir vermissen dich bei ! 👋`}
                         className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50" 
                       />
                     </div>
