@@ -1309,7 +1309,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       disabled={billingLoading}
                       className="w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-white disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95 bg-white/10 hover:bg-white/20"
                     >
-                      {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : '{t.switchToAutoPayment}'}
+                      {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : t.switchToAutoPayment}
                     </button>
                   )}
                 </>
@@ -1693,7 +1693,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   className="w-full py-3 rounded-xl font-bold uppercase tracking-widest text-black transition-all disabled:opacity-50 mt-4" 
                   style={{ background: merchant?.primary_color || '#D4AF37' }}
                 >
-                  {pinChangeStatus.loading ? <RefreshCw className="animate-spin mx-auto" size={16} /> : '{t.updatePin}'}
+                  {pinChangeStatus.loading ? <RefreshCw className="animate-spin mx-auto" size={16} /> : t.updatePin}
                 </button>
               </form>
             </div>
