@@ -10,14 +10,14 @@ export async function POST(req: Request) {
 
     if (isActive) {
       // Deactivate all previous
-      await supabase.from('system_news').update({ is_active: false }).neq('is_active', null);
+      await supabase.from('system_news').update({ is_active: false }).not('is_active', 'is', null);
       
       // Insert new
       const { error } = await supabase.from('system_news').insert([{ message, is_active: true }]);
       if (error) throw error;
     } else {
       // Just deactivate all
-      await supabase.from('system_news').update({ is_active: false }).neq('is_active', null);
+      await supabase.from('system_news').update({ is_active: false }).not('is_active', 'is', null);
     }
 
     return NextResponse.json({ success: true });
