@@ -4,35 +4,8 @@ import { useState, useEffect, use } from 'react';
 import { Users, Pizza, Gift, Activity, Bell, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock, BarChart2, Megaphone, Send, ExternalLink, Eye, EyeOff, CheckCircle, Save } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { PRICING } from '@/lib/pricing';
-import { MERCHANT_MERCHANT_DICT } from '@/locales/merchant';
+import { MERCHANT_DICT } from '@/locales/merchant';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-
-const MERCHANT_DICT = {
-  de: {
-    defaultStampHeader1: " von 9 Stempeln ",
-    defaultStampBody: "Du hast {points} Stempel gesammelt.",
-    redeemHeader: "Prämie eingelöst! ",
-    redeemBody: "Viel Spaß mit deiner Prämie!",
-    rewardHeader: "Belohnung bereit! ✨",
-    rewardBody: "Dein gratis Geschenk wartet auf dich!"
-  },
-  en: {
-    defaultStampHeader1: " of 9 stamps ",
-    defaultStampBody: "You have collected {points} stamps.",
-    redeemHeader: "Reward redeemed! ",
-    redeemBody: "Enjoy your reward!",
-    rewardHeader: "Reward ready! ✨",
-    rewardBody: "Your free gift is waiting for you!"
-  },
-  fr: {
-    defaultStampHeader1: " sur 9 tampons ",
-    defaultStampBody: "Vous avez collecté {points} tampons.",
-    redeemHeader: "Récompense réclamée! ",
-    redeemBody: "Profitez de votre récompense!",
-    rewardHeader: "Récompense prête! ✨",
-    rewardBody: "Votre cadeau gratuit vous attend!"
-  }
-};
 
 export default function MerchantDashboardPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug: rawSlug } = use(params);
@@ -371,7 +344,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         new Date(c.created_at).toLocaleString('de-DE'), 
         c.wallet_object_id || ''
       ].join(','))
-    ].join('Wir vermissen dich bei ! 👋n');
+    ].join('\n');
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -606,7 +579,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     const rows = customers.map((c: any) =>
       `"${c.wallet_object_id}",${c.points},"${new Date(c.created_at).toLocaleDateString('de-DE')}"`
     );
-    const csv = [header, ...rows].join('Wir vermissen dich bei ! 👋n');
+    const csv = [header, ...rows].join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -639,7 +612,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   };
 
   const lang = preMerchant?.language || 'de';
-  const t = MERCHANT_MERCHANT_DICT[lang as keyof typeof MERCHANT_MERCHANT_DICT] || MERCHANT_MERCHANT_DICT.de;
+  const t = MERCHANT_DICT[lang as keyof typeof MERCHANT_DICT] || MERCHANT_DICT.de;
 
   if (notFound) {
     return (
@@ -1554,7 +1527,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         type="text" 
                         value={pushSettings.miss_you_header || ''}
                         onChange={(e) => setPushSettings({...pushSettings, miss_you_header: e.target.value})}
-                        placeholder={`Wir vermissen dich bei ${merchant?.name ||Wir vermissen dich bei ! 👋`}
+                        placeholder={`Wir vermissen dich bei ${merchant?.name || 'uns'}! 👋`}
                         className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50" 
                       />
                     </div>
