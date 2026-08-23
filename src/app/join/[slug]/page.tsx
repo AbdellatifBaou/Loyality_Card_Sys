@@ -10,11 +10,11 @@ const DICT = {
   de: {
     merchantNotFound: "Händler nicht gefunden.",
     errorCreating: "Fehler beim Erstellen der Karte",
-    exclusiveLoyalty: "{t.exclusiveLoyalty}",
+    exclusiveLoyalty: "Exklusives Treueprogramm",
     exclusiveBenefits1: "Exklusive",
     exclusiveBenefits2: "Vorteile & Specials",
-    ready: "{t.ready}",
-    addToWallet: "{t.addToWallet}",
+    ready: "Bereit...",
+    addToWallet: "Zum Wallet hinzufügen",
     defaultReward: "10 Stempel = 1 GRATIS Lieblingsgericht",
   },
   en: {
@@ -149,9 +149,7 @@ export default function DynamicJoinPage({ params }: { params: Promise<{ slug: st
             <p
               className="text-[10px] font-black tracking-[0.6em] uppercase mb-3 opacity-60"
               style={{ color: primaryColor }}
-            >
-              Exklusives Treueprogramm
-            </p>
+            >{t.exclusiveLoyalty}</p>
             <h1 className="text-5xl font-extrabold text-white leading-none tracking-tight mb-4">
               {merchant.name}
             </h1>
@@ -231,11 +229,10 @@ export default function DynamicJoinPage({ params }: { params: Promise<{ slug: st
               <Loader2 className="animate-spin" size={24} />
             ) : success ? (
               <>
-                <CheckCircle2 size={24} /> Bereit...
-              </>
+                <CheckCircle2 size={24} />{t.ready}</>
             ) : (
               <>
-                Karte zum Wallet hinzufügen <ArrowRight size={22} strokeWidth={3} />
+                {t.addToWallet} <ArrowRight size={22} strokeWidth={3} />
               </>
             )}
           </button>

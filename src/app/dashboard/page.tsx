@@ -498,6 +498,44 @@ export default function DashboardPage() {
               </div>
             </div>
 
+            
+                {/* News Broadcast */}
+                <div className="mt-6 p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                  <div className="flex items-center gap-4 mb-4">
+                    <div className="p-3 bg-indigo-500/10 rounded-2xl border border-indigo-500/20"><Activity size={22} className="text-indigo-500" /></div>
+                    <h2 className="text-lg font-bold text-white">{t.newsBroadcast || 'System News (Broadcast)'}</h2>
+                  </div>
+                  {activeNews && (
+                    <div className="mb-4 p-4 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-200">
+                      <strong>Aktive Nachricht:</strong> {activeNews}
+                    </div>
+                  )}
+                  <textarea 
+                    value={newsMessage}
+                    onChange={(e) => setNewsMessage(e.target.value)}
+                    placeholder={t.newsPlaceholder || 'Nachricht an alle Händler-Dashboards...'}
+                    className="w-full bg-black/30 border border-white/10 rounded-xl p-4 text-white placeholder-white/30 mb-4 min-h-[100px] resize-y focus:outline-none focus:border-indigo-500/50"
+                  />
+                  <div className="flex gap-4">
+                    <button 
+                      onClick={() => handleSendNews(true)}
+                      disabled={newsLoading || !newsMessage.trim()}
+                      className="px-6 py-3 bg-indigo-500 hover:bg-indigo-400 text-white font-bold rounded-xl transition-colors disabled:opacity-50"
+                    >
+                      {newsLoading ? 'Lädt...' : (t.sendNews || 'News Senden')}
+                    </button>
+                    {activeNews && (
+                      <button 
+                        onClick={() => handleSendNews(false)}
+                        disabled={newsLoading}
+                        className="px-6 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-500 font-bold rounded-xl transition-colors disabled:opacity-50"
+                      >
+                        {t.deactivateNews || 'News Deaktivieren'}
+                      </button>
+                    )}
+                  </div>
+                </div>
+
             {/* Customer Management */}
             <div className="rounded-3xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="p-6 border-b border-white/5 flex items-center justify-between">
@@ -975,9 +1013,7 @@ export default function DashboardPage() {
                 onClick={() => setConfirmDelete(null)}
                 disabled={deleting}
                 className="flex-1 py-3 rounded-2xl border border-white/10 text-white/60 hover:bg-white/5 transition-colors text-sm font-medium"
-              >
-                Abbrechen
-              </button>
+              >{t.cancel}</button>
               <button
                 onClick={() => deleteCustomer(confirmDelete)}
                 disabled={deleting}
@@ -1022,9 +1058,7 @@ export default function DashboardPage() {
                 onClick={() => setManualActivationMerchant(null)}
                 className="flex-1 py-3 text-white/60 font-medium hover:text-white transition-colors"
                 disabled={manualActivating}
-              >
-                Abbrechen
-              </button>
+              >{t.cancel}</button>
               <button
                 onClick={handleManualActivation}
                 disabled={manualActivating}
@@ -1241,9 +1275,7 @@ export default function DashboardPage() {
                     onClick={() => setShowCreateMerchant(false)}
                     className="flex-1 py-3 text-white/60 font-medium hover:text-white transition-colors"
                     disabled={creatingMerchant}
-                  >
-                    Abbrechen
-                  </button>
+                  >{t.cancel}</button>
                   <button
                     onClick={handleCreateMerchant}
                     disabled={creatingMerchant || !newMerchantName}
@@ -1283,15 +1315,13 @@ export default function DashboardPage() {
                 onClick={() => setConfirmDeleteMerchant(null)}
                 className="flex-1 py-3 bg-white/5 border border-white/10 text-white font-medium rounded-xl hover:bg-white/10 transition-colors"
                 disabled={deletingMerchant}
-              >
-                Abbrechen
-              </button>
+              >{t.cancel}</button>
               <button
                 onClick={handleDeleteMerchant}
                 disabled={deletingMerchant}
                 className="flex-1 py-3 bg-red-500 text-white font-bold rounded-xl hover:bg-red-600 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
               >
-                {deletingMerchant ? <RefreshCw className="animate-spin" size={18} /> : 'Ja, komplett löschen'}
+                {deletingMerchant ? <RefreshCw className="animate-spin" size={18} /> : t.yesDeleteAll}
               </button>
             </div>
           </div>

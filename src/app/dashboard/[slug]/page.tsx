@@ -212,11 +212,11 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         stamp_header: merchantData?.push_settings?.stamp_header || `${DICT[(merchantData?.language || merchant?.language || 'de') as keyof typeof DICT]?.defaultStampHeader1 || ' von 9 Stempeln '} ${merchantData?.stamp_symbol || '✨'}`,
         stamp_body: merchantData?.push_settings?.stamp_body || `${DICT[(merchantData?.language || merchant?.language || 'de') as keyof typeof DICT]?.defaultStampBody || 'Du hast {points} Stempel gesammelt.'} Weiter so!`,
         reward_header: merchantData?.push_settings?.reward_header || DICT[(merchantData?.language || merchant?.language || 'de') as keyof typeof DICT]?.rewardHeader || 'Belohnung bereit! ✨',
-        reward_body: merchantData?.push_settings?.reward_body || merchantData?.reward_text || 'Herzlichen Glückwunsch! Du hast deine Stempelkarte voll. Zeige sie beim nächsten Mal vor.',
+        reward_body: merchantData?.push_settings?.reward_body || merchantData?.reward_text || DICT[(merchantData?.language || merchant?.language || 'de') as keyof typeof DICT]?.defaultRewardBody || 'Herzlichen Glückwunsch!',
         redeem_header: merchantData?.push_settings?.redeem_header || `${DICT[(merchantData?.language || merchant?.language || 'de') as keyof typeof DICT]?.redeemHeader || 'Prämie eingelöst! '}${merchantData?.stamp_symbol || '✨'}`,
-        redeem_body: merchantData?.push_settings?.redeem_body || `${DICT[(merchantData?.language || merchant?.language || 'de') as keyof typeof DICT]?.redeemBody || 'Viel Spaß mit deiner Prämie!'} Deine Karte wurde auf 0 zurückgesetzt, du kannst nun wieder neu sammeln.`,
-        miss_you_header: merchantData?.push_settings?.miss_you_header || `Wir vermissen dich bei ${merchantData?.name || 'uns'}! 👋`,
-        miss_you_body: merchantData?.push_settings?.miss_you_body || 'Du warst schon länger nicht mehr da. Komm vorbei und zeige deine Karte — deine Stempel warten!'
+        redeem_body: merchantData?.push_settings?.redeem_body || `${DICT[(merchantData?.language || merchant?.language || 'de') as keyof typeof DICT]?.redeemBody || 'Viel Spaß mit deiner Prämie!'} ${DICT[(merchantData?.language || merchant?.language || 'de') as keyof typeof DICT]?.defaultRedeemBodyEnd || ' Deine Karte wurde auf 0 zurückgesetzt.'}`,
+        miss_you_header: merchantData?.push_settings?.miss_you_header || `${DICT[(merchantData?.language || merchant?.language || 'de') as keyof typeof DICT]?.defaultMissYouHeader || 'Wir vermissen dich bei'} ${merchantData?.name || 'uns'}! 👋`,
+        miss_you_body: merchantData?.push_settings?.miss_you_body || DICT[(merchantData?.language || merchant?.language || 'de') as keyof typeof DICT]?.defaultMissYouBody || 'Du warst schon länger nicht mehr da.'
       });
       setCustomerCount(cc || 0);
       setEarnCount(earnStamps?.length || 0);
