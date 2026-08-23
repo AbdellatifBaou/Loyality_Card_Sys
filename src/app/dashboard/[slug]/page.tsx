@@ -4,6 +4,7 @@ import { useState, useEffect, use } from 'react';
 import { Users, Pizza, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock, BarChart2, Megaphone, Send, ExternalLink, Eye, EyeOff, CheckCircle, Save } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { PRICING } from '@/lib/pricing';
+import { MERCHANT_DICT } from '@/locales/merchant';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 
 const DICT = {
