@@ -215,7 +215,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         reward_body: merchantData?.push_settings?.reward_body || merchantData?.reward_text || (MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultRewardBody || 'Herzlichen Glückwunsch!',
         redeem_header: merchantData?.push_settings?.redeem_header || `${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.redeemHeader || 'Prämie eingelöst! '}${merchantData?.stamp_symbol || '✨'}`,
         redeem_body: merchantData?.push_settings?.redeem_body || `${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.redeemBody || 'Viel Spaß mit deiner Prämie!'} ${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultRedeemBodyEnd || ' Deine Karte wurde auf 0 zurückgesetzt.'}`,
-        miss_you_header: merchantData?.push_settings?.miss_you_header || `${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultMissYouHeader || 'Wir vermissen dich bei'} ${merchantData?.name ||Wir vermissen dich bei ! 👋`,
+        miss_you_header: merchantData?.push_settings?.miss_you_header || `${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultMissYouHeader || 'Wir vermissen dich bei'} ${merchantData?.name || 'uns'}! 👋`,
         miss_you_body: merchantData?.push_settings?.miss_you_body || (MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultMissYouBody || 'Du warst schon länger nicht mehr da.'
       });
       setCustomerCount(cc || 0);
