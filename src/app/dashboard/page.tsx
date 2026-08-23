@@ -111,7 +111,7 @@ export default function DashboardPage() {
         setFinancesData(data.invoices || []);
         setFailedFinancesData(data.failedInvoices || []);
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error(e);
     } finally {
       setFinancesLoading(false);
@@ -1027,7 +1027,7 @@ export default function DashboardPage() {
                     } else {
                       showToast((t.errorGeneric || 'Fehler: ') + data.error, 'error');
                     }
-                  } catch (e) {
+                  } catch (e: any) {
                     showToast((t.systemError || 'Systemfehler: ') + e.message, 'error');
                   }
                 }}
