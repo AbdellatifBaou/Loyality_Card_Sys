@@ -45,6 +45,15 @@ export default function DashboardPage() {
   const [manualMonths, setManualMonths] = useState('12');
   const [manualActivating, setManualActivating] = useState(false);
 
+  const [toast, setToast] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+  const showToast = (message: string, type: 'success' | 'error' = 'error') => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  const [resetPinData, setResetPinData] = useState<{merchantId: string, currentPin: string} | null>(null);
+  const [resetPinValue, setResetPinValue] = useState('');
+
   const [financesYear, setFinancesYear] = useState(2026);
   const [financesData, setFinancesData] = useState<any[]>([]);
   const [failedFinancesData, setFailedFinancesData] = useState<any[]>([]);
@@ -81,10 +90,10 @@ export default function DashboardPage() {
       if (data.success) {
         setActiveNews(isActive ? newsMessage : '');
         if (!isActive) setNewsMessage('');
-        alert('Erfolgreich gespeichert!');
+        showToast(t.successSaved || 'Erfolgreich gespeichert!', 'success');
       }
     } catch(e) {
-      alert('Fehler');
+      showToast(t.error || 'Fehler', 'error');
     }
     setNewsLoading(false);
   };
@@ -243,10 +252,10 @@ export default function DashboardPage() {
         setCustomerCount(prev => prev - 1);
         setConfirmDelete(null);
       } else {
-        alert('Fehler beim Löschen: ' + result.error);
+        showToast((t.errorDeleting || 'Fehler beim Löschen: ') + result.error, 'error');
       }
     } catch (err: any) {
-      alert('Netzwerkfehler beim Löschen: ' + err.message);
+      showToast((t.networkErrorDeleting || 'Netzwerkfehler beim Löschen: ') + err.message, 'error');
     } finally {
       setDeleting(false);
     }
@@ -264,10 +273,10 @@ export default function DashboardPage() {
         setTopMerchants(prev => prev.map(m => m.id === merchantId ? { ...m, is_active: !currentStatus } : m));
       setAllMerchants(prev => prev.map(m => m.id === merchantId ? { ...m, is_active: !currentStatus } : m));
       } else {
-        alert('Fehler: ' + result.error);
+        showToast((t.errorGeneric || 'Fehler: ') + result.error, 'error');
       }
     } catch (err) {
-      alert('Netzwerkfehler');
+      showToast(t.networkError || 'Netzwerkfehler', 'error');
     }
   };
 
@@ -285,35 +294,19 @@ export default function DashboardPage() {
         setCreatedMerchantResult(data.merchant);
         fetchData();
       } else {
-        alert('Fehler: ' + data.error);
+        showToast((t.errorGeneric || 'Fehler: ') + data.error, 'error');
       }
     } catch (e: any) {
-      alert('Systemfehler: ' + e.message);
+      showToast((t.systemError || 'Systemfehler: ') + e.message, 'error');
     } finally {
       setCreatingMerchant(false);
     }
   };
 
   
-  const handleResetPin = async (merchantId: string, currentPin: string) => {
-    const newPin = prompt('Neues 4-stelliges Passwort (PIN) eingeben:', currentPin);
-    if (!newPin || newPin.length !== 4) return;
-    try {
-      const response = await fetch('/api/admin/reset-pin', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: '2025', merchantId, newPin })
-      });
-      const data = await response.json();
-      if (data.success) {
-        alert('Passwort erfolgreich geändert!');
-        fetchData();
-      } else {
-        alert('Fehler: ' + data.error);
-      }
-    } catch (e: any) {
-      alert('Systemfehler: ' + e.message);
-    }
+  const handleResetPin = (merchantId: string, currentPin: string) => {
+    setResetPinData({ merchantId, currentPin });
+    setResetPinValue('');
   };
 
   const handleDeleteMerchant = async () => {
@@ -335,10 +328,10 @@ export default function DashboardPage() {
         setMerchantCount(prev => prev - 1);
         setConfirmDeleteMerchant(null);
       } else {
-        alert('Fehler: ' + data.error);
+        showToast((t.errorGeneric || 'Fehler: ') + data.error, 'error');
       }
     } catch (e: any) {
-      alert('Systemfehler beim Löschen: ' + e.message);
+      showToast((t.systemError || 'Systemfehler: ') + e.message, 'error');
     } finally {
       setDeletingMerchant(false);
     }
@@ -364,11 +357,11 @@ export default function DashboardPage() {
         } catch(e) {
            errMsg = res.statusText;
         }
-        alert('Fehler bei der manuellen Freischaltung: ' + errMsg);
+        showToast((t.errorManualActivation || 'Fehler: ') + errMsg, 'error');
       }
     } catch (e: any) {
       console.error(e);
-      alert('Systemfehler: ' + e.message);
+      showToast((t.systemError || 'Systemfehler: ') + e.message, 'error');
     } finally {
       setManualActivating(false);
     }
@@ -982,6 +975,71 @@ export default function DashboardPage() {
       </div>
     )}
   </div>
+
+      
+      {/* Toast Notification */}
+      {toast && (
+        <div
+          className={"fixed top-6 left-1/2 -translate-x-1/2 px-6 py-3 rounded-2xl shadow-2xl z-[100] animate-fade-in flex items-center gap-3 " + (toast.type === 'success' ? 'bg-[#D4AF37] text-black' : 'bg-red-500 text-white')}
+        >
+          <span className="font-bold text-sm">{toast.message}</span>
+        </div>
+      )}
+
+      {/* Reset PIN Modal */}
+      {resetPinData && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <div className="bg-[#111] border border-white/10 p-6 rounded-2xl w-full max-w-sm">
+            <h3 className="text-xl font-bold text-white mb-2">{t.enterNewPin || 'Neues 4-stelliges Passwort (PIN) eingeben:'}</h3>
+            <p className="text-sm text-white/50 mb-4">{t.currentPin || 'Aktueller PIN'}: {resetPinData.currentPin}</p>
+            <input
+              type="text"
+              maxLength={4}
+              inputMode="numeric"
+              className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white font-mono tracking-widest text-center outline-none focus:border-[#D4AF37] transition-all mb-4"
+              value={resetPinValue}
+              onChange={e => setResetPinValue(e.target.value.replace(/\D/g, ''))}
+              placeholder="1234"
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setResetPinData(null); setResetPinValue(''); }}
+                className="flex-1 py-3 bg-white/5 hover:bg-white/10 rounded-xl text-white/70 font-medium transition-all"
+              >
+                {t.cancel || 'Abbrechen'}
+              </button>
+              <button
+                onClick={async () => {
+                  if (resetPinValue.length !== 4) return;
+                  try {
+                    const response = await fetch('/api/admin/reset-pin', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ password: '2025', merchantId: resetPinData.merchantId, newPin: resetPinValue })
+                    });
+                    const data = await response.json();
+                    if (data.success) {
+                      showToast(t.passwordChangedSuccess || 'Passwort erfolgreich geändert!', 'success');
+                      fetchData();
+                      setResetPinData(null);
+                      setResetPinValue('');
+                    } else {
+                      showToast((t.errorGeneric || 'Fehler: ') + data.error, 'error');
+                    }
+                  } catch (e) {
+                    showToast((t.systemError || 'Systemfehler: ') + e.message, 'error');
+                  }
+                }}
+                disabled={resetPinValue.length !== 4}
+                className="flex-1 py-3 bg-[#D4AF37] hover:bg-[#b0922e] text-black rounded-xl font-bold transition-all disabled:opacity-50"
+              >
+                {t.ok || 'OK'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Delete Confirmation Modal */}
       {confirmDelete && (
