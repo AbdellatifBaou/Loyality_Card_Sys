@@ -769,16 +769,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           </div>
         </header>
 
-          {systemNews && (
-            <div className="bg-indigo-500/20 border border-indigo-500/50 rounded-xl p-4 flex gap-4 items-start animate-fade-in">
-              <div className="p-2 bg-indigo-500/20 rounded-lg text-indigo-400">
-                <Bell size={20} />
-              </div>
-              <div className="flex-1">
-                <h3 className="text-indigo-200 font-bold mb-1">Marketif News</h3>
-                <p className="text-white/80 text-sm whitespace-pre-line">{systemNews}</p>
-              </div>
-              <button onClick={() => setSystemNews('')} className="text-white/40 hover:text-white/80">
+           className="text-white/40 hover:text-white/80">
                 <X size={20} />
               </button>
             </div>
