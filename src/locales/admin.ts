@@ -195,10 +195,6 @@ export const ADMIN_DICT = {
     deleteMerchantWarning2: "wirklich unwiderruflich löschen? Alle Daten (Kunden, Stempel, Logins, Zahlungen) werden sofort vernichtet."
   },
   fr: {
-    logoutBtn: "Déconnexion",
-    dashboardText: "Tableau de bord",
-    chooseText: "Choisissez",
-    scannerTitle: "Scanner",
     pkgGold: "Forfait Or",
     pkgSilver: "Forfait Argent",
     langFr: "Français",
@@ -432,6 +428,10 @@ export const SCANNER_DICT = {
     errorStamping: "Fehler beim Stempeln"
   },
   fr: {
+    logoutBtn: "Déconnexion",
+    dashboardText: "Tableau de bord",
+    chooseText: "Choisissez",
+    scannerTitle: "Scanner",
     terminalFor: "Terminal pour",
     open: "Ouvrir",
     loginFailed: "Échec de la connexion",
