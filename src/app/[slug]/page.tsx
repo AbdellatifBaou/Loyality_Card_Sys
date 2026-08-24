@@ -470,7 +470,7 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
               <p className="text-white/70 mb-6">{message}</p>
               <div className="p-6 rounded-[32px] border border-white/10" style={{ background: `${primaryColor}15` }}>
                 <p className="text-5xl font-black mb-1" style={{ color: primaryColor }}>
-                  {newPoints} <span className="text-2xl opacity-40">/ 9</span>
+                  {newPoints} <span className="text-2xl opacity-40">/ {merchant?.stamp_goal || 9}</span>
                 </p>
                 <p className="text-[10px] uppercase tracking-[0.2em] font-bold text-white/40">{t.currentPointBalance}</p>
               </div>

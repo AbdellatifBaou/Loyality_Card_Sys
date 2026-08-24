@@ -13,6 +13,7 @@ export async function GET(req: NextRequest) {
   let merchantName = 'Deine Belohnung';
   let rewardText = 'Deine Belohnung ist bereit';
   let logoUrl = `${appUrl}/Aroma_logo.png`;
+  let lang = 'de';
 
   if (merchantSlug) {
     const { createClient } = require('@supabase/supabase-js');
@@ -20,14 +21,22 @@ export async function GET(req: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
-    const { data } = await adminSupabase.from('merchants_loyality').select('primary_color, name, reward_text, logo_url').eq('slug', merchantSlug).single();
+    const { data } = await adminSupabase.from('merchants_loyality').select('primary_color, name, reward_text, logo_url, language').eq('slug', merchantSlug).single();
     if (data) {
       if (data.primary_color) primaryColor = data.primary_color;
       if (data.name) merchantName = data.name;
       if (data.reward_text) rewardText = data.reward_text;
       if (data.logo_url) logoUrl = data.logo_url;
+      if (data.language) lang = data.language;
     }
   }
+
+  const translations: Record<string, { congrats: string; hint: string }> = {
+    de: { congrats: 'Herzlichen Glückwunsch!', hint: 'Zeige diese Karte beim nächsten Besuch vor' },
+    en: { congrats: 'Congratulations!', hint: 'Show this card on your next visit' },
+    fr: { congrats: 'Félicitations !', hint: 'Présentez cette carte lors de votre prochaine visite' }
+  };
+  const t = translations[lang] || translations.de;
 
   const GOLD       = primaryColor;
   const GOLD_LIGHT = primaryColor;
@@ -124,7 +133,7 @@ export async function GET(req: NextRequest) {
             lineHeight: 1,
             textAlign: 'center',
           }}>
-            Herzlichen Glückwunsch!
+            {t.congrats}
           </span>
 
           <span style={{
@@ -159,7 +168,7 @@ export async function GET(req: NextRequest) {
           letterSpacing: '1px',
           textAlign: 'center',
         }}>
-          Zeige diese Karte beim nächsten Besuch vor
+          {t.hint}
         </span>
       </div>
     ),

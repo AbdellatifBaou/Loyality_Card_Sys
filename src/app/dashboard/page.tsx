@@ -1153,6 +1153,10 @@ export default function DashboardPage() {
                     <a href={`/${createdMerchantResult.slug}`} target="_blank" rel="noreferrer" className="text-blue-400 block break-all">
                       https://treue.marketif.de/{createdMerchantResult.slug}
                     </a>
+                    <p className="text-white/60 mt-4">Join-Link:</p>
+                    <a href={`/join/${createdMerchantResult.slug}`} target="_blank" rel="noreferrer" className="text-blue-400 block break-all">
+                      https://treue.marketif.de/join/{createdMerchantResult.slug}
+                    </a>
                     <p className="text-white/60 mt-4">{t.adminPin}</p>
                     <p className="text-2xl font-mono text-white tracking-widest">{createdMerchantResult.pin}</p>
                   </div>
@@ -1336,7 +1340,7 @@ export default function DashboardPage() {
                   <input 
                     type="number"
                     min="3"
-                    max="20"
+                    max="14"
                     value={newMerchantStampGoal}
                     onChange={(e) => setNewMerchantStampGoal(parseInt(e.target.value) || 9)}
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"

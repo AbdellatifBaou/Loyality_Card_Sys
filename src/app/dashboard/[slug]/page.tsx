@@ -182,7 +182,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       } catch (err) {}
 
       setPushSettings({
-        stamp_header: merchantData?.push_settings?.stamp_header || `${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultStampHeader1 || ' von 9 Stempeln '} ${merchantData?.stamp_symbol || '✨'}`,
+        stamp_header: merchantData?.push_settings?.stamp_header || `{points}${((MERCHANT_DICT as any)[merchantData?.language || 'de']?.defaultStampHeader1 || ' von 9 Stempeln ').replace('9', (merchantData?.stamp_goal || 9).toString())} ${merchantData?.stamp_symbol || '✨'}`,
         stamp_body: merchantData?.push_settings?.stamp_body || `${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultStampBody || 'Du hast {points} Stempel gesammelt.'}${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultStampBodyEnd || ' Weiter so!'}`,
         reward_header: merchantData?.push_settings?.reward_header || (MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.rewardHeader || 'Belohnung bereit! ✨',
         reward_body: merchantData?.push_settings?.reward_body || merchantData?.reward_text || (MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultRewardBody || 'Herzlichen Glückwunsch!',
@@ -945,7 +945,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                             !searchQuery || c.wallet_object_id?.toLowerCase().includes(searchQuery.toLowerCase())
                           )
                           .map((customer: any) => {
-                          const pct = Math.round((customer.points / 9) * 100);
+                          const pct = Math.round((customer.points / (merchant?.stamp_goal || 9)) * 100);
                           return (
                             <tr key={customer.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors cursor-pointer" onClick={() => openCustomer(customer)}>
                               <td className="p-4">
@@ -953,7 +953,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                                   {customer.wallet_object_id?.substring(0, 14)}...
                                 </span>
                               </td>
-                              <td className="p-4 text-white font-bold">{customer.points} <span className="text-white/20">/ 9</span></td>
+                              <td className="p-4 text-white font-bold">{customer.points} <span className="text-white/20">/ {merchant?.stamp_goal || 9}</span></td>
                               <td className="p-4">
                                 <div className="flex items-center gap-2">
                                   <div className="flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden min-w-[60px]">
@@ -1399,7 +1399,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                     </div>
                     <div>
                       <h3 className="text-white font-medium">{t.whenStamping}</h3>
-                      <p className="text-xs text-white/50">{t.sentWhen1to8Stamps}</p>
+                      <p className="text-xs text-white/50">{t.sentWhen1to8Stamps?.replace('8', ((merchant?.stamp_goal || 9) - 1).toString())}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 gap-4">
@@ -1408,7 +1408,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       <input 
                         type="text" 
                         className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white placeholder-white/30 outline-none focus:border-white/50"
-                        placeholder={`{points}${MERCHANT_DICT[(merchant?.language || merchant?.language || 'de') as keyof typeof MERCHANT_DICT]?.defaultStampHeader1 || ' von 9 Stempeln '} ${merchant?.stamp_symbol || '✨'}`} 
+                        placeholder={`{points}${((MERCHANT_DICT as any)[merchant?.language || 'de']?.defaultStampHeader1 || ' von 9 Stempeln ').replace('9', (merchant?.stamp_goal || 9).toString())} ${merchant?.stamp_symbol || '✨'}`}
                         value={pushSettings.stamp_header || ''}
                         onChange={(e) => setPushSettings({...pushSettings, stamp_header: e.target.value})}
                       />
@@ -1432,7 +1432,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       <Gift className="w-4 h-4 text-yellow-400" />
                     </div>
                     <div>
-                      <h3 className="text-white font-medium">{t.rewardReached}</h3>
+                      <h3 className="text-white font-medium">{t.rewardReached?.replace('9', (merchant?.stamp_goal || 9).toString())}</h3>
                       <p className="text-xs text-white/50">{t.sentWhenCardFull}</p>
                     </div>
                   </div>
@@ -1778,11 +1778,12 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                 ><Minus size={18} /></button>
                 <div className="flex-1 text-center">
                   <span className="text-4xl font-black text-white">{editPoints}</span>
-                  <span className="text-white/20 text-xl"> / 9</span>
+                  <span className="text-white/20 text-xl"> / {merchant?.stamp_goal || 9}</span>
                 </div>
                 <button
                   onClick={() => setEditPoints(p => {
-                    if ((p ?? 0) >= 9) return 0;
+                    const goal = merchant?.stamp_goal || 9;
+                    if ((p ?? 0) >= goal) return 0;
                     return (p ?? 0) + 1;
                   })}
                   className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 text-white flex items-center justify-center hover:bg-white/10 transition-all"

@@ -18,6 +18,7 @@ export async function GET(
     const merchantSlug = searchParams.get('merchant');
     let primaryColor = '#D4AF37';
     let stampSymbol = '✨';
+    let stampGoal = 9;
 
     if (merchantSlug) {
       // Use service role key to avoid RLS / Anon key edge case issues
@@ -26,9 +27,10 @@ export async function GET(
         process.env.NEXT_PUBLIC_SUPABASE_URL,
         process.env.SUPABASE_SERVICE_ROLE_KEY
       );
-      const { data } = await adminSupabase.from('merchants_loyality').select('primary_color, stamp_symbol').eq('slug', merchantSlug).single();
+      const { data } = await adminSupabase.from('merchants_loyality').select('primary_color, stamp_symbol, stamp_goal').eq('slug', merchantSlug).single();
       if (data?.primary_color) primaryColor = data.primary_color;
       if (data?.stamp_symbol) stampSymbol = data.stamp_symbol;
+      if (data?.stamp_goal) stampGoal = data.stamp_goal;
     }
 
     const GOLD       = primaryColor;
@@ -42,10 +44,13 @@ export async function GET(
     const rgb = hexToRgb(primaryColor);
     const GOLD_DIM   = `rgba(${rgb},0.5)`;
 
-    // Max circle size fitting 5 per row in 1000px with 24px gaps and 40px side padding
-    // 5 × 164 + 4 × 24 + 2 × 40 = 996px ≈ 1000px
-    const SIZE = 164;
-    const GAP  = 24;
+    // Calculate dynamic size based on max rows to fit (max 14 stamps = 3 rows)
+    const colsPerRow = stampGoal > 10 ? 5 : 5;
+    const numRows = Math.ceil(stampGoal / colsPerRow);
+    
+    // Scale down if 3 rows to fit well
+    const SIZE = numRows > 2 ? 140 : 164;
+    const GAP  = numRows > 2 ? 20 : 24;
 
     const circle = (idx: number) => {
       const stamped = idx < validPoints;
@@ -72,17 +77,22 @@ export async function GET(
           }}
         >
           {stamped ? (
-            <span style={{ fontSize: '72px', lineHeight: 1 }}>{stampSymbol}</span>
-          ) : idx === 9 ? (
-            <span style={{ fontSize: '72px', lineHeight: 1 }}>🎁</span>
+            <span style={{ fontSize: numRows > 2 ? '60px' : '72px', lineHeight: 1 }}>{stampSymbol}</span>
+          ) : idx === stampGoal - 1 ? (
+            <span style={{ fontSize: numRows > 2 ? '60px' : '72px', lineHeight: 1 }}>🎁</span>
           ) : (
-            <span style={{ fontSize: '50px', lineHeight: 1, opacity: 0.2 }}>
+            <span style={{ fontSize: numRows > 2 ? '42px' : '50px', lineHeight: 1, opacity: 0.2 }}>
               {stampSymbol}
             </span>
           )}
         </div>
       );
     };
+
+    const rows = [];
+    for (let i = 0; i < stampGoal; i += colsPerRow) {
+      rows.push(Array.from({ length: Math.min(colsPerRow, stampGoal - i) }).map((_, j) => circle(i + j)));
+    }
 
     return new ImageResponse(
       (
@@ -117,15 +127,11 @@ export async function GET(
             background: `linear-gradient(90deg, transparent, ${GOLD} 20%, ${GOLD_LIGHT} 50%, ${GOLD} 80%, transparent)`,
           }} />
 
-          {/* Row 1: circles 1–5 */}
-          <div style={{ display: 'flex', gap: `${GAP}px` }}>
-            {Array.from({ length: 5 }).map((_, i) => circle(i))}
-          </div>
-
-          {/* Row 2: circles 6–10 */}
-          <div style={{ display: 'flex', gap: `${GAP}px` }}>
-            {Array.from({ length: 5 }).map((_, i) => circle(i + 5))}
-          </div>
+          {rows.map((row, i) => (
+            <div key={i} style={{ display: 'flex', gap: `${GAP}px` }}>
+              {row}
+            </div>
+          ))}
         </div>
       ),
       { 
