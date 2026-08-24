@@ -1,4 +1,4 @@
-﻿import { Metadata, ResolvingMetadata } from 'next';
+import { Metadata, ResolvingMetadata } from 'next';
 import { supabase } from '@/lib/supabase';
 
 type Props = {
@@ -26,11 +26,11 @@ export async function generateMetadata(
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://treue.marketif.de';
-  const logoUrl = \\/api/images/logo?slug=\\;
-  const title = \Digitale Treuekarte von \\;
+  const logoUrl = `${appUrl}/api/images/logo?slug=${slug}`;
+  const title = `Digitale Treuekarte von ${merchant.name}`;
   const description = merchant.reward_text 
-    ? \Sichere dir exklusive Belohnungen: \\ 
-    : \Hol dir jetzt die digitale Treuekarte von \ für dein Google Wallet.\;
+    ? `Sichere dir exklusive Belohnungen: ${merchant.reward_text}` 
+    : `Hol dir jetzt die digitale Treuekarte von ${merchant.name} für dein Google Wallet.`;
 
   return {
     title,
@@ -38,14 +38,14 @@ export async function generateMetadata(
     openGraph: {
       title,
       description,
-      url: \\/join/\\,
+      url: `${appUrl}/join/${slug}`,
       siteName: 'Marketif Loyalty',
       images: [
         {
           url: logoUrl,
           width: 500,
           height: 500,
-          alt: \Logo von \\,
+          alt: `Logo von ${merchant.name}`,
         }
       ],
       locale: 'de_DE',
