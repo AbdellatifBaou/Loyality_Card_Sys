@@ -376,7 +376,7 @@ export async function POST(req: Request) {
               console.error('[WEBHOOK ERROR] Failed to fetch customer for cancel email:', err);
             }
           }
-        } else if (sub.status === 'active') {
+        } else if (sub.status === 'active' || sub.status === 'trialing') {
           const updateObj: any = { is_active: true, subscription_status: 'active' };
           const periodEnd = (sub as any).current_period_end;
           if (periodEnd) {

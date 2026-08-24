@@ -62,7 +62,8 @@ export async function POST(req: Request) {
 
     // Erstelle die Checkout Session
     const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
-    const session = await stripe.checkout.sessions.create({
+    
+    const sessionConfig: any = {
       customer: customerId,
       line_items: [
         {
@@ -73,7 +74,20 @@ export async function POST(req: Request) {
       mode: 'subscription',
       success_url: `${appUrl}/dashboard/${merchant.slug}?checkout=success`,
       cancel_url: `${appUrl}/dashboard/${merchant.slug}?checkout=cancel`,
-    });
+    };
+
+    if (merchant.current_period_end) {
+      const currentPeriodEnd = new Date(merchant.current_period_end).getTime() / 1000;
+      const now = Date.now() / 1000;
+      // Stripe requires trial_end to be at least 48h in the future
+      if (currentPeriodEnd > now + 48 * 3600) {
+        sessionConfig.subscription_data = {
+          trial_end: Math.floor(currentPeriodEnd),
+        };
+      }
+    }
+
+    const session = await stripe.checkout.sessions.create(sessionConfig);
 
     return NextResponse.json({ url: session.url });
   } catch (error: any) {
