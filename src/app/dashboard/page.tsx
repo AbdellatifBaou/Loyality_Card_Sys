@@ -59,6 +59,7 @@ export default function DashboardPage() {
   const [failedFinancesData, setFailedFinancesData] = useState<any[]>([]);
   const [financesLoading, setFinancesLoading] = useState(false);
 
+
   const [showCreateMerchant, setShowCreateMerchant] = useState(false);
   const [newMerchantName, setNewMerchantName] = useState('');
   const [newMerchantColor, setNewMerchantColor] = useState('#D4AF37');
@@ -67,6 +68,8 @@ export default function DashboardPage() {
   const [newMerchantLogo, setNewMerchantLogo] = useState('');
   const [newMerchantSymbol, setNewMerchantSymbol] = useState('☕️');
   const [newMerchantLanguage, setNewMerchantLanguage] = useState('de');
+  const [newMerchantStampGoal, setNewMerchantStampGoal] = useState<number>(9);
+  const [newMerchantRewardText, setNewMerchantRewardText] = useState('');
   const [creatingMerchant, setCreatingMerchant] = useState(false);
   const [createdMerchantResult, setCreatedMerchantResult] = useState<any>(null);
 
@@ -287,7 +290,7 @@ export default function DashboardPage() {
       const response = await fetch('/api/admin/create-merchant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: '2025', name: newMerchantName, primaryColor: newMerchantColor, logoUrl: newMerchantLogo, stampSymbol: newMerchantSymbol, language: newMerchantLanguage, packageType: newMerchantPackage, customPrice: newMerchantPackage === 'custom' ? parseFloat(newMerchantPrice) : null })
+        body: JSON.stringify({ password: '2025', name: newMerchantName, primaryColor: newMerchantColor, logoUrl: newMerchantLogo, stampSymbol: newMerchantSymbol, language: newMerchantLanguage, packageType: newMerchantPackage, customPrice: newMerchantPackage === 'custom' ? parseFloat(newMerchantPrice) : null, stampGoal: newMerchantStampGoal, rewardText: newMerchantRewardText })
       });
       const data = await response.json();
       if (data.success) {
@@ -1327,6 +1330,29 @@ export default function DashboardPage() {
                     />
                   </div>
                 )}
+
+                <div>
+                  <label className="block text-xs font-medium text-white/50 mb-2">Stempel-Ziel (Anzahl Stempel für Belohnung)</label>
+                  <input 
+                    type="number"
+                    min="3"
+                    max="20"
+                    value={newMerchantStampGoal}
+                    onChange={(e) => setNewMerchantStampGoal(parseInt(e.target.value) || 9)}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-white/50 mb-2">Belohnungstext (Für Wallet & Push)</label>
+                  <input 
+                    type="text"
+                    value={newMerchantRewardText}
+                    onChange={(e) => setNewMerchantRewardText(e.target.value)}
+                    placeholder="z.B. Dein Gratis-Lieblingsgericht ist bereit"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
+                  />
+                </div>
 
                 <div className="flex gap-4 mt-8 pt-4 border-t border-white/10">
                   <button

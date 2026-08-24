@@ -293,8 +293,10 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
   try {
     const issuerId = process.env.GOOGLE_ISSUER_ID;
     const isPublicUrl = appUrl && !appUrl.includes('localhost');
+    
+    const stampGoal = merchant?.stamp_goal || 9;
 
-    const heroImageUri = points >= 9
+    const heroImageUri = points >= stampGoal
       ? `${appUrl}/api/images/redeem?v=${IMAGE_VERSION}&merchant=${merchant?.slug}`
       : `${appUrl}/api/images/card/${points}?v=${IMAGE_VERSION}&merchant=${merchant?.slug}`;
 
@@ -317,11 +319,11 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
           header: t.status,
           body: isRedeem
             ? 'Prämie erfolgreich eingelöst! 🎉'
-            : points >= 9
+            : points >= stampGoal
             ? 'DEINE BELOHNUNG IST BEREIT! 🎁'
-            : points >= 8
+            : points >= stampGoal - 1
             ? 'FAST GESCHAFFT! Nur noch 1 Stempel! 🎉'
-            : points >= 5
+            : points >= Math.floor(stampGoal / 2)
             ? 'HALBZEIT! Du bist auf dem Weg! 🚀'
             : `Willkommen bei ${merchant?.name || 'uns'}! 👋`,
         },
@@ -340,7 +342,7 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
           messageType: 'TEXT_AND_NOTIFY'
         }
       ];
-    } else if (points >= 9) {
+    } else if (points >= stampGoal) {
       updatedObject.linksModuleData = {
         uris: [
           {
@@ -359,8 +361,9 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
       ];
     } else {
       // For regular stamps: send a silent notify to force the pass to refresh
-      const defaultStampHeader = `${points}${t.defaultStampHeader1}${merchant?.stamp_symbol || '✨'}`;
-      const defaultStampBody = points >= 8
+      const headerTpl = t.defaultStampHeader1.replace('9', stampGoal.toString());
+      const defaultStampHeader = `${points}${headerTpl}${merchant?.stamp_symbol || '✨'}`;
+      const defaultStampBody = points >= stampGoal - 1
             ? t.defaultStampBodyNear
             : `${t.defaultStampBody}${points}${t.defaultStampBody2}`;
             

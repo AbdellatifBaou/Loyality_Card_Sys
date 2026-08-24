@@ -10,6 +10,9 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const merchantSlug = searchParams.get('merchant');
   let primaryColor = '#D4AF37';
+  let merchantName = 'Deine Belohnung';
+  let rewardText = 'Deine Belohnung ist bereit';
+  let logoUrl = `${appUrl}/Aroma_logo.png`;
 
   if (merchantSlug) {
     const { createClient } = require('@supabase/supabase-js');
@@ -17,8 +20,13 @@ export async function GET(req: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
-    const { data } = await adminSupabase.from('merchants_loyality').select('primary_color').eq('slug', merchantSlug).single();
-    if (data?.primary_color) primaryColor = data.primary_color;
+    const { data } = await adminSupabase.from('merchants_loyality').select('primary_color, name, reward_text, logo_url').eq('slug', merchantSlug).single();
+    if (data) {
+      if (data.primary_color) primaryColor = data.primary_color;
+      if (data.name) merchantName = data.name;
+      if (data.reward_text) rewardText = data.reward_text;
+      if (data.logo_url) logoUrl = data.logo_url;
+    }
   }
 
   const GOLD       = primaryColor;
@@ -78,9 +86,9 @@ export async function GET(req: NextRequest) {
         <div style={{ position: 'absolute', bottom: '24px', right: '48px', width: '72px', height: '3px', background: GOLD_DIM }} />
         <div style={{ position: 'absolute', bottom: '24px', right: '48px', width: '3px', height: '72px', background: GOLD_DIM }} />
 
-        {/* Aroma Logo */}
+        {/* Merchant Logo */}
         <img
-          src={`${appUrl}/Aroma_logo.png`}
+          src={logoUrl}
           width={160}
           height={160}
           style={{
@@ -91,7 +99,7 @@ export async function GET(req: NextRequest) {
           }}
         />
 
-        {/* Restaurant label */}
+        {/* Merchant label */}
         <span style={{
           fontSize: '22px',
           letterSpacing: '7px',
@@ -99,7 +107,7 @@ export async function GET(req: NextRequest) {
           color: GOLD,
           fontWeight: 'bold',
         }}>
-          Restaurant Aroma
+          {merchantName}
         </span>
 
         {/* Main message */}
@@ -134,7 +142,7 @@ export async function GET(req: NextRequest) {
           textAlign: 'center',
           lineHeight: 1.2,
         }}>
-          Dein Gratis-Lieblingsgericht ist bereit
+          {rewardText}
         </span>
 
         {/* Gold divider */}

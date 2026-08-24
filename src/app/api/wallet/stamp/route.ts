@@ -47,15 +47,17 @@ export async function POST(req: Request) {
     let newPoints = customer.points + amount;
     let type = 'earn';
 
+    const stampGoal = merchant.stamp_goal || 9;
+    
     // Reward logic:
-    // 1. If they ALREADY had 9 points (card full) and add a stamp, it resets to 0 and counts as a redemption.
-    if (customer.points >= 9 && amount > 0) {
+    // 1. If they ALREADY had stampGoal points (card full) and add a stamp, it resets to 0 and counts as a redemption.
+    if (customer.points >= stampGoal && amount > 0) {
       newPoints = 0;
       type = 'redeem';
     } 
-    // 2. If they reach 9 points, they stay at 9 (card full state).
-    else if (newPoints >= 9) {
-      newPoints = 9;
+    // 2. If they reach stampGoal points, they stay at stampGoal (card full state).
+    else if (newPoints >= stampGoal) {
+      newPoints = stampGoal;
       type = 'earn';
     }
 

@@ -10,7 +10,7 @@ function getAdminSupabase() {
 
 export async function POST(req: Request) {
   try {
-    const { password, name, primaryColor, packageType, customPrice, stampSymbol, logoUrl: logoBase64, language } = await req.json();
+    const { password, name, primaryColor, packageType, customPrice, stampSymbol, logoUrl: logoBase64, language, stampGoal, rewardText } = await req.json();
 
     if (password !== '2025') {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -54,6 +54,8 @@ export async function POST(req: Request) {
         package_type: packageType,
         language: language || 'de',
         custom_price: packageType === 'custom' && customPrice ? parseFloat(customPrice) : null,
+        stamp_goal: stampGoal ? parseInt(stampGoal) : 9,
+        reward_text: rewardText || null,
       })
       .select('id')
       .single();
