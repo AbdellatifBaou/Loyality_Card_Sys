@@ -297,7 +297,7 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
           }}
         >
           <div className="text-center mb-8">
-            <h1 className="text-3xl font-extrabold tracking-tight mb-2 text-white">Scanner</h1>
+            <h1 className="text-3xl font-extrabold tracking-tight mb-2 text-white">{t.scannerTitle}</h1>
             <p className="text-[10px] font-bold tracking-[0.3em] uppercase opacity-40 text-white">{t.terminalFor} {slug}</p>
           </div>
 
@@ -343,7 +343,7 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
                 ) : (
                   <div className="space-y-3 text-sm text-white/70">
                     <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5"><span className="text-xl">1</span><span>{t.tap3Dots.split('(⋮)')[0]} <strong className="text-white">(⋮)</strong> {t.tap3Dots.split('(⋮)')[1]}</span></div>
-                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5"><span className="text-xl">2</span><span>Wähle <strong className="text-white">"{t.installApp}"</strong></span></div>
+                    <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5"><span className="text-xl">2</span><span>{t.chooseText} <strong className="text-white">"{t.installApp}"</strong></span></div>
                     <div className="flex items-start gap-3 p-3 rounded-xl bg-white/5"><span className="text-xl">3</span><span>{t.tapInstall.split("'")[0]} <strong className="text-white">"{t.tapInstall.split("'")[1]}"</strong></span></div>
                   </div>
                 )}
@@ -365,7 +365,7 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
           </div>
           <h2 className="text-xl font-bold text-white mb-4">{t.terminalLocked}</h2>
           <p className="text-white/60 mb-8 text-sm">
-            {t.merchantAccountDeactivated.split('Dashboard')[0]} <strong className="text-white">Dashboard</strong> {t.merchantAccountDeactivated.split('Dashboard')[1]}
+            {t.merchantAccountDeactivated.split('Dashboard')[0]} <strong className="text-white">{t.dashboardText}</strong> {t.merchantAccountDeactivated.split('Dashboard')[1]}
           </p>
           <button onClick={() => { setIsAuthenticated(false); setPin(''); }} className="w-full py-4 bg-white/5 text-white rounded-2xl font-bold border border-white/10 hover:bg-white/10 transition-colors">
             Ausloggen

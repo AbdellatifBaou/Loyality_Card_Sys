@@ -373,7 +373,7 @@ export default function DashboardPage() {
         <div className="w-full max-w-md p-8 rounded-[40px] relative overflow-hidden" style={{ background: 'linear-gradient(145deg, #0A0A0A 0%, #111111 100%)', border: '1px solid rgba(212, 175, 55, 0.15)' }}>
           <div className="text-center mb-8">
             <img src="/Marketif_LOGO_Symbol.png" alt="Marketif" className="h-16 w-auto mx-auto mb-6 opacity-90" style={{ filter: 'brightness(0) invert(1)' }} />
-            <h1 className="text-2xl font-bold text-white mb-2">Admin Login</h1>
+            <h1 className="text-2xl font-bold text-white mb-2">{t.loginAdminTitle}</h1>
             <p className="text-white/40 text-sm">{t.enterPasswordDesc}</p>
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
@@ -407,7 +407,7 @@ export default function DashboardPage() {
               <h1 className="text-2xl font-extrabold text-white tracking-tight">
                 Marketif <span style={{ color: '#D4AF37' }}>Loyalty</span>
               </h1>
-              <p className="text-white/50 mt-0.5 font-medium text-sm">Admin Dashboard</p>
+              <p className="text-white/50 mt-0.5 font-medium text-sm">{t.adminDashboard}</p>
             </div>
           </div>
           <div className="flex gap-3">
@@ -500,7 +500,7 @@ export default function DashboardPage() {
                   </div>
                   {activeNews && (
                     <div className="mb-4 p-4 rounded-xl bg-indigo-500/20 border border-indigo-500/30 text-indigo-200">
-                      <strong>Aktive Nachricht:</strong> {activeNews}
+                      <strong>{t.activeNewsLabel}</strong> {activeNews}
                     </div>
                   )}
                   <textarea 
@@ -891,7 +891,7 @@ export default function DashboardPage() {
                       <th className="p-4 font-medium">{t.date}</th>
                       <th className="p-4 font-medium">{t.customerEmail}</th>
                       <th className="p-4 font-medium">{t.amount}</th>
-                      <th className="p-4 font-medium text-right">Aktion</th>
+                      <th className="p-4 font-medium text-right">{t.actionCol}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1297,9 +1297,9 @@ export default function DashboardPage() {
                     onChange={(e) => setNewMerchantLanguage(e.target.value)}
                     className="w-full bg-[#111111] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
                   >
-                    <option value="de">Deutsch</option>
-                    <option value="en">Englisch</option>
-                    <option value="fr">Französisch</option>
+                    <option value="de">{t.langDe}</option>
+                    <option value="en">{t.langEn}</option>
+                    <option value="fr">{t.langFr}</option>
                   </select>
                 </div>
 
@@ -1310,8 +1310,8 @@ export default function DashboardPage() {
                     onChange={(e) => setNewMerchantPackage(e.target.value)}
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
                   >
-                    <option className="bg-[#111111] text-white" value="silber">Silber Paket</option>
-                    <option className="bg-[#111111] text-white" value="gold">Gold Paket</option>
+                    <option className="bg-[#111111] text-white" value="silber">{t.pkgSilver}</option>
+                    <option className="bg-[#111111] text-white" value="gold">{t.pkgGold}</option>
                     <option className="bg-[#111111] text-white" value="custom">{t.customPackage}</option>
                   </select>
                 </div>

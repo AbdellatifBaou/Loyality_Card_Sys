@@ -703,8 +703,8 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           </div>
           <h2 className="text-3xl font-bold text-white mb-4">{t.dashboardLocked}</h2>
           <p className="text-white/60 mb-8 max-w-2xl mx-auto leading-relaxed">
-            Als Nutzer des Silber-Pakets hast du keinen Zugriff auf das Analytics-Dashboard.
-            Schalte jetzt detaillierte Statistiken, Kundenverwaltung und Mitarbeiter-PINs frei!
+            {t.silverNoAnalyticsText.split("Schalte jetzt")[0]}
+            Schalte jetzt" + t.silverNoAnalyticsText.split("Schalte jetzt")[1]
           </p>
 
           <div className="mb-8 rounded-2xl overflow-hidden border-2 border-white/20 shadow-none mx-auto max-w-2xl relative">
@@ -749,7 +749,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             <img src="/Marketif_LOGO_Symbol.png" alt="Marketif" className="h-9 w-auto" style={{ filter: 'brightness(0) invert(1)' }} />
             <div>
               <h1 className="text-2xl font-extrabold text-white tracking-tight">
-                {merchant?.name || 'Händler'} <span style={{ color: primaryColor }}>Dashboard</span>
+                {merchant?.name || 'Händler'} <span style={{ color: primaryColor }}>{t.dashboard}</span>
               </h1>
               <p className="text-white/50 mt-0.5 font-medium text-sm flex items-center gap-2">
                 <Settings size={14} /> {t.mgmtStats}
@@ -774,9 +774,9 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-4 rounded-2xl flex items-start gap-4">
             <AlertTriangle className="shrink-0 mt-0.5" size={20} />
             <div>
-              <p className="font-bold text-sm mb-1">Wichtiger Hinweis zur Abrechnung</p>
+              <p className="font-bold text-sm mb-1">{t.billingWarningTitle}</p>
               <p className="text-sm text-red-400/90 leading-relaxed">
-                Bei der Abbuchung deiner letzten Zahlung ist ein Fehler aufgetreten. Bitte überprüfe deine hinterlegte Zahlungsmethode unter dem Reiter <strong>"Abo & Abrechnung"</strong> oder sorge für ausreichende Deckung, um eine automatische Sperrung deines Zugangs zu vermeiden.
+                {t.billingWarningDesc ? ( <span dangerouslySetInnerHTML={{ __html: t.billingWarningDesc.replace(/'Abo & Abrechnung'/g, '<strong>"Abo & Abrechnung"</strong>') }} /> ) : null}
               </p>
             </div>
           </div>
@@ -796,7 +796,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                 <Bell size={20} />
               </div>
               <div className="flex-1">
-                <h3 className="text-indigo-200 font-bold mb-1">Marketif News</h3>
+                <h3 className="text-indigo-200 font-bold mb-1">{t.marketifNewsTitle}</h3>
                 <p className="text-white/80 text-sm whitespace-pre-line">{systemNews}</p>
               </div>
               <button onClick={() => setSystemNews('')} className="text-white/40 hover:text-white/80">
@@ -1338,7 +1338,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   ) : (!merchant?.package_type) ? (
                     <div className="text-center py-6">
                       <p className="text-sm text-white/70 mb-4">
-                        Dein Abonnement ist derzeit <span className="text-red-500 font-bold">{t.cancelled}</span>.
+                        {t.subCurrently} <span className="text-red-500 font-bold">{t.cancelled}</span>.
                       </p>
                       <a href="mailto:kontakt@marketif.de" className="inline-block w-full py-4 rounded-xl font-bold text-center text-black transition-all hover:scale-[1.02] active:scale-95" style={{ backgroundColor: primaryColor }}>
                         Support kontaktieren
@@ -1347,7 +1347,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   ) : (
                     <div>
                       <p className="text-sm text-white/70 mb-6">
-                        Dein Abonnement ist derzeit <span className="text-red-500 font-bold">{t.cancelled}</span>. Wähle ein Paket, um dein Abo zu reaktivieren (keine erneuten Einrichtungskosten).
+                        {t.subCurrently} <span className="text-red-500 font-bold">{t.cancelled}</span>. Wähle ein Paket, um dein Abo zu reaktivieren (keine erneuten Einrichtungskosten).
                       </p>
                       <div className="grid grid-cols-2 gap-4">
                         <button 
