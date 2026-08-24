@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { rateLimit } from '@/lib/ratelimit';
 
 function getAdminSupabase() {
   const { createClient } = require('@supabase/supabase-js');
@@ -10,6 +11,12 @@ function getAdminSupabase() {
 
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    const rl = rateLimit(`create-merchant:${ip}`, 5, 3600000); // Max 5 creates per hour per IP
+    if (!rl.success) {
+      return NextResponse.json({ error: 'Zu viele Anfragen. Bitte später erneut versuchen.' }, { status: 429 });
+    }
+
     const { password, name, primaryColor, packageType, customPrice, stampSymbol, logoUrl: logoBase64, language, stampGoal, rewardText } = await req.json();
 
     if (password !== '2025') {

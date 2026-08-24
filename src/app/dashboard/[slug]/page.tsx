@@ -96,14 +96,14 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     // Support global admin PIN
     if (password === '2025') {
       setIsAuthorized(true);
-      localStorage.setItem(`auth_${slug}`, 'true');
+      localStorage.setItem(`auth_${slug}`, password);
       return;
     }
 
     try {
       const response = await fetch('/api/auth/verify-pin', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem(`auth_${slug}`)}` },
         body: JSON.stringify({ pin: password, slug })
       });
       
@@ -118,7 +118,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         }
 
         setIsAuthorized(true);
-        localStorage.setItem(`auth_${slug}`, 'true');
+        localStorage.setItem(`auth_${slug}`, password);
         if (data.staffId) {
           localStorage.setItem(`staffId_${slug}`, data.staffId);
         }
@@ -131,7 +131,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   };
 
   useEffect(() => {
-    if (localStorage.getItem(`auth_${slug}`) === 'true') {
+    if (!!localStorage.getItem(`auth_${slug}`)) {
       setIsAuthorized(true);
     }
   }, [slug]);
@@ -142,7 +142,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     try {
       const response = await fetch('/api/admin/dashboard', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem(`auth_${slug}`)}` },
         body: JSON.stringify({ slug, password: '2025' })
       });
       
@@ -361,7 +361,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     try {
       const response = await fetch('/api/stripe/reactivate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem(`auth_${slug}`)}` },
         body: JSON.stringify({
           merchantId: merchant.id,
           plan: plan
@@ -388,7 +388,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     try {
       const response = await fetch('/api/stripe/portal', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem(`auth_${slug}`)}` },
         body: JSON.stringify({ merchantId: merchant.id })
       });
       const data = await response.json();
@@ -410,7 +410,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     try {
       const response = await fetch('/api/admin/delete-customer', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem(`auth_${slug}`)}` },
         body: JSON.stringify({ customerId: customer.id })
       });
       const result = await response.json();
@@ -437,7 +437,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     try {
       await fetch('/api/wallet/message', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem(`auth_${slug}`)}` },
         body: JSON.stringify({ slug, header: msgTitle, body: msgBody })
       });
       setMsgSuccess('Nachricht erfolgreich an alle Kunden gesendet!');
@@ -460,7 +460,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     try {
       const response = await fetch('/api/admin/add-staff', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem(`auth_${slug}`)}` },
         body: JSON.stringify({ merchantId: merchant.id, name: newStaffName, pin: newStaffPin, password: '2025' })
       });
       const resData = await response.json();
@@ -484,7 +484,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     try {
       const response = await fetch('/api/admin/delete-staff', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem(`auth_${slug}`)}` },
         body: JSON.stringify({ id, password: '2025' })
       });
       const resData = await response.json();
@@ -505,7 +505,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     try {
       const response = await fetch('/api/admin/stamp-history', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem(`auth_${slug}`)}` },
         body: JSON.stringify({ customerId: customer.id })
       });
       const result = await response.json();
@@ -526,7 +526,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     try {
       const response = await fetch('/api/merchant/update-push-settings', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem(`auth_${slug}`)}` },
         body: JSON.stringify({
           merchantId: merchant.id,
           settings: pushSettings
@@ -551,7 +551,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     try {
       const response = await fetch('/api/admin/update-points', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem(`auth_${slug}`)}` },
         body: JSON.stringify({
           customerId: selectedCustomer.id,
           newPoints: editPoints,
@@ -595,7 +595,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     try {
       const response = await fetch('/api/merchant/change-pin', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem(`auth_${slug}`)}` },
         body: JSON.stringify({ slug, oldPin, newPin })
       });
       const data = await response.json();
@@ -681,7 +681,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     try {
       const res = await fetch('/api/stripe/upgrade', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem(`auth_${slug}`)}` },
         body: JSON.stringify({ merchantId: merchant.id })
       });
       const data = await res.json();

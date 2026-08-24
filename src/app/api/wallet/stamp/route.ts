@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { updateLoyaltyObjectPoints } from '@/lib/google-wallet';
+import { rateLimit } from '@/lib/ratelimit';
 
 export async function POST(req: Request) {
   try {
@@ -10,24 +11,19 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing objectId or pin' }, { status: 400 });
     }
 
+    // Rate Limiting: max 1 request every 5 seconds per customer objectId
+    const rl = rateLimit(`stamp:${objectId}`, 1, 5000);
+    if (!rl.success) {
+      return NextResponse.json({ error: 'Zu viele Anfragen. Bitte kurz warten.' }, { status: 429 });
+    }
+
     const { createClient } = require('@supabase/supabase-js');
     const adminSupabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // 1. Validate PIN and get staff ID
-    const { data: staff, error: staffError } = await adminSupabase
-      .from('staff_loyality')
-      .select('id, merchant_id')
-      .eq('pin', pin)
-      .single();
-
-    if (staffError || !staff) {
-      return NextResponse.json({ error: 'Invalid PIN' }, { status: 401 });
-    }
-
-    // 2. Get customer and their merchant (Support both full UUID and short 8-char ID from manual input)
+    // 1. Get customer and their merchant first (to know which merchant the PIN belongs to)
     const { data: customer, error: customerError } = await adminSupabase
       .from('customers_loyality')
       .select('id, wallet_object_id, points, merchants_loyality(*)')
@@ -41,6 +37,18 @@ export async function POST(req: Request) {
     const merchant = customer.merchants_loyality;
     if (merchant.is_active === false) {
       return NextResponse.json({ error: 'Dieser Händler ist derzeit deaktiviert' }, { status: 403 });
+    }
+
+    // 2. Validate PIN scoped specifically to this merchant
+    const { data: staff, error: staffError } = await adminSupabase
+      .from('staff_loyality')
+      .select('id, merchant_id')
+      .eq('pin', pin)
+      .eq('merchant_id', merchant.id)
+      .single();
+
+    if (staffError || !staff) {
+      return NextResponse.json({ error: 'Invalid PIN for this merchant' }, { status: 401 });
     }
 
     // 3. Calculate new points

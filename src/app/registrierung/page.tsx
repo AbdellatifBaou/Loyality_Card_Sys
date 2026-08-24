@@ -412,7 +412,7 @@ function RegistrierungContent() {
 
       const res = await fetch('/api/stripe/register', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_auth')}` },
         body: JSON.stringify({ ...form, plan: planMode === 'custom' ? 'custom' : selectedPlan, monthlyPrice, setupFee, planName }),
       });
       const data = await res.json();

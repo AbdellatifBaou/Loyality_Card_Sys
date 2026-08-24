@@ -13,10 +13,9 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Marketif Scanner",
-  description: "Loyalty Card Scanner App",
+  title: "Marketif Loyalty | Das digitale Treueprogramm",
+  description: "Binde Kunden digital mit Google Wallet & Apple Wallet. Einfache Scanner-App für Mitarbeiter, keine physischen Stempelkarten mehr.",
   manifest: "/manifest.json",
-  themeColor: "#050505",
   icons: {
     icon: [
       { url: "/Marketif_LOGO_Symbol.png", type: "image/png" },
@@ -31,6 +30,32 @@ export const metadata: Metadata = {
     statusBarStyle: "black-translucent",
     title: "Marketif Scanner",
   },
+  openGraph: {
+    title: "Marketif Loyalty | Kundenbindung per Wallet",
+    description: "Moderne Kundenbindung für lokale Geschäfte. Digitale Stempelkarte direkt in der Wallet deiner Kunden.",
+    url: "https://treue.marketif.de",
+    siteName: "Marketif Loyalty",
+    images: [
+      {
+        url: "https://treue.marketif.de/dashboard-preview.jpg", // We have this in public/
+        width: 1200,
+        height: 630,
+        alt: "Marketif Loyalty Dashboard",
+      }
+    ],
+    locale: "de_DE",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Marketif Loyalty | Kundenbindung per Wallet",
+    description: "Moderne Kundenbindung für lokale Geschäfte. Digitale Stempelkarte direkt in der Wallet deiner Kunden.",
+    images: ["https://treue.marketif.de/dashboard-preview.jpg"],
+  },
+};
+
+export const viewport = {
+  themeColor: "#050505",
 };
 
 export default function RootLayout({

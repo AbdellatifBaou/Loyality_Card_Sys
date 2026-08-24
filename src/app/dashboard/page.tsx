@@ -86,7 +86,7 @@ export default function DashboardPage() {
     try {
       const res = await fetch('/api/admin/news', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_auth')}` },
         body: JSON.stringify({ password: '2025', message: newsMessage, isActive })
       });
       const data = await res.json();
@@ -106,7 +106,7 @@ export default function DashboardPage() {
     try {
       const res = await fetch('/api/admin/finances', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_auth')}` },
         body: JSON.stringify({ password: '2025', year })
       });
       const data = await res.json();
@@ -131,14 +131,14 @@ export default function DashboardPage() {
     e.preventDefault();
     if (password === '2025') {
       setIsAuthorized(true);
-      localStorage.setItem('admin_auth', 'true');
+      localStorage.setItem('admin_auth', password);
     } else {
       setAuthError(t.wrongPassword);
     }
   };
 
   useEffect(() => {
-    if (localStorage.getItem('admin_auth') === 'true') {
+    if (!!localStorage.getItem('admin_auth')) {
       setIsAuthorized(true);
     }
   }, []);
@@ -149,7 +149,7 @@ export default function DashboardPage() {
     try {
       const response = await fetch('/api/admin/global', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_auth')}` },
         body: JSON.stringify({ password: '2025' })
       });
       
@@ -246,7 +246,7 @@ export default function DashboardPage() {
     try {
       const response = await fetch('/api/admin/delete-customer', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_auth')}` },
         body: JSON.stringify({ customerId: customer.id })
       });
       const result = await response.json();
@@ -268,7 +268,7 @@ export default function DashboardPage() {
     try {
       const response = await fetch('/api/admin/toggle-merchant', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_auth')}` },
         body: JSON.stringify({ merchantId, isActive: !currentStatus })
       });
       const result = await response.json();
@@ -289,7 +289,7 @@ export default function DashboardPage() {
     try {
       const response = await fetch('/api/admin/create-merchant', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_auth')}` },
         body: JSON.stringify({ password: '2025', name: newMerchantName, primaryColor: newMerchantColor, logoUrl: newMerchantLogo, stampSymbol: newMerchantSymbol, language: newMerchantLanguage, packageType: newMerchantPackage, customPrice: newMerchantPackage === 'custom' ? parseFloat(newMerchantPrice) : null, stampGoal: newMerchantStampGoal, rewardText: newMerchantRewardText })
       });
       const data = await response.json();
@@ -318,7 +318,7 @@ export default function DashboardPage() {
     try {
       const response = await fetch('/api/admin/delete-merchant', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_auth')}` },
         body: JSON.stringify({ 
           password: '2025', 
           merchantId: confirmDeleteMerchant.id
@@ -346,7 +346,7 @@ export default function DashboardPage() {
     try {
       const res = await fetch('/api/admin/manual-activation', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_auth')}` },
         body: JSON.stringify({ password: '2025', merchantId: manualActivationMerchant.id, months: manualMonths })
       });
       if (res.ok) {
@@ -1018,7 +1018,7 @@ export default function DashboardPage() {
                   try {
                     const response = await fetch('/api/admin/reset-pin', {
                       method: 'POST',
-                      headers: { 'Content-Type': 'application/json' },
+                      headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_auth')}` },
                       body: JSON.stringify({ password: '2025', merchantId: resetPinData.merchantId, newPin: resetPinValue })
                     });
                     const data = await response.json();
