@@ -79,8 +79,27 @@ export default function DashboardPage() {
   const [activeNews, setActiveNews] = useState('');
   const [newsLoading, setNewsLoading] = useState(false);
 
+  // Edit Merchant State
+  const [editMerchant, setEditMerchant] = useState<any>(null);
+  const [editMerchantName, setEditMerchantName] = useState('');
+  const [editMerchantColor, setEditMerchantColor] = useState('');
+  const [editMerchantLogo, setEditMerchantLogo] = useState('');
+  const [editMerchantRewardText, setEditMerchantRewardText] = useState('');
+  const [editMerchantStampGoal, setEditMerchantStampGoal] = useState<number>(9);
+  const [editMerchantLanguage, setEditMerchantLanguage] = useState('de');
+  const [savingEditMerchant, setSavingEditMerchant] = useState(false);
 
-  
+  useEffect(() => {
+    if (editMerchant) {
+      setEditMerchantName(editMerchant.name || '');
+      setEditMerchantColor(editMerchant.primary_color || '#D4AF37');
+      setEditMerchantLogo(editMerchant.logo_url || '');
+      setEditMerchantRewardText(editMerchant.reward_text || '');
+      setEditMerchantStampGoal(editMerchant.stamp_goal || 9);
+      setEditMerchantLanguage(editMerchant.language || 'de');
+    }
+  }, [editMerchant]);
+
   const handleSendNews = async (isActive: boolean) => {
     setNewsLoading(true);
     try {
@@ -99,6 +118,38 @@ export default function DashboardPage() {
       showToast(t.error || 'Fehler', 'error');
     }
     setNewsLoading(false);
+  };
+
+  const handleSaveMerchant = async () => {
+    if (!editMerchant) return;
+    setSavingEditMerchant(true);
+    try {
+      const res = await fetch('/api/admin/update-merchant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_auth')}` },
+        body: JSON.stringify({ 
+          password: '2025', 
+          merchantId: editMerchant.id,
+          name: editMerchantName,
+          primaryColor: editMerchantColor,
+          logoUrl: editMerchantLogo,
+          rewardText: editMerchantRewardText,
+          stampGoal: editMerchantStampGoal,
+          language: editMerchantLanguage
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        showToast('Händler erfolgreich aktualisiert', 'success');
+        setEditMerchant(null);
+        fetchData();
+      } else {
+        showToast(data.error || 'Fehler beim Speichern', 'error');
+      }
+    } catch (e) {
+      showToast('Fehler beim Speichern', 'error');
+    }
+    setSavingEditMerchant(false);
   };
 
   const fetchFinances = async (year: number) => {
@@ -632,6 +683,13 @@ export default function DashboardPage() {
                           <td className="p-4 text-right">
                             <div className="flex items-center justify-end gap-2">
                               <button 
+                                onClick={() => setEditMerchant(m)}
+                                title="Bearbeiten"
+                                className="p-2 bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 rounded-lg transition-colors border border-yellow-500/20"
+                              >
+                                <Edit3 size={14} />
+                              </button>
+                              <button 
                                 onClick={() => setManualActivationMerchant(m)}
                                 title={t.manualActivationTooltip}
                                 className="p-2 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors border border-blue-500/20"
@@ -1131,6 +1189,108 @@ export default function DashboardPage() {
           </div>
         </div>
       )}
+      {/* Edit Merchant Modal */}
+      {editMerchant && (
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-[#111111] border border-white/10 rounded-3xl p-8 max-w-md w-full my-8">
+            <h3 className="text-xl font-bold text-white mb-6">Händler bearbeiten</h3>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-white/60 text-xs uppercase tracking-widest mb-2 font-bold">Firmenname</label>
+                <input
+                  type="text"
+                  value={editMerchantName}
+                  onChange={e => setEditMerchantName(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-white/60 text-xs uppercase tracking-widest mb-2 font-bold">Hauptfarbe (HEX)</label>
+                <div className="flex gap-2">
+                  <input
+                    type="color"
+                    value={editMerchantColor}
+                    onChange={e => setEditMerchantColor(e.target.value)}
+                    className="w-12 h-12 rounded-xl bg-transparent border-0 cursor-pointer"
+                  />
+                  <input
+                    type="text"
+                    value={editMerchantColor}
+                    onChange={e => setEditMerchantColor(e.target.value)}
+                    className="flex-1 bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37] transition-colors font-mono"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-white/60 text-xs uppercase tracking-widest mb-2 font-bold">Logo (URL oder Base64)</label>
+                <input
+                  type="text"
+                  value={editMerchantLogo}
+                  onChange={e => setEditMerchantLogo(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-white/60 text-xs uppercase tracking-widest mb-2 font-bold">Belohnungstext</label>
+                <input
+                  type="text"
+                  value={editMerchantRewardText}
+                  onChange={e => setEditMerchantRewardText(e.target.value)}
+                  placeholder="z.B. 10 Stempel = 1 GRATIS Döner"
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                />
+              </div>
+
+              <div>
+                <label className="block text-white/60 text-xs uppercase tracking-widest mb-2 font-bold">Anzahl Stempel</label>
+                <select
+                  value={editMerchantStampGoal}
+                  onChange={e => setEditMerchantStampGoal(Number(e.target.value))}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                >
+                  {[3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].map(num => (
+                    <option key={num} value={num} className="bg-[#111111]">{num} Stempel</option>
+                  ))}
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-white/60 text-xs uppercase tracking-widest mb-2 font-bold">Sprache</label>
+                <select
+                  value={editMerchantLanguage}
+                  onChange={e => setEditMerchantLanguage(e.target.value)}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                >
+                  <option value="de" className="bg-[#111111]">Deutsch</option>
+                  <option value="en" className="bg-[#111111]">Englisch</option>
+                  <option value="fr" className="bg-[#111111]">Französisch</option>
+                </select>
+              </div>
+
+              <div className="flex gap-3 pt-4">
+                <button
+                  onClick={() => setEditMerchant(null)}
+                  className="flex-1 py-3 bg-white/10 text-white font-bold rounded-xl hover:bg-white/20 transition-colors"
+                >
+                  {t.cancel}
+                </button>
+                <button
+                  onClick={handleSaveMerchant}
+                  disabled={savingEditMerchant}
+                  className="flex-1 py-3 bg-[#D4AF37] text-black font-bold rounded-xl hover:bg-[#C5A030] transition-colors disabled:opacity-50"
+                >
+                  {savingEditMerchant ? t.pleaseWait : t.save}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Create Merchant Modal */}
       {showCreateMerchant && (
         <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
