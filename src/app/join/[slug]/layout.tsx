@@ -15,7 +15,7 @@ export async function generateMetadata(
 
   const { data: merchant } = await supabase
     .from('merchants_loyality')
-    .select('name, reward_text, primary_color')
+    .select('name, reward_text, primary_color, language')
     .eq('slug', slug)
     .single();
 
@@ -26,11 +26,24 @@ export async function generateMetadata(
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://treue.marketif.de';
-  const logoUrl = `${appUrl}/api/images/logo?slug=${slug}`;
-  const title = `Digitale Treuekarte von ${merchant.name}`;
-  const description = merchant.reward_text 
-    ? `Sichere dir exklusive Belohnungen: ${merchant.reward_text}` 
-    : `Hol dir jetzt die digitale Treuekarte von ${merchant.name} für dein Google Wallet.`;
+  // Fake .png extension to trick WhatsApp into recognizing the image
+  const logoUrl = `${appUrl}/api/images/logo.png?slug=${slug}`;
+  
+  const isFrench = merchant.language === 'fr';
+  const title = isFrench 
+    ? `Carte de fidélité numérique de ${merchant.name}`
+    : `Digitale Treuekarte von ${merchant.name}`;
+
+  let description = '';
+  if (merchant.reward_text) {
+    description = isFrench 
+      ? `Obtenez des récompenses exclusives: ${merchant.reward_text}`
+      : `Sichere dir exklusive Belohnungen: ${merchant.reward_text}`;
+  } else {
+    description = isFrench
+      ? `Obtenez la carte de fidélité numérique de ${merchant.name} pour votre Google Wallet.`
+      : `Hol dir jetzt die digitale Treuekarte von ${merchant.name} für dein Google Wallet.`;
+  }
 
   return {
     title,
@@ -45,10 +58,10 @@ export async function generateMetadata(
           url: logoUrl,
           width: 500,
           height: 500,
-          alt: `Logo von ${merchant.name}`,
+          alt: isFrench ? `Logo de ${merchant.name}` : `Logo von ${merchant.name}`,
         }
       ],
-      locale: 'de_DE',
+      locale: isFrench ? 'fr_FR' : 'de_DE',
       type: 'website',
     },
     twitter: {
