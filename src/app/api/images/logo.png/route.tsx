@@ -1,8 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
 
-export const runtime = 'edge';
-export const revalidate = 86400;
-
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url);
   const slug = searchParams.get('slug');
