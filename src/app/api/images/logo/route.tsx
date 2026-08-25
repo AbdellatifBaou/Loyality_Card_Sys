@@ -31,6 +31,6 @@ export async function GET(req: Request) {
     }
   }
 
-  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '');
-  return Response.redirect(`${appUrl}/Aroma_logo.png`);
+  const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'https://treue.marketif.de').replace(/\/$/, '');
+  return Response.redirect(\\/Marketif_LOGO.png\);
 }
