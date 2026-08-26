@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { validateAuth } from '@/lib/auth';
 
 // Helper to create a Supabase client with the Service Role Key for admin operations
 function getAdminSupabase() {
@@ -12,10 +13,10 @@ function getAdminSupabase() {
 
 export async function POST(req: Request) {
   try {
-    const { slug, password } = await req.json();
+    const { slug } = await req.json();
 
-    if (!slug || password !== '2025') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!slug) {
+      return NextResponse.json({ error: 'Missing slug' }, { status: 400 });
     }
 
     const adminSupabase = getAdminSupabase();
@@ -29,6 +30,11 @@ export async function POST(req: Request) {
 
     if (mError || !merchantData) {
       return NextResponse.json({ error: 'Händler nicht gefunden' }, { status: 404 });
+    }
+
+    const authValidation = await validateAuth(req, merchantData.id);
+    if (!authValidation.authorized) {
+      return NextResponse.json({ error: authValidation.error }, { status: 401 });
     }
 
     // 2. Fetch all required specific data for this merchant
