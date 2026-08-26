@@ -15,7 +15,7 @@ export async function generateMetadata(
 
   const { data: merchant } = await supabase
     .from('merchants_loyality')
-    .select('name, language')
+    .select('name, language, logo_url')
     .eq('slug', slug)
     .single();
 
@@ -26,7 +26,9 @@ export async function generateMetadata(
   }
 
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://treue.marketif.de';
-  const logoUrl = `${appUrl}/api/images/logo.png?slug=${slug}`;
+  const logoUrl = merchant.logo_url && merchant.logo_url.startsWith('data:image/')
+    ? `${appUrl}/api/images/logo.png?slug=${slug}`
+    : `${appUrl}/icon-512x512.png`;
   
   const isFrench = merchant.language === 'fr';
   const title = isFrench 
