@@ -1,6 +1,8 @@
 import { Metadata, ResolvingMetadata } from 'next';
 import { supabase } from '@/lib/supabase';
 
+export const dynamic = 'force-dynamic';
+
 type Props = {
   params: Promise<{ slug: string }>;
   children: React.ReactNode;
