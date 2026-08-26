@@ -206,7 +206,13 @@ export default function DashboardPage() {
       
       const res = await response.json();
       if (!response.ok || !res.success) {
-        setAuthError(res.error || 'Fehler beim Laden');
+        if (response.status === 401) {
+          localStorage.removeItem('admin_auth');
+          setIsAuthorized(false);
+          setAuthError('Sitzung abgelaufen oder Passwort falsch. Bitte neu einloggen.');
+        } else {
+          setAuthError(res.error || 'Fehler beim Laden');
+        }
         return;
       }
 

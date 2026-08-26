@@ -149,7 +149,13 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       const resData = await response.json();
       
       if (!response.ok || !resData.success) {
-        setAuthError(resData.error || 'Fehler beim Laden');
+        if (response.status === 401) {
+          localStorage.removeItem(`auth_${slug}`);
+          setIsAuthorized(false);
+          setAuthError('Sitzung abgelaufen oder PIN falsch. Bitte neu einloggen.');
+        } else {
+          setAuthError(resData.error || 'Fehler beim Laden');
+        }
         return;
       }
       
