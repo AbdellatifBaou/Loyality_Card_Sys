@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, use, useCallback } from 'react';
+import { notFound } from 'next/navigation';
 import { Html5QrcodeScanner, Html5QrcodeScanType } from 'html5-qrcode';
 import { supabase } from '@/lib/supabase';
 import { SCANNER_DICT } from '@/locales/admin';
@@ -47,7 +48,11 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
   useEffect(() => {
     async function loadPreMerchant() {
       const { data } = await supabase.from('merchants_loyality').select('*').eq('slug', slug).single();
-      if (data) setPreMerchant(data);
+      if (data) {
+        setPreMerchant(data);
+      } else {
+        notFound();
+      }
       setPreLoading(false);
     }
     loadPreMerchant();
