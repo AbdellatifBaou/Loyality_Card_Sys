@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validateAuth } from '@/lib/auth';
 
 function getAdminSupabase() {
   const { createClient } = require('@supabase/supabase-js');
@@ -10,17 +11,28 @@ function getAdminSupabase() {
 
 export async function POST(req: Request) {
   try {
-    const { id, password } = await req.json();
-
-    if (password !== '2025') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
+    const { id } = await req.json();
 
     if (!id) {
       return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
     }
 
     const adminSupabase = getAdminSupabase();
+
+    const { data: staff, error: staffLookupError } = await adminSupabase
+      .from('staff_loyality')
+      .select('merchant_id')
+      .eq('id', id)
+      .single();
+
+    if (staffLookupError || !staff) {
+      return NextResponse.json({ error: 'Staff not found' }, { status: 404 });
+    }
+
+    const authValidation = await validateAuth(req, staff.merchant_id);
+    if (!authValidation.authorized) {
+      return NextResponse.json({ error: authValidation.error }, { status: 401 });
+    }
 
     const { error } = await adminSupabase
       .from('staff_loyality')

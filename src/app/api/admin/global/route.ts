@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validateAuth } from '@/lib/auth';
 
 function getAdminSupabase() {
   const { createClient } = require('@supabase/supabase-js');
@@ -10,10 +11,9 @@ function getAdminSupabase() {
 
 export async function POST(req: Request) {
   try {
-    const { password } = await req.json();
-
-    if (password !== '2025') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authValidation = await validateAuth(req);
+    if (!authValidation.authorized) {
+      return NextResponse.json({ error: authValidation.error }, { status: 401 });
     }
 
     const adminSupabase = getAdminSupabase();

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { updateLoyaltyObjectPoints } from '@/lib/google-wallet';
+import { validateAuth } from '@/lib/auth';
 
 export async function POST(req: Request) {
   try {
@@ -28,6 +29,11 @@ export async function POST(req: Request) {
     }
 
     const merchant = customer.merchants_loyality;
+
+    const authValidation = await validateAuth(req, merchant.id);
+    if (!authValidation.authorized) {
+      return NextResponse.json({ error: authValidation.error }, { status: 401 });
+    }
     const isRedeem = (customer.points >= 9 && newPoints === 0);
     const type = isRedeem ? 'redeem' : 'correction';
 

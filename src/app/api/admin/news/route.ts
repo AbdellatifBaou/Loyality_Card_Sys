@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { validateAuth } from '@/lib/auth';
 
 const supabaseAdmin = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -8,9 +9,10 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: Request) {
   try {
-    const { password, message, isActive } = await req.json();
-    if (password !== '2025') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const { message, isActive } = await req.json();
+    const authValidation = await validateAuth(req);
+    if (!authValidation.authorized) {
+      return NextResponse.json({ error: authValidation.error }, { status: 401 });
     }
 
     if (isActive) {

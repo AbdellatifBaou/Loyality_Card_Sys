@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { validateAuth } from '@/lib/auth';
 
 // Helper to create a Supabase client with the Service Role Key for admin operations
 function getAdminSupabase() {
@@ -12,10 +13,11 @@ function getAdminSupabase() {
 
 export async function POST(req: Request) {
   try {
-    const { password, merchantId, months } = await req.json();
+    const { merchantId, months } = await req.json();
 
-    if (password !== '2025') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authValidation = await validateAuth(req);
+    if (!authValidation.authorized) {
+      return NextResponse.json({ error: authValidation.error }, { status: 401 });
     }
 
     if (!merchantId || !months) {

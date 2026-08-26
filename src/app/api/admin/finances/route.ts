@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
+import { validateAuth } from '@/lib/auth';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
   apiVersion: '2026-04-22.dahlia',
@@ -7,10 +8,11 @@ const stripe = new Stripe(process.env.STRIPE_SECRET_KEY as string, {
 
 export async function POST(req: Request) {
   try {
-    const { password, year } = await req.json();
+    const { year } = await req.json();
 
-    if (password !== '2025') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authValidation = await validateAuth(req);
+    if (!authValidation.authorized) {
+      return NextResponse.json({ error: authValidation.error }, { status: 401 });
     }
 
     if (!year) {

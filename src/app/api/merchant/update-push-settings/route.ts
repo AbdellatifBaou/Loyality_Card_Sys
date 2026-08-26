@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { validateAuth } from '@/lib/auth';
 
 export async function POST(req: Request) {
   try {
@@ -6,6 +7,11 @@ export async function POST(req: Request) {
 
     if (!merchantId || !settings) {
       return NextResponse.json({ error: 'Missing fields' }, { status: 400 });
+    }
+
+    const authValidation = await validateAuth(req, merchantId);
+    if (!authValidation.authorized) {
+      return NextResponse.json({ error: authValidation.error }, { status: 401 });
     }
 
     const { createClient } = require('@supabase/supabase-js');

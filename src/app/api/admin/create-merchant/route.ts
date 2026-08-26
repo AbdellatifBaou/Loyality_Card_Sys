@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { rateLimit } from '@/lib/ratelimit';
+import { validateAuth } from '@/lib/auth';
 
 function getAdminSupabase() {
   const { createClient } = require('@supabase/supabase-js');
@@ -17,10 +18,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Zu viele Anfragen. Bitte später erneut versuchen.' }, { status: 429 });
     }
 
-    const { password, name, primaryColor, packageType, customPrice, stampSymbol, logoUrl: logoBase64, language, stampGoal, rewardText } = await req.json();
+    const { name, primaryColor, packageType, customPrice, stampSymbol, logoUrl: logoBase64, language, stampGoal, rewardText } = await req.json();
 
-    if (password !== '2025') {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    const authValidation = await validateAuth(req);
+    if (!authValidation.authorized) {
+      return NextResponse.json({ error: authValidation.error }, { status: 401 });
     }
 
     if (!name || !primaryColor || !packageType) {

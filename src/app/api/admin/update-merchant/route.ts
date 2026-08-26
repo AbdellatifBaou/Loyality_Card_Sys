@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { validateAuth } from '@/lib/auth';
 
 export async function POST(req: Request) {
   try {
-    const { password, merchantId, name, primaryColor, logoUrl, rewardText, stampGoal, language } = await req.json();
+    const { merchantId, name, primaryColor, logoUrl, rewardText, stampGoal, language } = await req.json();
 
-    if (password !== process.env.ADMIN_API_KEY && password !== '2025') {
-      return NextResponse.json({ success: false, error: 'Unauthorized' }, { status: 401 });
+    const authValidation = await validateAuth(req);
+    if (!authValidation.authorized) {
+      return NextResponse.json({ success: false, error: authValidation.error }, { status: 401 });
     }
 
     if (!merchantId) {
