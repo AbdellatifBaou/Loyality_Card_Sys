@@ -183,7 +183,9 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         const newsRes = await fetch('/api/news');
         const newsData = await newsRes.json();
         if (newsData.active && newsData.message) {
-          setSystemNews(newsData.message);
+          if (localStorage.getItem('dismissed_news') !== newsData.message) {
+            setSystemNews(newsData.message);
+          }
         }
       } catch (err) {}
 
@@ -805,7 +807,10 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                 <h3 className="text-indigo-200 font-bold mb-1">{t.marketifNewsTitle}</h3>
                 <p className="text-white/80 text-sm whitespace-pre-line">{systemNews}</p>
               </div>
-              <button onClick={() => setSystemNews('')} className="text-white/40 hover:text-white/80">
+                <button onClick={() => {
+                  localStorage.setItem('dismissed_news', systemNews);
+                  setSystemNews('');
+                }} className="text-white/40 hover:text-white/80">
                 <X size={20} />
               </button>
             </div>
