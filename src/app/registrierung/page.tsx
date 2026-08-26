@@ -5,8 +5,6 @@ import { useSearchParams } from 'next/navigation';
 import { PRICING } from '@/lib/pricing';
 import { Loader2, Check, ChevronLeft, ArrowRight, Star, Shield } from 'lucide-react';
 
-const ADMIN_PASSWORD = '2025';
-
 const silverFeatures = [
   'Digitale Treuekarte (Google & Apple Wallet)',
   'Geofencing (100m Benachrichtigung)',
@@ -370,12 +368,24 @@ function RegistrierungContent() {
   const [isLoading, setIsLoading] = useState(false);
   const [apiError, setApiError] = useState('');
 
-  const handleAuth = (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (password === ADMIN_PASSWORD) {
-      setIsAuthenticated(true);
-    } else {
-      setAuthError('Falsches Passwort');
+    try {
+      const res = await fetch('/api/auth/verify-pin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pin: password })
+      });
+      const data = await res.json();
+      if (res.ok && data.success && data.staffName === 'Global Admin') {
+        setIsAuthenticated(true);
+        localStorage.setItem('admin_auth', password);
+      } else {
+        setAuthError('Falsches Passwort');
+        setTimeout(() => setAuthError(''), 3000);
+      }
+    } catch (err) {
+      setAuthError('Netzwerkfehler');
       setTimeout(() => setAuthError(''), 3000);
     }
   };
