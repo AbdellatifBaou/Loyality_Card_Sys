@@ -93,13 +93,6 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     e.preventDefault();
     setAuthError('');
     
-    // Support global admin PIN
-    if (password === '2025') {
-      setIsAuthorized(true);
-      localStorage.setItem(`auth_${slug}`, password);
-      return;
-    }
-
     try {
       const response = await fetch('/api/auth/verify-pin', {
         method: 'POST',

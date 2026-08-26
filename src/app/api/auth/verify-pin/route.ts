@@ -17,6 +17,27 @@ export async function POST(req: Request) {
 
     const normalizedSlug = slug ? decodeURIComponent(slug).toLowerCase() : null;
 
+    // Check if it's the global admin password
+    if (pin === (process.env.ADMIN_API_KEY || '2025')) {
+      if (normalizedSlug) {
+        const { data: merchantData } = await adminSupabase
+          .from('merchants_loyality')
+          .select('*')
+          .eq('slug', normalizedSlug)
+          .single();
+        if (merchantData) {
+          return NextResponse.json({
+            success: true,
+            merchantId: merchantData.id,
+            staffId: 'admin',
+            staffName: 'Global Admin',
+            merchant: merchantData
+          });
+        }
+      }
+      return NextResponse.json({ success: true, staffName: 'Global Admin' });
+    }
+
     // 1. Check Merchant Lockout status first (if slug is provided)
     if (normalizedSlug) {
       const { data: merchantData } = await adminSupabase
