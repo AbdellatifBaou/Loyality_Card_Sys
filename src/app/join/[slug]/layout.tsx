@@ -31,7 +31,7 @@ export async function generateMetadata(
   
   // Use direct fallback icon if no logo exists to prevent WhatsApp 302 redirect issues
   const logoUrl = merchant.logo_url && merchant.logo_url.startsWith('data:image/')
-    ? `${appUrl}/api/images/logo.png?slug=${slug}`
+    ? `${appUrl}/api/images/merchant/${slug}/logo.png`
     : `${appUrl}/icon-512x512.png`;
   
   const isFrench = merchant.language === 'fr';
@@ -61,8 +61,6 @@ export async function generateMetadata(
       images: [
         {
           url: logoUrl,
-          width: 500,
-          height: 500,
           alt: isFrench ? `Logo de ${merchant.name}` : `Logo von ${merchant.name}`,
         }
       ],
