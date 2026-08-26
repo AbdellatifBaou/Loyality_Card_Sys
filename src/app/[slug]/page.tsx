@@ -44,6 +44,7 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
   const [merchantConfig, setMerchantConfig] = useState<any>(null);
   const [preMerchant, setPreMerchant] = useState<any>(null);
   const [preLoading, setPreLoading] = useState(true);
+  const [isNotFound, setIsNotFound] = useState(false);
   
   useEffect(() => {
     async function loadPreMerchant() {
@@ -51,12 +52,16 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
       if (data) {
         setPreMerchant(data);
       } else {
-        notFound();
+        setIsNotFound(true);
       }
       setPreLoading(false);
     }
     loadPreMerchant();
   }, [slug]);
+
+  if (isNotFound) {
+    notFound();
+  }
 
   const lang = merchantConfig?.language || preMerchant?.language || 'de';
   const t = SCANNER_DICT[lang as keyof typeof SCANNER_DICT] || SCANNER_DICT.de;
