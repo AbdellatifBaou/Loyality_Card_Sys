@@ -87,6 +87,12 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   const [showLoginPassword, setShowLoginPassword] = useState(false);
   const [showOldPin, setShowOldPin] = useState(false);
   const [showNewPin, setShowNewPin] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{text: string, type: 'success' | 'error'} | null>(null);
+
+  const showToast = (text: string, type: 'success' | 'error' = 'success') => {
+    setToastMessage({ text, type });
+    setTimeout(() => setToastMessage(null), 3000);
+  };
 
   // Handle Login
   const handleLogin = async (e: React.FormEvent) => {
@@ -420,10 +426,10 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         setCustomerCount(prev => prev - 1);
         setConfirmDelete(null);
       } else {
-        alert('Fehler beim Löschen: ' + result.error);
+        showToast('Fehler beim Löschen: ' + result.error, 'error');
       }
     } catch (err) {
-      alert('Netzwerkfehler beim Löschen');
+      showToast('Netzwerkfehler beim Löschen', 'error');
     } finally {
       setDeleting(false);
     }
@@ -467,7 +473,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       const resData = await response.json();
       
       if (!response.ok || !resData.success) {
-        alert('Fehler beim Hinzufügen: ' + (resData.error || 'Netzwerkfehler'));
+        showToast('Fehler beim Hinzufügen: ' + (resData.error || 'Netzwerkfehler'), 'error');
       } else if (resData.data) {
         setStaff(prev => [...prev, resData.data[0]]);
         setNewStaffName('');
@@ -475,7 +481,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         setShowStaffModal(false);
       }
     } catch (err: any) {
-      alert('Systemfehler: ' + err.message);
+      showToast('Systemfehler: ' + err.message, 'error');
     } finally {
       setIsAddingStaff(false);
     }
@@ -492,10 +498,10 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       if (response.ok && resData.success) {
         setStaff(prev => prev.filter(s => s.id !== id));
       } else {
-        alert('Fehler beim Löschen: ' + resData.error);
+        showToast('Fehler beim Löschen: ' + resData.error, 'error');
       }
     } catch (err: any) {
-      alert('Systemfehler: ' + err.message);
+      showToast('Systemfehler: ' + err.message, 'error');
     }
   };
 
@@ -534,12 +540,12 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         })
       });
       if (response.ok) {
-        alert('Push-Einstellungen gespeichert!');
+        showToast('Push-Einstellungen gespeichert!');
       } else {
-        alert('Fehler beim Speichern der Push-Einstellungen.');
+        showToast('Fehler beim Speichern der Push-Einstellungen.', 'error');
       }
     } catch (err) {
-      alert('Netzwerkfehler.');
+      showToast('Netzwerkfehler.', 'error');
     } finally {
       setSavingPush(false);
     }
@@ -566,10 +572,10 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         setCustomers(prev => prev.map(c => c.id === selectedCustomer.id ? { ...c, points: editPoints } : c));
         setSelectedCustomer((prev: any) => ({ ...prev, points: editPoints }));
       } else {
-        alert('Fehler beim Aktualisieren: ' + (result.error || 'Unbekannter Fehler'));
+        showToast('Fehler beim Aktualisieren: ' + (result.error || 'Unbekannter Fehler'), 'error');
       }
     } catch (error) {
-      alert('Netzwerkfehler beim Aktualisieren');
+      showToast('Netzwerkfehler beim Aktualisieren', 'error');
     } finally {
       setSavingPoints(false);
     }
@@ -1939,6 +1945,24 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+      
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="fixed bottom-8 left-1/2 -translate-x-1/2 z-[100] animate-fade-in-up">
+          <div className={`flex items-center gap-2 px-5 py-3 rounded-2xl shadow-2xl backdrop-blur-md border ${
+            toastMessage.type === 'error' 
+              ? 'bg-red-500/20 border-red-500/50 text-red-100' 
+              : 'bg-green-500/20 border-green-500/50 text-green-100'
+          }`}>
+            {toastMessage.type === 'error' ? (
+              <AlertTriangle size={18} className="text-red-400" />
+            ) : (
+              <CheckCircle size={18} className="text-green-400" />
+            )}
+            <span className="text-sm font-medium">{toastMessage.text}</span>
           </div>
         </div>
       )}
