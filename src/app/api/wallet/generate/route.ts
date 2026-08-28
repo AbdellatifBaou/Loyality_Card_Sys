@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { generateLoyaltyObjectJwt, createLoyaltyClass } from '@/lib/google-wallet';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -29,17 +30,19 @@ export async function POST(req: Request) {
     // 3. Generate new Customer ID
     const customerId = uuidv4();
 
-    const { createClient } = require('@supabase/supabase-js');
     const adminSupabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
     );
 
-    // 4. Save customer in Supabase
+    // 4. Save customer in Supabase with Welcome Bonus
+    const pushSettings = merchant.push_settings || {};
+    const welcomeBonus = parseInt(pushSettings.welcome_bonus) || 0;
+
     const { error: dbError } = await adminSupabase
       .from('customers_loyality')
       .insert([
-        { id: customerId, wallet_object_id: customerId, points: 0, merchant_id: merchant.id }
+        { id: customerId, wallet_object_id: customerId, points: welcomeBonus, merchant_id: merchant.id }
       ]);
 
     if (dbError) {
@@ -47,8 +50,14 @@ export async function POST(req: Request) {
       throw new Error('Database error');
     }
 
+    if (welcomeBonus > 0) {
+      await adminSupabase.from('stamps_loyality').insert([
+        { customer_id: customerId, amount: welcomeBonus, type: 'welcome' }
+      ]);
+    }
+
     // 5. Generate Google Wallet Add URL
-    const saveUrl = await generateLoyaltyObjectJwt(classId, customerId, 0, merchant);
+    const saveUrl = await generateLoyaltyObjectJwt(classId, customerId, welcomeBonus, merchant);
 
     return NextResponse.json({ url: saveUrl, customerId });
   } catch (error: any) {

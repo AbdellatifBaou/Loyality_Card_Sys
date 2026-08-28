@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { Users, Pizza, Gift, Activity, Bell, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock, BarChart2, Megaphone, Send, ExternalLink, Eye, EyeOff, CheckCircle, Save } from 'lucide-react';
+import { Users, Pizza, Gift, Activity, Bell, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock, BarChart2, Megaphone, Send, ExternalLink, Eye, EyeOff, CheckCircle, Save, Star } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { PRICING } from '@/lib/pricing';
 import { MERCHANT_DICT } from '@/locales/merchant';
@@ -1395,6 +1395,32 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
               <p className="text-white/60 text-sm mb-6">{t.pushMessagesDesc}</p>
 
               <div className="space-y-8">
+                {/* Welcome Bonus */}
+                <div className="p-5 bg-black/40 rounded-xl border border-white/5 space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 rounded-full bg-yellow-500/20 flex items-center justify-center">
+                      <Star className="w-4 h-4 text-yellow-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-medium">{t.welcomeBonusTitle || 'Willkommens-Bonus'}</h3>
+                      <p className="text-xs text-white/50">{t.welcomeBonusDesc || 'Start-Stempel für neue Kunden'}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-white/60 mb-1">{t.bonusStampsLabel || 'Anzahl der Gratis-Stempel'}</label>
+                      <input 
+                        type="number" 
+                        min="0"
+                        max={(merchant?.stamp_goal || 9) - 1}
+                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white outline-none focus:border-white/50"
+                        value={pushSettings.welcome_bonus || 0}
+                        onChange={(e) => setPushSettings({...pushSettings, welcome_bonus: parseInt(e.target.value) || 0})}
+                      />
+                    </div>
+                  </div>
+                </div>
+
                 {/* Stamp Message */}
                 <div className="p-5 bg-black/40 rounded-xl border border-white/5 space-y-4">
                   <div className="flex items-center gap-3 mb-2">
