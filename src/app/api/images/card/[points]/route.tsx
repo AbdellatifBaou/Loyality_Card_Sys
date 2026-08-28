@@ -19,6 +19,7 @@ export async function GET(
     let primaryColor = '#D4AF37';
     let stampSymbol = '✨';
     let stampGoal = 9;
+    let heroImage: string | null = null;
 
     if (merchantSlug) {
       // Use service role key to avoid RLS / Anon key edge case issues
@@ -27,10 +28,11 @@ export async function GET(
         process.env.NEXT_PUBLIC_SUPABASE_URL,
         process.env.SUPABASE_SERVICE_ROLE_KEY
       );
-      const { data } = await adminSupabase.from('merchants_loyality').select('primary_color, stamp_symbol, stamp_goal').eq('slug', merchantSlug).single();
+      const { data } = await adminSupabase.from('merchants_loyality').select('primary_color, stamp_symbol, stamp_goal, push_settings').eq('slug', merchantSlug).single();
       if (data?.primary_color) primaryColor = data.primary_color;
       if (data?.stamp_symbol) stampSymbol = data.stamp_symbol;
       if (data?.stamp_goal) stampGoal = data.stamp_goal;
+      heroImage = data?.push_settings?.hero_image || null;
     }
 
     const GOLD       = primaryColor;
@@ -104,13 +106,27 @@ export async function GET(
             flexDirection: 'column',
             alignItems: 'center',
             justifyContent: 'center',
-            background: 'linear-gradient(160deg, #0E0B03 0%, #080808 55%, #0B0900 100%)',
+            background: heroImage ? '#000000' : 'linear-gradient(160deg, #0E0B03 0%, #080808 55%, #0B0900 100%)',
             gap: `${GAP}px`,
             padding: '40px',
             position: 'relative',
             overflow: 'hidden',
           }}
         >
+          {heroImage && (
+            <img 
+              src={heroImage} 
+              style={{
+                position: 'absolute',
+                top: 0,
+                left: 0,
+                width: '1000px',
+                height: '700px',
+                objectFit: 'cover',
+                opacity: 0.8,
+              }}
+            />
+          )}
           {/* Ambient glow */}
           <div style={{
             position: 'absolute',

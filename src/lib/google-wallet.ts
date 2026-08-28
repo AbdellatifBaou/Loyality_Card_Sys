@@ -180,7 +180,7 @@ export async function createLoyaltyClass(classId: string, merchant: any) {
     },
     hexBackgroundColor: merchant.primary_color || '#1A3828',
     ...(appUrl && !appUrl.includes('localhost')
-      ? { heroImage: { sourceUri: { uri: `${appUrl}/api/images/card/0?v=${IMAGE_VERSION}&merchant=${merchant.slug}` } } }
+      ? { heroImage: { sourceUri: { uri: `${appUrl}/api/images/card/0?v=${IMAGE_VERSION}&rev=${merchant?.push_settings?.hero_image?.length || 0}&merchant=${merchant.slug}` } } }
       : {}),
     locations: merchant.latitude && merchant.longitude 
       ? [{ latitude: merchant.latitude, longitude: merchant.longitude }]
@@ -245,7 +245,7 @@ export async function generateLoyaltyObjectJwt(classId: string, objectId: string
     ...(appUrl && !appUrl.includes('localhost')
       ? {
           heroImage: {
-            sourceUri: { uri: `${appUrl}/api/images/card/${points}?v=${IMAGE_VERSION}&merchant=${merchant.slug}` },
+            sourceUri: { uri: `${appUrl}/api/images/card/${points}?v=${IMAGE_VERSION}&rev=${merchant?.push_settings?.hero_image?.length || 0}&merchant=${merchant.slug}` },
           },
         }
       : {}),
@@ -297,8 +297,8 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
     const stampGoal = merchant?.stamp_goal || 9;
 
     const heroImageUri = points >= stampGoal
-      ? `${appUrl}/api/images/redeem?v=${IMAGE_VERSION}&merchant=${merchant?.slug}`
-      : `${appUrl}/api/images/card/${points}?v=${IMAGE_VERSION}&merchant=${merchant?.slug}`;
+      ? `${appUrl}/api/images/redeem?v=${IMAGE_VERSION}&rev=${merchant?.push_settings?.hero_image?.length || 0}&merchant=${merchant?.slug}`
+      : `${appUrl}/api/images/card/${points}?v=${IMAGE_VERSION}&rev=${merchant?.push_settings?.hero_image?.length || 0}&merchant=${merchant?.slug}`;
 
     const updatedObject: any = {
       loyaltyPoints: {

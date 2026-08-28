@@ -1421,6 +1421,83 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   </div>
                 </div>
 
+                {/* Hero Image */}
+                <div className="p-5 bg-black/40 rounded-xl border border-white/5 space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="w-8 h-8 rounded-full bg-purple-500/20 flex items-center justify-center">
+                      <Star className="w-4 h-4 text-purple-400" />
+                    </div>
+                    <div>
+                      <h3 className="text-white font-medium">{t.heroImageTitle || 'Kundenkarten-Design (Hintergrundbild)'}</h3>
+                      <p className="text-xs text-white/50">{t.heroImageDesc || 'Lade ein Titelbild für Apple/Google Wallet hoch'}</p>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-white/60 mb-2">{t.heroImageUpload || 'Bild hochladen'}</label>
+                      <input 
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              const img = new Image();
+                              img.onload = () => {
+                                const canvas = document.createElement('canvas');
+                                let width = img.width;
+                                let height = img.height;
+                                const maxSize = 800;
+                                
+                                if (width > height) {
+                                  if (width > maxSize) {
+                                    height *= maxSize / width;
+                                    width = maxSize;
+                                  }
+                                } else {
+                                  if (height > maxSize) {
+                                    width *= maxSize / height;
+                                    height = maxSize;
+                                  }
+                                }
+                                
+                                canvas.width = width;
+                                canvas.height = height;
+                                const ctx = canvas.getContext('2d');
+                                if (ctx) {
+                                  ctx.drawImage(img, 0, 0, width, height);
+                                  const dataUrl = canvas.toDataURL('image/jpeg', 0.8);
+                                  setPushSettings({...pushSettings, hero_image: dataUrl});
+                                }
+                              };
+                              img.src = event.target?.result as string;
+                            };
+                            reader.readAsDataURL(file);
+                          }
+                        }}
+                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white outline-none focus:border-white/50"
+                      />
+                      {pushSettings.hero_image && (
+                        <div className="mt-4">
+                          <img src={pushSettings.hero_image} alt="Hero Preview" className="w-full max-h-32 object-cover rounded-lg border border-white/20" />
+                          <button 
+                            type="button"
+                            onClick={() => {
+                              const newSettings = {...pushSettings};
+                              delete newSettings.hero_image;
+                              setPushSettings(newSettings);
+                            }}
+                            className="text-red-400 text-xs mt-2 hover:underline"
+                          >
+                            Bild entfernen
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
                 {/* Stamp Message */}
                 <div className="p-5 bg-black/40 rounded-xl border border-white/5 space-y-4">
                   <div className="flex items-center gap-3 mb-2">

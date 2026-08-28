@@ -14,6 +14,7 @@ export async function GET(req: NextRequest) {
   let rewardText = 'Deine Belohnung ist bereit';
   let logoUrl = `${appUrl}/Aroma_logo.png`;
   let lang = 'de';
+  let heroImage: string | null = null;
 
   if (merchantSlug) {
     const { createClient } = require('@supabase/supabase-js');
@@ -21,13 +22,14 @@ export async function GET(req: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
-    const { data } = await adminSupabase.from('merchants_loyality').select('primary_color, name, reward_text, logo_url, language').eq('slug', merchantSlug).single();
+    const { data } = await adminSupabase.from('merchants_loyality').select('primary_color, name, reward_text, logo_url, language, push_settings').eq('slug', merchantSlug).single();
     if (data) {
       if (data.primary_color) primaryColor = data.primary_color;
       if (data.name) merchantName = data.name;
       if (data.reward_text) rewardText = data.reward_text;
       if (data.logo_url) logoUrl = data.logo_url;
       if (data.language) lang = data.language;
+      if (data.push_settings?.hero_image) heroImage = data.push_settings.hero_image;
     }
   }
 
@@ -59,13 +61,27 @@ export async function GET(req: NextRequest) {
           flexDirection: 'column',
           alignItems: 'center',
           justifyContent: 'center',
-          background: 'linear-gradient(160deg, #0E0B03 0%, #080808 55%, #0B0900 100%)',
+          background: heroImage ? '#000000' : 'linear-gradient(160deg, #0E0B03 0%, #080808 55%, #0B0900 100%)',
           fontFamily: 'sans-serif',
           position: 'relative',
           overflow: 'hidden',
           gap: '18px',
         }}
       >
+        {heroImage && (
+          <img 
+            src={heroImage} 
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '1000px',
+              height: '700px',
+              objectFit: 'cover',
+              opacity: 0.8,
+            }}
+          />
+        )}
         {/* Ambient gold glow */}
         <div style={{
           position: 'absolute',
