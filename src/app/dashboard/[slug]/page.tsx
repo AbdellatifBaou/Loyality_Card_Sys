@@ -66,6 +66,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   const [topCustomers, setTopCustomers] = useState<any[]>([]);
   
   const [activeTab, setActiveTab] = useState<'overview' | 'analytics' | 'marketing' | 'billing' | 'qrcodes' | 'security' | 'push'>('overview');
+  const [anomalies, setAnomalies] = useState<any[]>([]);
   const [pushSettings, setPushSettings] = useState<any>({});
   const [savingPush, setSavingPush] = useState(false);
   const [monthlyData, setMonthlyData] = useState<any[]>([]);
@@ -176,6 +177,53 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       }
 
       setMerchant(merchantData);
+
+      // FRAUD DETECTION / ANOMALY DETECTION
+      const detectedAnomalies: any[] = [];
+      if (earnStamps && cust) {
+        // Find high amount stamps
+        earnStamps.forEach((stamp: any) => {
+          if (stamp.amount >= 4) {
+            const c = cust.find((x:any) => x.id === stamp.customer_id);
+            detectedAnomalies.push({
+              id: stamp.id,
+              type: 'HIGH_AMOUNT',
+              amount: stamp.amount,
+              created_at: stamp.created_at,
+              staff_id: stamp.staff_id,
+              customer_id: c?.wallet_object_id || stamp.customer_id
+            });
+          }
+        });
+
+        // Find rapid scans (spam)
+        const stampsByCustomer = earnStamps.reduce((acc: any, curr: any) => {
+          if (!acc[curr.customer_id]) acc[curr.customer_id] = [];
+          acc[curr.customer_id].push(curr);
+          return acc;
+        }, {});
+
+        for (const customerId in stampsByCustomer) {
+          const sorted = stampsByCustomer[customerId].sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+          for (let i = 0; i < sorted.length - 1; i++) {
+            const timeDiff = new Date(sorted[i+1].created_at).getTime() - new Date(sorted[i].created_at).getTime();
+            if (timeDiff < 5 * 60 * 1000) { // less than 5 minutes
+              const c = cust.find((x:any) => x.id === customerId);
+              if (!detectedAnomalies.find(a => a.id === sorted[i+1].id)) {
+                detectedAnomalies.push({
+                  id: sorted[i+1].id,
+                  type: 'RAPID_SCAN',
+                  amount: sorted[i].amount + sorted[i+1].amount,
+                  created_at: sorted[i+1].created_at,
+                  staff_id: sorted[i+1].staff_id || sorted[i].staff_id,
+                  customer_id: c?.wallet_object_id || customerId
+                });
+              }
+            }
+          }
+        }
+      }
+      setAnomalies(detectedAnomalies.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5));
 
       // Fetch system news
       try {
@@ -1024,6 +1072,38 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                     {staff.length === 0 && <p className="text-center py-4 text-white/20 text-sm italic">{t.noStaffCreated}</p>}
                   </div>
                 </div>
+                {/* Anomalies (Fraud Detection) */}
+                {anomalies.length > 0 && (
+                  <div className="rounded-3xl overflow-hidden border border-red-500/20 bg-red-500/5">
+                    <div className="p-6 border-b border-red-500/10 flex items-center gap-3 bg-red-500/10">
+                      <AlertTriangle size={20} className="text-red-500" />
+                      <h2 className="text-lg font-bold text-red-500">Auffällige Aktivitäten</h2>
+                    </div>
+                    <div className="p-4 space-y-4">
+                      {anomalies.map((a: any) => {
+                        const s = staff.find((x:any) => x.id === a.staff_id);
+                        return (
+                          <div key={a.id} className="flex items-start gap-3 p-3 bg-black/40 rounded-xl border border-red-500/10">
+                            <div className="mt-1 w-2 h-2 rounded-full shrink-0 bg-red-500 animate-pulse" />
+                            <div>
+                              <p className="text-xs text-white/90">
+                                {a.type === 'RAPID_SCAN' && <><span className="font-bold text-red-400">Verdacht auf Spam:</span> Mehrere Stempel-Scans in unter 5 Minuten.</>}
+                                {a.type === 'HIGH_AMOUNT' && <><span className="font-bold text-red-400">Hohe Stempelanzahl:</span> +{a.amount} Stempel auf einmal vergeben.</>}
+                              </p>
+                              <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-white/40">
+                                <span className="bg-white/5 px-2 py-0.5 rounded">Zeit: {new Date(a.created_at).toLocaleString('de-DE')}</span>
+                                {s && <span className="bg-white/5 px-2 py-0.5 rounded flex items-center gap-1"><Users size={10}/> {s.name} (PIN: {s.pin})</span>}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      <p className="text-[10px] text-white/40 text-center italic mt-2">
+                        Hinweis: Das System markiert unnatürlich viele oder schnelle Stempel-Vorgänge (Spam-Schutz).
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Recent Activity */}
                 <div className="rounded-3xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
