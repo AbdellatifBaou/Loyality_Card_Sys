@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
+import { rateLimit } from '@/lib/ratelimit';
 
 export async function POST(req: Request) {
   try {
+    const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
+    const rl = rateLimit(`login:${ip}`, 20, 60000); // Max 20 Versuche pro Minute pro IP
+    if (!rl.success) {
+      return NextResponse.json({ error: 'Zu viele Login-Versuche. Bitte warte eine Minute.' }, { status: 429 });
+    }
+
     const { pin, slug } = await req.json();
 
     if (!pin) {
@@ -18,7 +25,7 @@ export async function POST(req: Request) {
     const normalizedSlug = slug ? decodeURIComponent(slug).toLowerCase() : null;
 
     // Check if it's the global admin password
-    if (pin === (process.env.ADMIN_API_KEY || '2025')) {
+    if (process.env.ADMIN_API_KEY && pin === process.env.ADMIN_API_KEY) {
       if (normalizedSlug) {
         const { data: merchantData } = await adminSupabase
           .from('merchants_loyality')

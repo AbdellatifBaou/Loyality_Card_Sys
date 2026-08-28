@@ -23,12 +23,12 @@ export function proxy(request: NextRequest) {
   // Content Security Policy
   const cspHeader = `
     default-src 'self';
-    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com;
+    script-src 'self' 'unsafe-inline' 'unsafe-eval' https://js.stripe.com https://checkout.stripe.com;
     style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
     img-src 'self' blob: data: https://*.supabase.co;
     font-src 'self' data: https://fonts.gstatic.com;
-    connect-src 'self' https://*.supabase.co https://api.stripe.com;
-    frame-src 'self' https://js.stripe.com https://hooks.stripe.com;
+    connect-src 'self' wss://*.supabase.co https://*.supabase.co https://api.stripe.com https://checkout.stripe.com;
+    frame-src 'self' https://js.stripe.com https://hooks.stripe.com https://checkout.stripe.com;
   `.replace(/\s{2,}/g, ' ').trim();
   
   response.headers.set('Content-Security-Policy', cspHeader);

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { updateLoyaltyObjectPoints } from '@/lib/google-wallet';
 import { rateLimit } from '@/lib/ratelimit';
 
@@ -8,7 +8,7 @@ export async function POST(req: Request) {
     const { objectId, pin, amount = 1 } = await req.json();
 
     if (!objectId || !pin) {
-      return NextResponse.json({ error: 'Missing objectId or pin' }, { status: 400 });
+      return NextResponse.json({ error: 'Kunden-ID oder PIN fehlt' }, { status: 400 });
     }
 
     // Rate Limiting: max 1 request every 5 seconds per customer objectId
@@ -17,7 +17,6 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Zu viele Anfragen. Bitte kurz warten.' }, { status: 429 });
     }
 
-    const { createClient } = require('@supabase/supabase-js');
     const adminSupabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
       process.env.SUPABASE_SERVICE_ROLE_KEY!
@@ -31,7 +30,7 @@ export async function POST(req: Request) {
       .single();
 
     if (customerError || !customer) {
-      return NextResponse.json({ error: 'Customer not found' }, { status: 404 });
+      return NextResponse.json({ error: 'Kunde nicht gefunden' }, { status: 404 });
     }
 
     const merchant = customer.merchants_loyality;
@@ -48,7 +47,7 @@ export async function POST(req: Request) {
       .single();
 
     if (staffError || !staff) {
-      return NextResponse.json({ error: 'Invalid PIN for this merchant' }, { status: 401 });
+      return NextResponse.json({ error: 'Ungültige PIN' }, { status: 401 });
     }
 
     // 3. Calculate new points

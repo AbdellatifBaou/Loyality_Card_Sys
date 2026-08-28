@@ -19,10 +19,10 @@ export async function GET(req: Request) {
   const sixtyDaysAgo = new Date();
   sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
-  // Fetch all customers (any point count) from active merchants
+  // Fetch all customers (including points) from active merchants
   const { data: customers, error } = await db
     .from('customers_loyality')
-    .select('id, wallet_object_id, last_miss_you_sent_at, merchants_loyality!inner(name, is_active, push_settings)');
+    .select('id, wallet_object_id, points, last_miss_you_sent_at, merchants_loyality!inner(name, is_active, push_settings)');
 
   if (error) {
     console.error('Cron DB error:', error);
@@ -31,38 +31,79 @@ export async function GET(req: Request) {
 
   if (!customers?.length) return NextResponse.json({ success: true, sentCount: 0 });
 
-  const issuerId = process.env.GOOGLE_ISSUER_ID;
-  let sentCount = 0;
   let skippedCount = 0;
-
-  for (const customer of customers) {
+  
+  // 1. Filter out inactive merchants and customers who received a ping recently
+  const eligibleCustomers = customers.filter(customer => {
     const merchant = customer.merchants_loyality as any;
-
-    // Skip inactive merchants
-    if (!merchant?.is_active) { skippedCount++; continue; }
-
-    // Skip if we already sent one within the last 60 days
+    if (!merchant?.is_active) { skippedCount++; return false; }
+    
     if (customer.last_miss_you_sent_at) {
       const lastSent = new Date(customer.last_miss_you_sent_at);
-      if (lastSent > sixtyDaysAgo) { skippedCount++; continue; }
+      if (lastSent > sixtyDaysAgo) { skippedCount++; return false; }
     }
+    return true;
+  });
 
-    // Check their most recent stamp
-    const { data: latestStamp } = await db
+  if (eligibleCustomers.length === 0) {
+    return NextResponse.json({ success: true, sentCount: 0, skippedCount });
+  }
+
+  // 2. Find customers who stamped recently (in the last 30 days)
+  const { data: recentStamps, error: stampErr } = await db
+    .from('stamps_loyality')
+    .select('customer_id')
+    .gte('created_at', thirtyDaysAgo.toISOString());
+    
+  if (stampErr) {
+    return NextResponse.json({ error: stampErr.message }, { status: 500 });
+  }
+
+  const recentCustomerIds = new Set(recentStamps?.map(s => s.customer_id) || []);
+
+  // 3. Keep only customers who are INACTIVE (not in recentCustomerIds)
+  const inactiveCustomers = eligibleCustomers.filter(c => {
+    if (recentCustomerIds.has(c.id)) {
+      skippedCount++;
+      return false;
+    }
+    return true;
+  });
+
+  // 4. To avoid sending to people who NEVER visited (just downloaded the card), 
+  // we must confirm they have at least 1 stamp ever.
+  // Customers with points > 0 definitely visited.
+  const knownActive = inactiveCustomers.filter(c => (c as any).points > 0);
+  
+  // Customers with 0 points might have redeemed a reward or never visited. We check these in chunks.
+  const needingCheck = inactiveCustomers.filter(c => (c as any).points === 0);
+  const everVisitedSet = new Set<string>();
+  
+  for (let i = 0; i < needingCheck.length; i += 500) {
+    const chunk = needingCheck.slice(i, i + 500).map(c => c.id);
+    const { data: stampsChunk } = await db
       .from('stamps_loyality')
-      .select('created_at')
-      .eq('customer_id', customer.id)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+      .select('customer_id')
+      .in('customer_id', chunk);
+      
+    stampsChunk?.forEach(s => everVisitedSet.add(s.customer_id));
+  }
+  
+  const finalCustomersToNotify = [
+    ...knownActive,
+    ...needingCheck.filter(c => {
+      if (everVisitedSet.has(c.id)) return true;
+      skippedCount++;
+      return false;
+    })
+  ];
 
-    // No stamps at all → skip (just joined, never visited)
-    if (!latestStamp) { skippedCount++; continue; }
+  const issuerId = process.env.GOOGLE_ISSUER_ID;
+  let sentCount = 0;
 
-    const lastStampDate = new Date(latestStamp.created_at);
-    if (lastStampDate >= thirtyDaysAgo) { skippedCount++; continue; }
-
-    // 30+ days inactive → send wallet push notification
+  // 5. Send push notifications
+  for (const customer of finalCustomersToNotify) {
+    const merchant = customer.merchants_loyality as any;
     try {
       const push = merchant.push_settings || {};
       const customHeader = push.miss_you_header || `Wir vermissen dich bei ${merchant.name}! 👋`;
