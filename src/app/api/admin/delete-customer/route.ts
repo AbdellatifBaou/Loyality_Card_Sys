@@ -50,6 +50,11 @@ export async function POST(req: Request) {
 
     if (customerError) throw customerError;
 
+    // 3. Invalidate Google Wallet Object (Fire & Forget)
+    import('@/lib/google-wallet').then(({ invalidateLoyaltyObject }) => {
+      invalidateLoyaltyObject(customerId).catch(console.error);
+    }).catch(console.error);
+
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Delete Customer API Error:', error);

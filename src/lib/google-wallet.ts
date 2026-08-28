@@ -285,6 +285,36 @@ export async function generateLoyaltyObjectJwt(classId: string, objectId: string
 }
 
 /**
+ * Invalidates (expires) a LoyaltyObject in Google Wallet (e.g. when a customer is deleted)
+ */
+export async function invalidateLoyaltyObject(objectId: string) {
+  try {
+    const issuerId = process.env.GOOGLE_ISSUER_ID;
+    
+    // We patch the state to EXPIRED which removes it from the active passes
+    const response = await walletClient.loyaltyobject.patch({
+      resourceId: `${issuerId}.${objectId}`,
+      requestBody: {
+        state: 'EXPIRED',
+        textModulesData: [
+          {
+            id: 'status',
+            header: 'Status',
+            body: 'Kundenkarte wurde gelöscht oder deaktiviert.',
+          },
+        ]
+      },
+    });
+    return response.data;
+  } catch (error: any) {
+    console.error('API Error invalidating object:', error.response?.data || error.message);
+    // Even if it fails (e.g. not found in Wallet), we don't want to throw an error 
+    // that stops the database deletion process.
+    return null;
+  }
+}
+
+/**
  * Updates an existing LoyaltyObject (e.g. after adding a stamp)
  */
 export async function updateLoyaltyObjectPoints(objectId: string, points: number, isRedeem: boolean = false, merchant: any) {
