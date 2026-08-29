@@ -13,11 +13,7 @@ export async function GET(req: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY!
   );
 
-  const thirtyDaysAgo = new Date();
-  thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
-  const sixtyDaysAgo = new Date();
-  sixtyDaysAgo.setDate(sixtyDaysAgo.getDate() - 60);
 
   // Fetch all customers (including points) from active merchants
   const { data: customers, error } = await db
@@ -38,9 +34,13 @@ export async function GET(req: Request) {
     const merchant = customer.merchants_loyality as any;
     if (!merchant?.is_active) { skippedCount++; return false; }
     
+    const daysConfig = merchant.push_settings?.we_miss_you_days || 30;
+    
     if (customer.last_miss_you_sent_at) {
       const lastSent = new Date(customer.last_miss_you_sent_at);
-      if (lastSent > sixtyDaysAgo) { skippedCount++; return false; }
+      const coolOffPeriod = new Date();
+      coolOffPeriod.setDate(coolOffPeriod.getDate() - (daysConfig * 2));
+      if (lastSent > coolOffPeriod) { skippedCount++; return false; }
     }
     return true;
   });
@@ -49,17 +49,37 @@ export async function GET(req: Request) {
     return NextResponse.json({ success: true, sentCount: 0, skippedCount });
   }
 
-  // 2. Find customers who stamped recently (in the last 30 days)
-  const { data: recentStamps, error: stampErr } = await db
-    .from('stamps_loyality')
-    .select('customer_id')
-    .gte('created_at', thirtyDaysAgo.toISOString());
-    
-  if (stampErr) {
-    return NextResponse.json({ error: stampErr.message }, { status: 500 });
-  }
+  // 2. Find customers who stamped recently, grouped by the merchant's config
+  const daysGroups = new Map<number, string[]>();
+  eligibleCustomers.forEach(c => {
+    const merchant = c.merchants_loyality as any;
+    const days = merchant.push_settings?.we_miss_you_days || 30;
+    if (!daysGroups.has(days)) daysGroups.set(days, []);
+    daysGroups.get(days)!.push(c.id);
+  });
 
-  const recentCustomerIds = new Set(recentStamps?.map(s => s.customer_id) || []);
+  const recentCustomerIds = new Set<string>();
+  
+  for (const [days, custIds] of daysGroups.entries()) {
+    const targetDate = new Date();
+    targetDate.setDate(targetDate.getDate() - days);
+    
+    // Chunking to avoid massive IN clauses
+    for (let i = 0; i < custIds.length; i += 500) {
+      const chunk = custIds.slice(i, i + 500);
+      const { data: recentStamps, error: stampErr } = await db
+        .from('stamps_loyality')
+        .select('customer_id')
+        .gte('created_at', targetDate.toISOString())
+        .in('customer_id', chunk);
+        
+      if (stampErr) {
+        return NextResponse.json({ error: stampErr.message }, { status: 500 });
+      }
+      
+      recentStamps?.forEach(s => recentCustomerIds.add(s.customer_id));
+    }
+  }
 
   // 3. Keep only customers who are INACTIVE (not in recentCustomerIds)
   const inactiveCustomers = eligibleCustomers.filter(c => {

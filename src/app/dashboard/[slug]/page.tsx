@@ -1694,10 +1694,21 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                     </div>
                     <div>
                       <h3 className="text-white font-medium">{t.customerReactivation}</h3>
-                      <p className="text-xs text-white/50">{t.sentWhenNoStamp30Days}</p>
+                      <p className="text-xs text-white/50">{t.sentWhenNoStamp30Days?.replace('30', (pushSettings.we_miss_you_days || 30).toString()) || `Wird versendet, wenn der Kunde ${pushSettings.we_miss_you_days || 30} Tage keinen Stempel erhalten hat.`}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 gap-4">
+                    <div>
+                      <label className="block text-xs font-medium text-white/60 mb-1">Tage bis zur Erinnerung (Standard: 30)</label>
+                      <input 
+                        type="number" 
+                        min="1"
+                        max="365"
+                        value={pushSettings.we_miss_you_days || 30}
+                        onChange={(e) => setPushSettings({...pushSettings, we_miss_you_days: parseInt(e.target.value) || 30})}
+                        className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white outline-none focus:border-white/50" 
+                      />
+                    </div>
                     <div>
                       <label className="block text-xs font-medium text-white/60 mb-1">{t.title}</label>
                       <input 
