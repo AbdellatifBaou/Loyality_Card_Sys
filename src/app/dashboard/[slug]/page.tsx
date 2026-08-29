@@ -235,7 +235,11 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           }
         }
       }
-      setAnomalies(detectedAnomalies.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5));
+      const dismissedStr = localStorage.getItem(`dismissed_anomalies_${merchantData.id}`) || '[]';
+      let dismissedIds: string[] = [];
+      try { dismissedIds = JSON.parse(dismissedStr); } catch (e) {}
+      const filteredAnomalies = detectedAnomalies.filter((a: any) => !dismissedIds.includes(a.id));
+      setAnomalies(filteredAnomalies.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5));
 
       // Fetch system news
       try {
@@ -563,6 +567,16 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
     } catch (err: any) {
       showToast('Systemfehler: ' + err.message, 'error');
     }
+  };
+
+  const handleDismissAnomaly = (e: any, id: string) => {
+    e.stopPropagation();
+    const dismissedStr = localStorage.getItem(`dismissed_anomalies_${merchant?.id}`) || '[]';
+    let dismissedIds: string[] = [];
+    try { dismissedIds = JSON.parse(dismissedStr); } catch (err) {}
+    dismissedIds.push(id);
+    localStorage.setItem(`dismissed_anomalies_${merchant?.id}`, JSON.stringify(dismissedIds));
+    setAnomalies(prev => prev.filter(a => a.id !== id));
   };
 
   const openCustomer = async (customer: any) => {
@@ -1089,28 +1103,44 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   <div className="rounded-3xl overflow-hidden border border-red-500/20 bg-red-500/5">
                     <div className="p-6 border-b border-red-500/10 flex items-center gap-3 bg-red-500/10">
                       <AlertTriangle size={20} className="text-red-500" />
-                      <h2 className="text-lg font-bold text-red-500">Auffällige Aktivitäten</h2>
+                      <h2 className="text-lg font-bold text-red-500">{(t as any).anomaliesTitle || 'Auffällige Aktivitäten'}</h2>
                     </div>
-                    <div className="p-4 space-y-4">
+                    <div className="p-4 space-y-4 max-h-[350px] overflow-y-auto">
                       {anomalies.map((a: any) => {
                         const s = staff.find((x:any) => x.id === a.staff_id);
                         return (
-                          <div key={a.id} className="flex items-start gap-3 p-3 bg-black/40 rounded-xl border border-red-500/10">
-                            <div className="mt-1 w-2 h-2 rounded-full shrink-0 bg-red-500 animate-pulse" />
-                            <div>
-                              <p className="text-xs text-white/90">
-                                {a.type === 'HIGH_AMOUNT' && <><span className="font-bold text-red-400">Verdächtige Aktivität:</span> Einem Kunden wurden +{a.amount} Stempel innerhalb weniger Minuten vergeben.</>}
-                              </p>
-                              <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-white/40">
-                                <span className="bg-white/5 px-2 py-0.5 rounded">Letzter Scan: {new Date(a.created_at).toLocaleString('de-DE')}</span>
-                                {s && <span className="bg-white/5 px-2 py-0.5 rounded flex items-center gap-1"><Users size={10}/> {s.name} (PIN: {s.pin})</span>}
+                          <div 
+                            key={a.id} 
+                            onClick={() => {
+                              const customer = cust.find((x:any) => x.wallet_object_id === a.customer_id || x.id === a.customer_id);
+                              if (customer) openCustomer(customer);
+                            }}
+                            className="flex items-start justify-between gap-3 p-3 bg-black/40 rounded-xl border border-red-500/10 cursor-pointer hover:border-red-500/30 transition-all group"
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className="mt-1 w-2 h-2 rounded-full shrink-0 bg-red-500 animate-pulse" />
+                              <div>
+                                <p className="text-xs text-white/90">
+                                  {a.type === 'HIGH_AMOUNT' && ((t as any).anomalyHighAmount ? (t as any).anomalyHighAmount.replace('{amount}', a.amount) : <><span className="font-bold text-red-400">Verdächtige Aktivität:</span> Einem Kunden wurden +{a.amount} Stempel innerhalb weniger Minuten vergeben.</>)}
+                                </p>
+                                <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-white/40">
+                                  <span className="bg-white/5 px-2 py-0.5 rounded">{(t as any).anomalyLastScan || 'Letzter Scan: '}{new Date(a.created_at).toLocaleString('de-DE')}</span>
+                                  {s && <span className="bg-white/5 px-2 py-0.5 rounded flex items-center gap-1"><Users size={10}/> {s.name} (PIN: {s.pin})</span>}
+                                </div>
                               </div>
                             </div>
+                            <button 
+                              onClick={(e) => handleDismissAnomaly(e, a.id)}
+                              className="text-white/20 hover:text-white/60 p-1 opacity-0 group-hover:opacity-100 transition-all shrink-0"
+                              title="Ignorieren"
+                            >
+                              <X size={16} />
+                            </button>
                           </div>
                         );
                       })}
                       <p className="text-[10px] text-white/40 text-center italic mt-2">
-                        Hinweis: Das System schlägt Alarm, sobald ein einzelner Kunde insgesamt 4 oder mehr Stempel innerhalb von 5 Minuten erhält.
+                        {(t as any).anomalyHint || 'Hinweis: Das System schlägt Alarm, sobald ein einzelner Kunde insgesamt 4 oder mehr Stempel innerhalb von 5 Minuten erhält.'}
                       </p>
                     </div>
                   </div>

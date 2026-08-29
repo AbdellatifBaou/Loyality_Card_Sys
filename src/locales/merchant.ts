@@ -1,5 +1,9 @@
 export const MERCHANT_DICT = {
   de: {
+    anomaliesTitle: "Auffällige Aktivitäten",
+    anomalyHighAmount: "Verdächtige Aktivität: Einem Kunden wurden +{amount} Stempel innerhalb weniger Minuten vergeben.",
+    anomalyLastScan: "Letzter Scan: ",
+    anomalyHint: "Hinweis: Das System schlägt Alarm, sobald ein einzelner Kunde insgesamt 4 oder mehr Stempel innerhalb von 5 Minuten erhält.",
     subChoosePackage: ". Wähle ein Paket, um dein Abo zu reaktivieren (keine erneuten Einrichtungskosten).",
     subCurrently: "Dein Abonnement ist derzeit",
     until: "bis zum",
@@ -188,6 +192,10 @@ export const MERCHANT_DICT = {
     thisNotificationIs: "Diese Nachricht wird",
   },
   fr: {
+    anomaliesTitle: "Activités Suspectes",
+    anomalyHighAmount: "Activité suspecte : Un client a reçu +{amount} tampons en quelques minutes.",
+    anomalyLastScan: "Dernier scan : ",
+    anomalyHint: "Remarque : Le système déclenche une alarme lorsqu'un client reçoit au total 4 tampons ou plus en 5 minutes.",
     subChoosePackage: ". Choisissez un forfait pour réactiver (sans frais supplémentaires).",
     subCurrently: "Votre abonnement est actuellement",
     until: "jusqu'au",
