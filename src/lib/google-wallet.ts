@@ -350,7 +350,7 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
           body: isRedeem
             ? 'Prämie erfolgreich eingelöst! 🎉'
             : points >= stampGoal
-            ? 'DEINE BELOHNUNG IST BEREIT! 🎁'
+            ? 'DEINE BELOHNUNG IST BEREIT! 🎉'
             : points >= stampGoal - 1
             ? 'FAST GESCHAFFT! Nur noch 1 Stempel! 🎉'
             : points >= Math.floor(stampGoal / 2)

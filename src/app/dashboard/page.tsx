@@ -1193,8 +1193,8 @@ export default function DashboardPage() {
       )}
       {/* Edit Merchant Modal */}
       {editMerchant && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-[#111111] border border-white/10 rounded-3xl p-8 max-w-md w-full my-8">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <div className="bg-[#111111] border border-white/10 rounded-3xl p-8 max-w-md w-full max-h-[85vh] overflow-y-auto">
             <h3 className="text-xl font-bold text-white mb-6">Händler bearbeiten</h3>
 
             <div className="space-y-4">
@@ -1295,8 +1295,8 @@ export default function DashboardPage() {
 
       {/* Create Merchant Modal */}
       {showCreateMerchant && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-[#111111] border border-white/10 rounded-3xl p-8 max-w-md w-full my-8">
+        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
+          <div className="bg-[#111111] border border-white/10 rounded-3xl p-8 max-w-md w-full max-h-[85vh] overflow-y-auto custom-scrollbar">
             <h3 className="text-xl font-bold text-white mb-2">{t.createMerchantTitle}</h3>
             <p className="text-white/60 text-sm mb-6">
               {t.createMerchantDesc}
@@ -1426,7 +1426,7 @@ export default function DashboardPage() {
                   <label className="block text-xs font-medium text-white/50 mb-2">{t.stampSymbol}</label>
                   <div className="space-y-2">
                     <select 
-                      value={!['☕️','🥐','🍔','🍕','✂️','💅','💆‍♀️','🍺','🍹','🛍️','🎁','⭐'].includes(newMerchantSymbol) ? 'custom' : newMerchantSymbol}
+                      value={!['☕️','🥐','🍔','🍕','✂️','💅','💆‍♀️','🍺','🍹','🛍️','⭐'].includes(newMerchantSymbol) ? 'custom' : newMerchantSymbol}
                       onChange={(e) => {
                         if (e.target.value === 'custom') setNewMerchantSymbol('✨');
                         else setNewMerchantSymbol(e.target.value);
@@ -1443,11 +1443,10 @@ export default function DashboardPage() {
                       <option value="🍺">🍺 Bier (Bar/Pub)</option>
                       <option value="🍹">🍹 Cocktail (Bar)</option>
                       <option value="🛍️">🛍️ Einkaufstasche (Einzelhandel)</option>
-                      <option value="🎁">🎁 Geschenk (Allgemein)</option>
                       <option value="⭐">⭐ Stern (Allgemein)</option>
                       <option value="custom">✍️ Eigenes Emoji eingeben...</option>
                     </select>
-                    {(!['☕️','🥐','🍔','🍕','✂️','💅','💆‍♀️','🍺','🍹','🛍️','🎁','⭐'].includes(newMerchantSymbol)) && (
+                    {(!['☕️','🥐','🍔','🍕','✂️','💅','💆‍♀️','🍺','🍹','🛍️','⭐'].includes(newMerchantSymbol)) && (
                       <input 
                         type="text"
                         placeholder="Füge dein Emoji ein..."
