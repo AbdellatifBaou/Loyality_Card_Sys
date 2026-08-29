@@ -195,6 +195,33 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             });
           }
         });
+
+        // Find rapid scans (spam)
+        const stampsByCustomer = earnStamps.reduce((acc: any, curr: any) => {
+          if (!acc[curr.customer_id]) acc[curr.customer_id] = [];
+          acc[curr.customer_id].push(curr);
+          return acc;
+        }, {});
+
+        for (const customerId in stampsByCustomer) {
+          const sorted = stampsByCustomer[customerId].sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+          for (let i = 0; i < sorted.length - 1; i++) {
+            const timeDiff = new Date(sorted[i+1].created_at).getTime() - new Date(sorted[i].created_at).getTime();
+            if (timeDiff < 5 * 60 * 1000) { // less than 5 minutes
+              const c = cust.find((x:any) => x.id === customerId);
+              if (!detectedAnomalies.find(a => a.id === sorted[i+1].id)) {
+                detectedAnomalies.push({
+                  id: sorted[i+1].id,
+                  type: 'RAPID_SCAN',
+                  amount: sorted[i].amount + sorted[i+1].amount,
+                  created_at: sorted[i+1].created_at,
+                  staff_id: sorted[i+1].staff_id || sorted[i].staff_id,
+                  customer_id: c?.wallet_object_id || customerId
+                });
+              }
+            }
+          }
+        }
       }
       setAnomalies(detectedAnomalies.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5));
 
@@ -1060,6 +1087,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                             <div className="mt-1 w-2 h-2 rounded-full shrink-0 bg-red-500 animate-pulse" />
                             <div>
                               <p className="text-xs text-white/90">
+                                {a.type === 'RAPID_SCAN' && <><span className="font-bold text-red-400">Verdacht auf Spam:</span> Mehrere Stempel-Scans in unter 5 Minuten.</>}
                                 {a.type === 'HIGH_AMOUNT' && <><span className="font-bold text-red-400">Hohe Stempelanzahl:</span> +{a.amount} Stempel auf einmal vergeben.</>}
                               </p>
                               <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-white/40">
@@ -1071,7 +1099,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         );
                       })}
                       <p className="text-[10px] text-white/40 text-center italic mt-2">
-                        Hinweis: Das System markiert unnatürlich viele Stempel auf einmal (Spam-Schutz).
+                        Hinweis: Das System markiert unnatürlich viele oder schnelle Stempel-Vorgänge (Spam-Schutz).
                       </p>
                     </div>
                   </div>
