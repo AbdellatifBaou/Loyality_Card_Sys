@@ -41,7 +41,7 @@ const DICT = {
   }
 };
 
-const IMAGE_VERSION = '11';
+const IMAGE_VERSION = '12';
 
 // Normalize App URL: remove trailing slash if present
 const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '');

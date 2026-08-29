@@ -78,7 +78,7 @@ export async function GET(req: NextRequest) {
               width: '1000px',
               height: '700px',
               objectFit: 'cover',
-              opacity: 0.8,
+              opacity: 0.6,
             }}
           />
         )}
@@ -129,8 +129,9 @@ export async function GET(req: NextRequest) {
           fontSize: '22px',
           letterSpacing: '7px',
           textTransform: 'uppercase',
-          color: GOLD,
+          color: '#FFFFFF',
           fontWeight: 'bold',
+          textShadow: '0 2px 10px rgba(0,0,0,0.8)'
         }}>
           {merchantName}
         </span>
@@ -148,6 +149,7 @@ export async function GET(req: NextRequest) {
             color: '#FFFFFF',
             lineHeight: 1,
             textAlign: 'center',
+            textShadow: '0 2px 15px rgba(0,0,0,0.8)'
           }}>
             {t.congrats}
           </span>
@@ -163,9 +165,10 @@ export async function GET(req: NextRequest) {
         {/* Subtitle */}
         <span style={{
           fontSize: '34px',
-          color: 'rgba(255,255,255,0.65)',
+          color: '#FFFFFF',
           textAlign: 'center',
           lineHeight: 1.2,
+          textShadow: '0 2px 10px rgba(0,0,0,0.8)'
         }}>
           {rewardText}
         </span>
@@ -180,9 +183,10 @@ export async function GET(req: NextRequest) {
         {/* Bottom hint */}
         <span style={{
           fontSize: '22px',
-          color: 'rgba(255,255,255,0.32)',
+          color: '#FFFFFF',
           letterSpacing: '1px',
           textAlign: 'center',
+          textShadow: '0 2px 10px rgba(0,0,0,0.8)'
         }}>
           {t.hint}
         </span>
