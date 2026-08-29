@@ -15,7 +15,12 @@ const DICT = {
     defaultStampHeader1: " von 9 Stempeln ",
     defaultStampBodyNear: "Nur noch 1 Stempel bis zu deiner Gratisbelohnung! 🎉",
     defaultStampBody: "Du hast ",
-    defaultStampBody2: " Stempel gesammelt. Weiter so!"
+    defaultStampBody2: " Stempel gesammelt. Weiter so!",
+    statusRedeemed: "Prämie erfolgreich eingelöst! 🎉",
+    statusReady: "DEINE BELOHNUNG IST BEREIT! 🎉",
+    statusAlmost: "FAST GESCHAFFT! Nur noch 1 Stempel! 🎉",
+    statusHalfway: "HALBZEIT! Du bist auf dem Weg! 🚀",
+    statusWelcome: "Willkommen bei {name}! 👋"
   },
   en: {
     stamp: "Stamps",
@@ -26,7 +31,12 @@ const DICT = {
     defaultStampHeader1: " of 9 stamps ",
     defaultStampBodyNear: "Only 1 stamp left until your free reward! 🎉",
     defaultStampBody: "You have collected ",
-    defaultStampBody2: " stamps. Keep it up!"
+    defaultStampBody2: " stamps. Keep it up!",
+    statusRedeemed: "Reward successfully redeemed! 🎉",
+    statusReady: "YOUR REWARD IS READY! 🎉",
+    statusAlmost: "ALMOST THERE! Only 1 stamp left! 🎉",
+    statusHalfway: "HALFWAY! You are on your way! 🚀",
+    statusWelcome: "Welcome to {name}! 👋"
   },
   fr: {
     stamp: "Tampons",
@@ -35,9 +45,14 @@ const DICT = {
     redeemHeader: "Récompense réclamée! ",
     rewardHeader: "Récompense prête! ✨",
     defaultStampHeader1: " sur 9 tampons ",
-    defaultStampBodyNear: "Plus qu'1 tampon avant votre récompense gratuite! 🎉",
+    defaultStampBodyNear: "Plus qu"1 tampon avant votre récompense gratuite! 🎉",
     defaultStampBody: "Vous avez collecté ",
-    defaultStampBody2: " tampons. Continuez comme ça!"
+    defaultStampBody2: " tampons. Continuez comme ça!",
+    statusRedeemed: "Récompense utilisée avec succès ! 🎉",
+    statusReady: "VOTRE RÉCOMPENSE EST PRÊTE ! 🎉",
+    statusAlmost: "PRESQUE LÀ ! Plus qu"1 tampon ! 🎉",
+    statusHalfway: "À MOITIÉ ! Vous êtes sur la bonne voie ! 🚀",
+    statusWelcome: "Bienvenue chez {name} ! 👋"
   }
 };
 
@@ -348,14 +363,14 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
           id: 'status',
           header: t.status,
           body: isRedeem
-            ? 'Prämie erfolgreich eingelöst! 🎉'
+            ? t.statusRedeemed
             : points >= stampGoal
-            ? 'DEINE BELOHNUNG IST BEREIT! 🎉'
+            ? t.statusReady
             : points >= stampGoal - 1
-            ? 'FAST GESCHAFFT! Nur noch 1 Stempel! 🎉'
+            ? t.statusAlmost
             : points >= Math.floor(stampGoal / 2)
-            ? 'HALBZEIT! Du bist auf dem Weg! 🚀'
-            : `Willkommen bei ${merchant?.name || 'uns'}! 👋`,
+            ? t.statusHalfway
+            : t.statusWelcome.replace('{name}', merchant?.name || 'uns'),
         },
       ]
     };
