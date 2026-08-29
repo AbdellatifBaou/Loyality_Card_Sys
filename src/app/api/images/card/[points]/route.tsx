@@ -80,8 +80,6 @@ export async function GET(
         >
           {stamped ? (
             <span style={{ fontSize: numRows > 2 ? '60px' : '72px', lineHeight: 1 }}>{stampSymbol}</span>
-          ) : idx === stampGoal - 1 ? (
-            <span style={{ fontSize: numRows > 2 ? '60px' : '72px', lineHeight: 1 }}>🎁</span>
           ) : (
             <span style={{ fontSize: numRows > 2 ? '42px' : '50px', lineHeight: 1, opacity: 0.2 }}>
               {stampSymbol}

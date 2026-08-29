@@ -144,7 +144,7 @@ export default function LandingPage() {
                     <div className="grid grid-cols-5 gap-3 mb-6">
                       {stamps.map(i=>(
                         <div key={i} className="aspect-square rounded-xl flex items-center justify-center text-lg font-bold transition-all" style={i<=7?{background:'rgba(212,175,55,0.2)',border:'1px solid rgba(212,175,55,0.4)',color:'#D4AF37',boxShadow:'0 0 12px rgba(212,175,55,0.15)'}:i===10?{background:'linear-gradient(135deg,#D4AF37,#F3D179)',border:'1px solid #D4AF37',color:'#000'}:{background:'rgba(255,255,255,0.04)',border:'1px solid rgba(255,255,255,0.08)',color:'rgba(255,255,255,0.2)'}}>
-                          {i<=7?'✓':i===10?'🎁':i}
+                          {i<=7?'✓':i}
                         </div>
                       ))}
                     </div>
