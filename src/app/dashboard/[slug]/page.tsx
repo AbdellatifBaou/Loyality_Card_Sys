@@ -181,20 +181,59 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       // FRAUD DETECTION / ANOMALY DETECTION
       const detectedAnomalies: any[] = [];
       if (earnStamps && cust) {
-        // Find high amount stamps
-        earnStamps.forEach((stamp: any) => {
-          if (stamp.amount >= 4) {
-            const c = cust.find((x:any) => x.id === stamp.customer_id);
-            detectedAnomalies.push({
-              id: stamp.id,
-              type: 'HIGH_AMOUNT',
-              amount: stamp.amount,
-              created_at: stamp.created_at,
-              staff_id: stamp.staff_id,
-              customer_id: c?.wallet_object_id || stamp.customer_id
-            });
+        const stampsByCustomer = earnStamps.reduce((acc: any, curr: any) => {
+          if (!acc[curr.customer_id]) acc[curr.customer_id] = [];
+          acc[curr.customer_id].push(curr);
+          return acc;
+        }, {});
+
+        for (const customerId in stampsByCustomer) {
+          const sorted = stampsByCustomer[customerId].sort((a: any, b: any) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+          
+          for (let i = 0; i < sorted.length; i++) {
+            let sum = sorted[i].amount;
+            
+            // Single stamp >= 4
+            if (sum >= 4) {
+              const c = cust.find((x:any) => x.id === customerId);
+              if (!detectedAnomalies.find(a => a.id === sorted[i].id)) {
+                detectedAnomalies.push({
+                  id: sorted[i].id,
+                  type: 'HIGH_AMOUNT',
+                  amount: sum,
+                  created_at: sorted[i].created_at,
+                  staff_id: sorted[i].staff_id,
+                  customer_id: c?.wallet_object_id || customerId
+                });
+              }
+              continue;
+            }
+
+            // Sliding window: sum stamps within 5 minutes
+            for (let j = i + 1; j < sorted.length; j++) {
+              const timeDiff = new Date(sorted[j].created_at).getTime() - new Date(sorted[i].created_at).getTime();
+              if (timeDiff <= 5 * 60 * 1000) {
+                sum += sorted[j].amount;
+                if (sum >= 4) {
+                  const c = cust.find((x:any) => x.id === customerId);
+                  if (!detectedAnomalies.find(a => a.id === sorted[j].id)) {
+                    detectedAnomalies.push({
+                      id: sorted[j].id,
+                      type: 'HIGH_AMOUNT',
+                      amount: sum,
+                      created_at: sorted[j].created_at,
+                      staff_id: sorted[j].staff_id || sorted[i].staff_id,
+                      customer_id: c?.wallet_object_id || customerId
+                    });
+                  }
+                  break;
+                }
+              } else {
+                break;
+              }
+            }
           }
-        });
+        }
       }
       setAnomalies(detectedAnomalies.sort((a: any, b: any) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()).slice(0, 5));
 
@@ -1060,10 +1099,10 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                             <div className="mt-1 w-2 h-2 rounded-full shrink-0 bg-red-500 animate-pulse" />
                             <div>
                               <p className="text-xs text-white/90">
-                                {a.type === 'HIGH_AMOUNT' && <><span className="font-bold text-red-400">Hohe Stempelanzahl:</span> +{a.amount} Stempel auf einmal vergeben.</>}
+                                {a.type === 'HIGH_AMOUNT' && <><span className="font-bold text-red-400">Verdächtige Aktivität:</span> Einem Kunden wurden +{a.amount} Stempel innerhalb weniger Minuten vergeben.</>}
                               </p>
                               <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-white/40">
-                                <span className="bg-white/5 px-2 py-0.5 rounded">Zeit: {new Date(a.created_at).toLocaleString('de-DE')}</span>
+                                <span className="bg-white/5 px-2 py-0.5 rounded">Letzter Scan: {new Date(a.created_at).toLocaleString('de-DE')}</span>
                                 {s && <span className="bg-white/5 px-2 py-0.5 rounded flex items-center gap-1"><Users size={10}/> {s.name} (PIN: {s.pin})</span>}
                               </div>
                             </div>
@@ -1071,7 +1110,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         );
                       })}
                       <p className="text-[10px] text-white/40 text-center italic mt-2">
-                        Hinweis: Das System markiert unnatürlich viele Stempel auf einmal (Spam-Schutz).
+                        Hinweis: Das System schlägt Alarm, sobald ein einzelner Kunde insgesamt 4 oder mehr Stempel innerhalb von 5 Minuten erhält.
                       </p>
                     </div>
                   </div>
