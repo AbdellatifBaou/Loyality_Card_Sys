@@ -1193,8 +1193,8 @@ export default function DashboardPage() {
       )}
       {/* Edit Merchant Modal */}
       {editMerchant && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-          <div className="bg-[#111111] border border-white/10 rounded-3xl p-8 max-w-md w-full max-h-[85vh] overflow-y-auto">
+        <div className="fixed inset-0 bg-black/80 flex items-start justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-[#111111] border border-white/10 rounded-3xl p-8 max-w-md w-full my-8">
             <h3 className="text-xl font-bold text-white mb-6">Händler bearbeiten</h3>
 
             <div className="space-y-4">
@@ -1295,8 +1295,8 @@ export default function DashboardPage() {
 
       {/* Create Merchant Modal */}
       {showCreateMerchant && (
-        <div className="fixed inset-0 bg-black/80 flex items-center justify-center p-4 z-50 backdrop-blur-sm">
-          <div className="bg-[#111111] border border-white/10 rounded-3xl p-8 max-w-md w-full max-h-[85vh] overflow-y-auto custom-scrollbar">
+        <div className="fixed inset-0 bg-black/80 flex items-start justify-center p-4 z-50 backdrop-blur-sm overflow-y-auto">
+          <div className="bg-[#111111] border border-white/10 rounded-3xl p-8 max-w-md w-full my-8">
             <h3 className="text-xl font-bold text-white mb-2">{t.createMerchantTitle}</h3>
             <p className="text-white/60 text-sm mb-6">
               {t.createMerchantDesc}
