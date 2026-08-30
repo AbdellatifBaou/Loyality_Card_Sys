@@ -29,6 +29,11 @@ export async function POST(req: Request) {
 
     const errAdminPin = lang === 'fr' ? "Ce code PIN est réservé à l'administrateur." : lang === 'en' ? "This PIN is reserved for the administrator." : "Diese PIN ist für den Administrator reserviert.";
     const errInUse = lang === 'fr' ? "Ce code PIN est déjà utilisé par un autre employé." : lang === 'en' ? "This PIN is already in use by another employee." : "Diese PIN wird bereits von einem anderen Mitarbeiter verwendet.";
+    const errFormat = lang === 'fr' ? "Le code PIN doit comporter exactement 4 chiffres." : lang === 'en' ? "PIN must be exactly 4 digits." : "Die PIN muss aus genau 4 Zahlen bestehen.";
+
+    if (!/^\d{4}$/.test(pin)) {
+      return NextResponse.json({ error: errFormat }, { status: 400 });
+    }
 
     if (process.env.ADMIN_API_KEY && pin === process.env.ADMIN_API_KEY) {
       return NextResponse.json({ error: errAdminPin }, { status: 400 });

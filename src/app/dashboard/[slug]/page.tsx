@@ -1912,7 +1912,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       value={newPin}
                       onChange={(e) => setNewPin(e.target.value)}
                       required
-                      minLength={4}
+                      minLength={4} maxLength={4} pattern="\d{4}"
                       className="w-full bg-black/50 border border-white/10 rounded-xl px-4 py-3 text-white outline-none transition-all text-sm pr-12"
                     />
                     <button 
@@ -1955,7 +1955,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             <h3 className="text-xl font-bold text-white">{t.addStaff}</h3>
             <form onSubmit={addStaff} className="space-y-4">
               <input value={newStaffName} onChange={e => setNewStaffName(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-white/50 transition-all" placeholder="Name (z.B. Latif)" />
-              <input value={newStaffPin} onChange={e => setNewStaffPin(e.target.value)} maxLength={6} className="w-full bg-black/50 border border-white/10 rounded-2xl px-6 py-4 text-white font-mono tracking-[0.5em] text-center outline-none focus:border-white/50 transition-all" placeholder="PIN" />
+              <input value={newStaffPin} onChange={e => setNewStaffPin(e.target.value)} maxLength={4} pattern="\d{4}" className="w-full bg-black/50 border border-white/10 rounded-2xl px-6 py-4 text-white font-mono tracking-[0.5em] text-center outline-none focus:border-white/50 transition-all" placeholder="PIN" />
               <button 
                 type="submit" 
                 disabled={isAddingStaff}
