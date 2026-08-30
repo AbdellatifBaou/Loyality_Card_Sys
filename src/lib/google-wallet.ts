@@ -20,7 +20,10 @@ const DICT = {
     statusReady: "DEINE BELOHNUNG IST BEREIT! 🎉",
     statusAlmost: "FAST GESCHAFFT! Nur noch 1 Stempel! 🎉",
     statusHalfway: "HALBZEIT! Du bist auf dem Weg! 🚀",
-    statusWelcome: "Willkommen bei {name}! 👋"
+    statusWelcome: "Willkommen bei {name}! 👋",
+    redeemBody: "Viel Spaß mit deiner Prämie! Deine Karte wurde auf 0 zurückgesetzt, du kannst nun wieder neu sammeln.",
+    rewardBody: "Herzlichen Glückwunsch! Du hast deine Stempelkarte voll. Zeige sie beim nächsten Mal vor.",
+    reviewText: "Jetzt bewerten & Feedback geben ⭐"
   },
   en: {
     stamp: "Stamps",
@@ -36,7 +39,10 @@ const DICT = {
     statusReady: "YOUR REWARD IS READY! 🎉",
     statusAlmost: "ALMOST THERE! Only 1 stamp left! 🎉",
     statusHalfway: "HALFWAY! You are on your way! 🚀",
-    statusWelcome: "Welcome to {name}! 👋"
+    statusWelcome: "Welcome to {name}! 👋",
+    redeemBody: "Enjoy your reward! Your card has been reset to 0, you can start collecting again.",
+    rewardBody: "Congratulations! Your stamp card is full. Show it on your next visit.",
+    reviewText: "Rate us & give feedback ⭐"
   },
   fr: {
     stamp: "Tampons",
@@ -52,7 +58,10 @@ const DICT = {
     statusReady: "VOTRE RÉCOMPENSE EST PRÊTE ! 🎉",
     statusAlmost: "PRESQUE LÀ ! Plus qu"1 tampon ! 🎉",
     statusHalfway: "À MOITIÉ ! Vous êtes sur la bonne voie ! 🚀",
-    statusWelcome: "Bienvenue chez {name} ! 👋"
+    statusWelcome: "Bienvenue chez {name} ! 👋",
+    redeemBody: "Profitez de votre récompense ! Votre carte a été remise à zéro, vous pouvez recommencer à collecter.",
+    rewardBody: "Félicitations ! Votre carte de fidélité est pleine. Présentez-la lors de votre prochaine visite.",
+    reviewText: "Évaluez-nous & donnez votre avis ⭐"
   }
 };
 
@@ -382,7 +391,7 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
       updatedObject.messages = [
         {
           header: push.redeem_header || t.redeemHeader,
-          body: push.redeem_body || 'Viel Spaß mit deiner Prämie! Deine Karte wurde auf 0 zurückgesetzt, du kannst nun wieder neu sammeln.',
+          body: push.redeem_body || t.redeemBody,
           id: `REDEEM_MESSAGE_${Date.now()}`,
           messageType: 'TEXT_AND_NOTIFY'
         }
@@ -392,14 +401,14 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
         uris: [
           {
             uri: 'https://search.google.com/local/writereview?placeid=PLACEHOLDER',
-            description: 'Jetzt bewerten & Feedback geben ⭐',
+            description: t.reviewText,
           }
         ]
       };
       updatedObject.messages = [
         {
           header: push.reward_header || t.rewardHeader,
-          body: push.reward_body || merchant?.reward_text || 'Herzlichen Glückwunsch! Du hast deine Stempelkarte voll. Zeige sie beim nächsten Mal vor.',
+          body: push.reward_body || merchant?.reward_text || t.rewardBody,
           id: `REWARD_READY_MESSAGE_${Date.now()}`,
           messageType: 'TEXT_AND_NOTIFY'
         }
