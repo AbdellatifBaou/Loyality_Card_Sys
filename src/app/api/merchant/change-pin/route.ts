@@ -35,6 +35,28 @@ export async function POST(req: Request) {
     if (!staff.name.toLowerCase().includes('admin') && !(staff.merchants_loyality as any).slug.includes('admin')) {
       return NextResponse.json({ error: 'Diese PIN hat keine Administrator-Rechte' }, { status: 403 });
     }
+    // Uniqueness and validity checks for new PIN
+    const { data: merchantData } = await adminSupabase.from('merchants_loyality').select('language').eq('id', staff.merchant_id).single();
+    const lang = merchantData?.language || 'de';
+
+    const errAdminPin = lang === 'fr' ? "Ce code PIN est réservé à l'administrateur." : lang === 'en' ? "This PIN is reserved for the administrator." : "Diese PIN ist für den Administrator reserviert.";
+    const errInUse = lang === 'fr' ? "Ce code PIN est déjà utilisé par un autre employé." : lang === 'en' ? "This PIN is already in use by another employee." : "Diese PIN wird bereits von einem anderen Mitarbeiter verwendet.";
+
+    if (process.env.ADMIN_API_KEY && newPin === process.env.ADMIN_API_KEY) {
+      return NextResponse.json({ error: errAdminPin }, { status: 400 });
+    }
+
+    const { data: existingPin } = await adminSupabase
+      .from('staff_loyality')
+      .select('id')
+      .eq('merchant_id', staff.merchant_id)
+      .eq('pin', newPin)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingPin) {
+      return NextResponse.json({ error: errInUse }, { status: 400 });
+    }
 
     // Update PIN
     const { error: updateError } = await adminSupabase

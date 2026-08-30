@@ -24,6 +24,28 @@ export async function POST(req: Request) {
 
     const adminSupabase = getAdminSupabase();
 
+    const { data: merchantData } = await adminSupabase.from('merchants_loyality').select('language').eq('id', merchantId).single();
+    const lang = merchantData?.language || 'de';
+
+    const errAdminPin = lang === 'fr' ? "Ce code PIN est réservé à l'administrateur." : lang === 'en' ? "This PIN is reserved for the administrator." : "Diese PIN ist für den Administrator reserviert.";
+    const errInUse = lang === 'fr' ? "Ce code PIN est déjà utilisé par un autre employé." : lang === 'en' ? "This PIN is already in use by another employee." : "Diese PIN wird bereits von einem anderen Mitarbeiter verwendet.";
+
+    if (process.env.ADMIN_API_KEY && pin === process.env.ADMIN_API_KEY) {
+      return NextResponse.json({ error: errAdminPin }, { status: 400 });
+    }
+
+    const { data: existingPin } = await adminSupabase
+      .from('staff_loyality')
+      .select('id')
+      .eq('merchant_id', merchantId)
+      .eq('pin', pin)
+      .limit(1)
+      .maybeSingle();
+
+    if (existingPin) {
+      return NextResponse.json({ error: errInUse }, { status: 400 });
+    }
+
     const { data, error } = await adminSupabase
       .from('staff_loyality')
       .insert([{ merchant_id: merchantId, name, pin }])

@@ -537,7 +537,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       const resData = await response.json();
       
       if (!response.ok || !resData.success) {
-        showToast('Fehler beim Hinzufügen: ' + (resData.error || 'Netzwerkfehler'), 'error');
+        showToast((t.errorGeneric || 'Fehler: ') + ' ' + (resData.error || ''), 'error');
       } else if (resData.data) {
         setStaff(prev => [...prev, resData.data[0]]);
         setNewStaffName('');
