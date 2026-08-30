@@ -1047,7 +1047,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                                 </div>
                               </td>
                               <td className="p-4 text-right" onClick={e => e.stopPropagation()}>
-                                <button onClick={() => setConfirmDelete(customer)} className="p-2 rounded-lg text-white/10 hover:text-red-500 hover:bg-red-500/10 transition-all">
+                                <button onClick={() => setConfirmDelete(customer)} className="p-2 rounded-lg text-red-500/60 bg-red-500/10 hover:text-red-500 hover:bg-red-500/20 transition-all">
                                   <Trash2 size={16} />
                                 </button>
                               </td>
@@ -1089,7 +1089,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                             <p className="text-sm font-bold text-white">{s.stampsGiven || 0}</p>
                             <p className="text-[10px] text-white/40 uppercase tracking-widest">{t.stamps}</p>
                           </div>
-                          <button onClick={() => deleteStaff(s.id)} className="text-white/10 hover:text-red-500 transition-colors p-2">
+                          <button onClick={() => deleteStaff(s.id)} className="p-2 rounded-lg text-red-500/60 bg-red-500/10 hover:text-red-500 hover:bg-red-500/20 transition-all">
                             <Trash2 size={14} />
                           </button>
                         </div>
