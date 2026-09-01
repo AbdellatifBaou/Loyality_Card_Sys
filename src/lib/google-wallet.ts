@@ -23,7 +23,8 @@ const DICT = {
     statusWelcome: "Willkommen bei {name}! 👋",
     redeemBody: "Viel Spaß mit deiner Prämie! Deine Karte wurde auf 0 zurückgesetzt, du kannst nun wieder neu sammeln.",
     rewardBody: "Herzlichen Glückwunsch! Du hast deine Stempelkarte voll. Zeige sie beim nächsten Mal vor.",
-    reviewText: "Jetzt bewerten & Feedback geben ⭐"
+    reviewText: "Jetzt bewerten & Feedback geben ⭐",
+    programNameSuffix: " Treueprogramm"
   },
   en: {
     stamp: "Stamps",
@@ -42,7 +43,8 @@ const DICT = {
     statusWelcome: "Welcome to {name}! 👋",
     redeemBody: "Enjoy your reward! Your card has been reset to 0, you can start collecting again.",
     rewardBody: "Congratulations! Your stamp card is full. Show it on your next visit.",
-    reviewText: "Rate us & give feedback ⭐"
+    reviewText: "Rate us & give feedback ⭐",
+    programNameSuffix: " Loyalty Program"
   },
   fr: {
     stamp: "Tampons",
@@ -61,11 +63,12 @@ const DICT = {
     statusWelcome: "Bienvenue chez {name} ! 👋",
     redeemBody: "Profitez de votre récompense ! Votre carte a été remise à zéro, vous pouvez recommencer à collecter.",
     rewardBody: "Félicitations ! Votre carte de fidélité est pleine. Présentez-la lors de votre prochaine visite.",
-    reviewText: "Évaluez-nous & donnez votre avis ⭐"
+    reviewText: "Évaluez-nous & donnez votre avis ⭐",
+    programNameSuffix: " Programme de fidélité"
   }
 };
 
-const IMAGE_VERSION = '12';
+const IMAGE_VERSION = '13';
 
 // Normalize App URL: remove trailing slash if present
 const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '');
@@ -194,7 +197,7 @@ export async function createLoyaltyClass(classId: string, merchant: any) {
 
   const sharedFields = {
     issuerName: merchant.name,
-    programName: `${merchant.name} Treueprogramm`,
+    programName: `${merchant.name}${t.programNameSuffix}`,
     programLogo: {
       sourceUri: {
         uri: merchant.logo_url 
