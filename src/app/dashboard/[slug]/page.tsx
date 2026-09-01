@@ -722,7 +722,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           <div className="text-center mb-8">
             <img src="/Marketif_LOGO_Symbol.png" alt="Marketif" className="h-14 w-auto mx-auto mb-6 opacity-90" style={{ filter: 'brightness(0) invert(1)' }} />
             <h1 className="text-2xl font-bold text-white mb-2">{t.dashboardLogin}</h1>
-            <p className="text-white/40 text-sm">{t.enterPasswordFor}<span style={{ color: primaryColor }}>{slug}</span> ein.</p>
+            <p className="text-white/40 text-sm">{t.enterPasswordFor}<span style={{ color: primaryColor }}>{slug}</span></p>
           </div>
           <form onSubmit={handleLogin} className="space-y-4">
 <style>{`input:focus { border-color: ${primaryColor} !important; }`}</style>
@@ -745,7 +745,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             </div>
             {authError && <p className="text-red-500 text-xs text-center">{authError}</p>}
             <button type="submit" className="w-full py-4 rounded-2xl font-bold uppercase tracking-widest text-black transition-all active:scale-95" style={{ backgroundColor: primaryColor }}>
-              Anmelden
+              {t.loginBtn || 'Anmelden'}
             </button>
           </form>
         </div>
@@ -1126,6 +1126,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                                 <div className="mt-1 flex flex-wrap gap-2 text-[10px] text-white/40">
                                   <span className="bg-white/5 px-2 py-0.5 rounded">{(t as any).anomalyLastScan || 'Letzter Scan: '}{new Date(a.created_at).toLocaleString('de-DE')}</span>
                                   {s && <span className="bg-white/5 px-2 py-0.5 rounded flex items-center gap-1"><Users size={10}/> {s.name} (PIN: {s.pin})</span>}
+                                  {a.customer_id && <span className="bg-white/5 px-2 py-0.5 rounded flex items-center gap-1">👤 {(t as any).customer || 'Kunde'}: {a.customer_id.substring(0, 8)}</span>}
                                 </div>
                               </div>
                             </div>
@@ -1740,7 +1741,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   </div>
                   <div className="grid grid-cols-1 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-white/60 mb-1">Tage bis zur Erinnerung (Standard: 30)</label>
+                        <label className="block text-xs font-medium text-white/60 mb-1">{t.daysUntilReminder || 'Tage bis zur Erinnerung (Standard: 30)'}</label>
                       <input 
                         type="number" 
                         min="1"
@@ -1954,7 +1955,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           <div className="w-full max-w-sm p-8 rounded-[40px] space-y-6 animate-scale-up" style={{ background: '#111', border: '1px solid rgba(212,175,55,0.2)' }} onClick={e => e.stopPropagation()}>
             <h3 className="text-xl font-bold text-white">{t.addStaff}</h3>
             <form onSubmit={addStaff} className="space-y-4">
-              <input value={newStaffName} onChange={e => setNewStaffName(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-white/50 transition-all" placeholder="Name (z.B. Latif)" />
+              <input value={newStaffName} onChange={e => setNewStaffName(e.target.value)} className="w-full bg-black/50 border border-white/10 rounded-2xl px-6 py-4 text-white outline-none focus:border-white/50 transition-all" placeholder={t.staffNamePlaceholder || "Name (z.B. Latif)"} />
               <input value={newStaffPin} onChange={e => setNewStaffPin(e.target.value)} maxLength={4} pattern="\d{4}" className="w-full bg-black/50 border border-white/10 rounded-2xl px-6 py-4 text-white font-mono tracking-[0.5em] text-center outline-none focus:border-white/50 transition-all" placeholder="PIN" />
               <button 
                 type="submit" 
@@ -1962,7 +1963,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                 className="w-full py-4 rounded-2xl font-bold text-black flex items-center justify-center gap-2 disabled:opacity-50" 
                 style={{ backgroundColor: primaryColor }}
               >
-                {isAddingStaff ? <RefreshCw size={20} className="animate-spin" /> : 'Hinzufügen'}
+                {isAddingStaff ? <RefreshCw size={20} className="animate-spin" /> : (t.addBtn || 'Hinzufügen')}
               </button>
             </form>
           </div>
