@@ -126,7 +126,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         setAuthError(data.error || 'Ungültige PIN');
       }
     } catch (err) {
-      setAuthError('Verbindungsfehler');
+      setAuthError((t as any).errConnection || 'Verbindungsfehler');
     }
   };
 
@@ -154,7 +154,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           setIsAuthorized(false);
           setAuthError('Sitzung abgelaufen oder PIN falsch. Bitte neu einloggen.');
         } else {
-          setAuthError(resData.error || 'Fehler beim Laden');
+          setAuthError(resData.error || (t as any).errLoad || 'Fehler beim Laden');
         }
         return;
       }
@@ -443,11 +443,11 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         window.open(data.url, '_blank');
         setBillingLoading(false);
       } else {
-        setBillingError(data.error || 'Fehler beim Checkout');
+        setBillingError(data.error || (t as any).errUnknown || 'Fehler beim Checkout');
         setBillingLoading(false);
       }
     } catch (err) {
-      setBillingError('Verbindungsfehler');
+      setBillingError((t as any).errConnection || 'Verbindungsfehler');
       setBillingLoading(false);
     }
   };
@@ -467,11 +467,11 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         window.open(data.url, '_blank');
         setBillingLoading(false);
       } else {
-        setBillingError(data.error || 'Fehler beim Laden des Kundenportals');
+        setBillingError(data.error || (t as any).errLoad || 'Fehler beim Laden des Kundenportals');
         setBillingLoading(false);
       }
     } catch (err) {
-      setBillingError('Verbindungsfehler');
+      setBillingError((t as any).errConnection || 'Verbindungsfehler');
       setBillingLoading(false);
     }
   };
@@ -511,13 +511,13 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem(`auth_${slug}`)}` },
         body: JSON.stringify({ slug, header: msgTitle, body: msgBody })
       });
-      setMsgSuccess('Nachricht erfolgreich an alle Kunden gesendet!');
+      setMsgSuccess((t as any).msgSentSuccess || 'Nachricht erfolgreich an alle Kunden gesendet!');
       setMsgTitle('');
       setMsgBody('');
       fetchData(); // Refresh to get the new message
     } catch (err) {
       console.error(err);
-      setMsgSuccess('Fehler beim Senden.');
+      setMsgSuccess((t as any).msgSentError || 'Fehler beim Senden.');
     } finally {
       setSendingMsg(false);
     }
@@ -545,7 +545,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         setShowStaffModal(false);
       }
     } catch (err: any) {
-      showToast('Systemfehler: ' + err.message, 'error');
+      showToast(((t as any).errSystem || 'Systemfehler: ') + err.message, 'error');
     } finally {
       setIsAddingStaff(false);
     }
@@ -565,7 +565,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         showToast('Fehler beim Löschen: ' + resData.error, 'error');
       }
     } catch (err: any) {
-      showToast('Systemfehler: ' + err.message, 'error');
+      showToast(((t as any).errSystem || 'Systemfehler: ') + err.message, 'error');
     }
   };
 
@@ -616,10 +616,10 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       if (response.ok) {
         showToast('Push-Einstellungen gespeichert!');
       } else {
-        showToast('Fehler beim Speichern der Push-Einstellungen.', 'error');
+        showToast((t as any).errSave || 'Fehler beim Speichern.', 'error');
       }
     } catch (err) {
-      showToast('Netzwerkfehler.', 'error');
+      showToast((t as any).errNetwork || 'Netzwerkfehler.', 'error');
     } finally {
       setSavingPush(false);
     }
@@ -646,10 +646,10 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         setCustomers(prev => prev.map(c => c.id === selectedCustomer.id ? { ...c, points: editPoints } : c));
         setSelectedCustomer((prev: any) => ({ ...prev, points: editPoints }));
       } else {
-        showToast('Fehler beim Aktualisieren: ' + (result.error || 'Unbekannter Fehler'), 'error');
+        showToast(((t as any).errUpdate || 'Fehler beim Aktualisieren: ') + (result.error || (t as any).errUnknown || 'Unbekannter Fehler'), 'error');
       }
     } catch (error) {
-      showToast('Netzwerkfehler beim Aktualisieren', 'error');
+      showToast((t as any).errNetwork || 'Netzwerkfehler beim Aktualisieren', 'error');
     } finally {
       setSavingPoints(false);
     }
@@ -688,7 +688,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         setPinChangeStatus({ loading: false, error: data.error || 'Fehler beim Ändern', success: '' });
       }
     } catch (err) {
-      setPinChangeStatus({ loading: false, error: 'Netzwerkfehler', success: '' });
+      setPinChangeStatus({ loading: false, error: (t as any).errNetwork || 'Netzwerkfehler', success: '' });
     }
   };
 
