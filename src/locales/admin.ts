@@ -200,7 +200,23 @@ export const ADMIN_DICT = {
     createInvoiceTooltip: "Rechnung für diesen Händler erstellen",
     selectMerchant: "Händler auswählen...",
     allMerchantsOption: "Alle Händler",
-    invoiceForMerchant: "Rechnung für Händler"
+    invoiceForMerchant: "Rechnung für Händler",
+    searchPlaceholder: "Händler nach Name oder Slug suchen...",
+    filterAllCountries: "Alle Länder",
+    filterGermany: "🇩🇪 Deutschland (DE)",
+    filterMorocco: "🇲🇦 Marokko (FR)",
+    filterAllPayments: "Alle Zahlungsarten",
+    filterStripe: "💳 Stripe Abo",
+    filterManual: "📄 Manuelle Rechnung",
+    filterNoPayment: "❌ Kein Abo",
+    filterAllStatus: "Alle Status",
+    filterActive: "🟢 Aktiv",
+    filterInactive: "🔴 Deaktiviert",
+    filterAllPackages: "Alle Pakete",
+    resetFilters: "Filter zurücksetzen",
+    showingXOfY: (shown: number, total: number) => `${shown} von ${total} Händlern`,
+    manualBillingMerchants: "Händler mit manueller Abrechnung / Barzahlung",
+    invoiceBadge: "Rechnung"
   },
   fr: {
     pkgGold: "Forfait Or",
@@ -322,7 +338,7 @@ export const ADMIN_DICT = {
     enterNewPin: "Entrez un nouveau mot de passe à 4 chiffres (PIN) :",
     currentPin: "PIN actuel",
     ok: "OK",
-        newsBroadcast: "Envoyer des News / Mises à jour aux commerçants",
+    newsBroadcast: "Envoyer des News / Mises à jour aux commerçants",
     newsPlaceholder: "Saisir le message...",
     sendNews: "Envoyer News",
     deactivateNews: "Désactiver News",
@@ -394,7 +410,31 @@ export const ADMIN_DICT = {
     creatingBtn: "Création...",
     createMerchantSubmitBtn: "Créer le commerçant",
     deleteMerchantWarning1: "Voulez-vous vraiment supprimer définitivement le commerçant",
-    deleteMerchantWarning2: " ? Toutes les données (clients, tampons, connexions, paiements) seront immédiatement détruites."
+    deleteMerchantWarning2: " ? Toutes les données (clients, tampons, connexions, paiements) seront immédiatement détruites.",
+    createInvoiceBtn: "Créer une facture",
+    manualInvoicesTitle: "Factures Manuelles & Espèces",
+    manualInvoicesDesc: "Générez et imprimez des factures professionnelles pour les commerçants (virement / espèces).",
+    generateInvoice: "Générer la facture",
+    createInvoiceTooltip: "Créer une facture pour ce commerçant",
+    selectMerchant: "Sélectionner un commerçant...",
+    allMerchantsOption: "Tous les commerçants",
+    invoiceForMerchant: "Facture pour commerçant",
+    searchPlaceholder: "Rechercher un commerçant par nom ou slug...",
+    filterAllCountries: "Tous les pays",
+    filterGermany: "🇩🇪 Allemagne (DE)",
+    filterMorocco: "🇲🇦 Maroc (FR)",
+    filterAllPayments: "Tous les paiements",
+    filterStripe: "💳 Abonnement Stripe",
+    filterManual: "📄 Facturation manuelle",
+    filterNoPayment: "❌ Sans abonnement",
+    filterAllStatus: "Tous les statuts",
+    filterActive: "🟢 Actif",
+    filterInactive: "🔴 Désactivé",
+    filterAllPackages: "Tous les forfaits",
+    resetFilters: "Réinitialiser les filtres",
+    showingXOfY: (shown: number, total: number) => `${shown} sur ${total} commerçants`,
+    manualBillingMerchants: "Commerçants en facturation manuelle / Espèces",
+    invoiceBadge: "Facture"
   }
 };
 
@@ -469,14 +509,6 @@ export const SCANNER_DICT = {
     offlineSavedDesc: "Enregistré hors ligne - sera automatiquement synchronisé lorsque vous serez de nouveau en ligne.",
     scansWaitingForSync: (count: number) => `${count} scan${count !== 1 ? 's' : ''} en attente de synchronisation`,
     errorTitle: "Erreur",
-    errorStamping: "Erreur lors de l'ajout du tampon",
-    createInvoiceBtn: "Créer une facture",
-    manualInvoicesTitle: "Factures Manuelles & Espèces",
-    manualInvoicesDesc: "Générez et imprimez des factures professionnelles pour les commerçants (virement / espèces).",
-    generateInvoice: "Générer la facture",
-    createInvoiceTooltip: "Créer une facture pour ce commerçant",
-    selectMerchant: "Sélectionner un commerçant...",
-    allMerchantsOption: "Tous les commerçants",
-    invoiceForMerchant: "Facture pour commerçant"
+    errorStamping: "Erreur lors de l'ajout du tampon"
   }
 };

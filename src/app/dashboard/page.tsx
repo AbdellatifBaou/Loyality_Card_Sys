@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Unlock, Lock, LogOut, BarChart2, Store, DollarSign, Download, FileText, X, Edit3 } from 'lucide-react';
+import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Unlock, Lock, LogOut, BarChart2, Store, DollarSign, Download, FileText, X, Edit3, Search, Filter, RotateCcw } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { ADMIN_DICT } from '@/locales/admin';
 import InvoiceModal from '@/components/InvoiceModal';
@@ -61,6 +61,13 @@ export default function DashboardPage() {
   const [financesLoading, setFinancesLoading] = useState(false);
   const [invoiceMerchant, setInvoiceMerchant] = useState<any>(null);
   const [manualInvoiceMerchantId, setManualInvoiceMerchantId] = useState<string>('');
+
+  // Table Filters & Search
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterCountry, setFilterCountry] = useState<'all' | 'de' | 'fr'>('all');
+  const [filterPayment, setFilterPayment] = useState<'all' | 'stripe' | 'manual' | 'none'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
+  const [filterPackage, setFilterPackage] = useState<'all' | 'silber' | 'gold' | 'custom'>('all');
 
 
   const [showCreateMerchant, setShowCreateMerchant] = useState(false);
@@ -604,35 +611,191 @@ export default function DashboardPage() {
                   {t.createMerchantBtn}
                 </button>
               </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse">
-                  <thead>
-                    <tr style={{ background: 'rgba(255,255,255,0.03)' }} className="text-white/50 text-xs uppercase tracking-wider">
-                      <th className="p-4 font-medium">{t.merchant}</th>
-                      <th className="p-4 font-medium">{t.language || 'Land / Sprache'}</th>
-                      <th className="p-4 font-medium">{t.slug}</th>
-                      <th className="p-4 font-medium">{t.package}</th>
-                      <th className="p-4 font-medium">{t.customers}</th>
-                      <th className="p-4 font-medium">{t.status}</th>
-                      <th className="p-4 font-medium">{t.aboAndPayment}</th>
-                      <th className="p-4 font-medium">{t.registered}</th>
-                      <th className="p-4 font-medium">{t.actions}</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {(() => {
-                      const merchantStats = new Map();
-                      customers.forEach((c: any) => {
-                        const mId = c.merchant_id;
-                        merchantStats.set(mId, (merchantStats.get(mId) || 0) + 1);
-                      });
 
-                      // Get merchants from topMerchants or recentActivity or elsewhere
-                      // Actually I should have a 'merchants' state. 
-                      // Wait, I have 'topMerchants' which contains merchant info.
-                      // Let's use the topMerchants list which is already sorted/mapped.
-                      
-                      return allMerchants.map((m: any) => (
+              {/* Filter & Search Bar */}
+              {(() => {
+                const filteredList = allMerchants.filter((m: any) => {
+                  if (searchQuery) {
+                    const q = searchQuery.toLowerCase();
+                    const matchName = m.name?.toLowerCase().includes(q);
+                    const matchSlug = m.slug?.toLowerCase().includes(q);
+                    if (!matchName && !matchSlug) return false;
+                  }
+                  if (filterCountry !== 'all') {
+                    const isFr = m.language === 'fr';
+                    if (filterCountry === 'fr' && !isFr) return false;
+                    if (filterCountry === 'de' && isFr) return false;
+                  }
+                  if (filterPayment !== 'all') {
+                    if (filterPayment === 'manual' && m.stripe_subscription_id !== 'manual_invoice') return false;
+                    if (filterPayment === 'stripe' && (!m.stripe_subscription_id || m.stripe_subscription_id === 'manual_invoice')) return false;
+                    if (filterPayment === 'none' && m.stripe_subscription_id) return false;
+                  }
+                  if (filterStatus !== 'all') {
+                    if (filterStatus === 'active' && m.is_active === false) return false;
+                    if (filterStatus === 'inactive' && m.is_active !== false) return false;
+                  }
+                  if (filterPackage !== 'all') {
+                    const pkg = m.package_type || 'silber';
+                    if (pkg !== filterPackage) return false;
+                  }
+                  return true;
+                });
+
+                return (
+                  <>
+                    <div className="p-4 sm:p-5 border-b border-white/5 bg-white/[0.01] flex flex-wrap items-center justify-between gap-3">
+                      <div className="flex flex-wrap items-center gap-2.5 w-full lg:w-auto flex-1">
+                        {/* Search Input */}
+                        <div className="relative flex-1 min-w-[180px] max-w-xs">
+                          <Search size={15} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-white/30" />
+                          <input
+                            type="text"
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            placeholder={t.searchPlaceholder || "Händler nach Name oder Slug suchen..."}
+                            className="w-full bg-[#111111] border border-white/10 rounded-xl pl-9 pr-8 py-2 text-white outline-none focus:border-[#D4AF37] text-xs placeholder:text-white/30"
+                          />
+                          {searchQuery && (
+                            <button
+                              onClick={() => setSearchQuery('')}
+                              className="absolute right-2.5 top-1/2 -translate-y-1/2 text-white/40 hover:text-white p-1"
+                            >
+                              <X size={12} />
+                            </button>
+                          )}
+                        </div>
+
+                        {/* Country Filter Buttons */}
+                        <div className="flex items-center gap-1 bg-[#111111] border border-white/10 p-1 rounded-xl">
+                          <button
+                            onClick={() => setFilterCountry('all')}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${filterCountry === 'all' ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white'}`}
+                          >
+                            {t.filterAllCountries || 'Alle'}
+                          </button>
+                          <button
+                            onClick={() => setFilterCountry('de')}
+                            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${filterCountry === 'de' ? 'bg-blue-500/20 text-blue-400 border border-blue-500/30' : 'text-white/40 hover:text-white'}`}
+                          >
+                            <span>🇩🇪</span> DE
+                          </button>
+                          <button
+                            onClick={() => setFilterCountry('fr')}
+                            className={`flex items-center gap-1 px-2.5 py-1 rounded-lg text-xs font-bold transition-all ${filterCountry === 'fr' ? 'bg-red-500/20 text-red-400 border border-red-500/30' : 'text-white/40 hover:text-white'}`}
+                          >
+                            <span>🇲🇦</span> FR
+                          </button>
+                        </div>
+
+                        {/* Payment Filter */}
+                        <select
+                          value={filterPayment}
+                          onChange={(e) => setFilterPayment(e.target.value as any)}
+                          className="bg-[#111111] border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-[#D4AF37] text-xs font-medium"
+                        >
+                          <option className="bg-[#111111] text-white" value="all">{t.filterAllPayments || 'Alle Zahlungen'}</option>
+                          <option className="bg-[#111111] text-white" value="stripe">{t.filterStripe || '💳 Stripe Abo'}</option>
+                          <option className="bg-[#111111] text-white" value="manual">{t.filterManual || '📄 Manuelle Rechnung'}</option>
+                          <option className="bg-[#111111] text-white" value="none">{t.filterNoPayment || '❌ Kein Abo'}</option>
+                        </select>
+
+                        {/* Status Filter */}
+                        <select
+                          value={filterStatus}
+                          onChange={(e) => setFilterStatus(e.target.value as any)}
+                          className="bg-[#111111] border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-[#D4AF37] text-xs font-medium"
+                        >
+                          <option className="bg-[#111111] text-white" value="all">{t.filterAllStatus || 'Alle Status'}</option>
+                          <option className="bg-[#111111] text-white" value="active">{t.filterActive || '🟢 Aktiv'}</option>
+                          <option className="bg-[#111111] text-white" value="inactive">{t.filterInactive || '🔴 Deaktiviert'}</option>
+                        </select>
+
+                        {/* Package Filter */}
+                        <select
+                          value={filterPackage}
+                          onChange={(e) => setFilterPackage(e.target.value as any)}
+                          className="bg-[#111111] border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-[#D4AF37] text-xs font-medium"
+                        >
+                          <option className="bg-[#111111] text-white" value="all">{t.filterAllPackages || 'Alle Pakete'}</option>
+                          <option className="bg-[#111111] text-white" value="silber">Silber</option>
+                          <option className="bg-[#111111] text-white" value="gold">Gold</option>
+                          <option className="bg-[#111111] text-white" value="custom">Custom</option>
+                        </select>
+                      </div>
+
+                      {/* Counter & Reset */}
+                      <div className="flex items-center gap-3 text-xs text-white/50 shrink-0">
+                        <span className="font-medium">
+                          {typeof t.showingXOfY === 'function' ? t.showingXOfY(filteredList.length, allMerchants.length) : `${filteredList.length} von ${allMerchants.length}`}
+                        </span>
+                        {(searchQuery || filterCountry !== 'all' || filterPayment !== 'all' || filterStatus !== 'all' || filterPackage !== 'all') && (
+                          <button
+                            onClick={() => {
+                              setSearchQuery('');
+                              setFilterCountry('all');
+                              setFilterPayment('all');
+                              setFilterStatus('all');
+                              setFilterPackage('all');
+                            }}
+                            className="flex items-center gap-1 text-[#D4AF37] hover:underline font-bold"
+                          >
+                            <RotateCcw size={12} />
+                            {t.resetFilters || 'Zurücksetzen'}
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left border-collapse">
+                        <thead>
+                          <tr style={{ background: 'rgba(255,255,255,0.03)' }} className="text-white/50 text-xs uppercase tracking-wider">
+                            <th className="p-4 font-medium">{t.merchant}</th>
+                            <th className="p-4 font-medium">{t.language || 'Land / Sprache'}</th>
+                            <th className="p-4 font-medium">{t.slug}</th>
+                            <th className="p-4 font-medium">{t.package}</th>
+                            <th className="p-4 font-medium">{t.customers}</th>
+                            <th className="p-4 font-medium">{t.status}</th>
+                            <th className="p-4 font-medium">{t.aboAndPayment}</th>
+                            <th className="p-4 font-medium">{t.registered}</th>
+                            <th className="p-4 font-medium">{t.actions}</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {(() => {
+                            const merchantStats = new Map();
+                            customers.forEach((c: any) => {
+                              const mId = c.merchant_id;
+                              merchantStats.set(mId, (merchantStats.get(mId) || 0) + 1);
+                            });
+
+                            if (filteredList.length === 0) {
+                              return (
+                                <tr>
+                                  <td colSpan={9} className="p-12 text-center text-white/30 space-y-2">
+                                    <Store size={28} className="mx-auto text-white/20" />
+                                    <p className="text-sm font-medium">{t.noMerchantsFound || 'Keine Händler gefunden.'}</p>
+                                    {(searchQuery || filterCountry !== 'all' || filterPayment !== 'all' || filterStatus !== 'all' || filterPackage !== 'all') && (
+                                      <button
+                                        onClick={() => {
+                                          setSearchQuery('');
+                                          setFilterCountry('all');
+                                          setFilterPayment('all');
+                                          setFilterStatus('all');
+                                          setFilterPackage('all');
+                                        }}
+                                        className="text-xs text-[#D4AF37] hover:underline font-bold mt-2"
+                                      >
+                                        {t.resetFilters || 'Filter zurücksetzen'}
+                                      </button>
+                                    )}
+                                  </td>
+                                </tr>
+                              );
+                            }
+                            
+                            return filteredList.map((m: any) => (
                         <tr key={m.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
                           <td className="p-4">
                             <div className="flex items-center gap-3">
@@ -734,13 +897,13 @@ export default function DashboardPage() {
                         </tr>
                       ));
                     })()}
-                    {allMerchants.length === 0 && (
-                      <tr><td colSpan={8} className="p-8 text-center text-white/30">{t.noMerchantsFound}</td></tr>
-                    )}
                   </tbody>
                 </table>
               </div>
-            </div>
+            </>
+          );
+        })()}
+      </div>
 
             {/* Recent Activity */}
             <div className="rounded-3xl overflow-hidden" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -977,7 +1140,7 @@ export default function DashboardPage() {
                 return (
                   <div className="mt-4 pt-4 border-t border-white/5">
                     <p className="text-xs font-bold uppercase tracking-wider text-white/40 mb-3">
-                      {adminLang === 'fr' ? 'Commerçants en facturation manuelle / Espèces' : 'Händler mit manueller Abrechnung / Barzahlung'}:
+                      {t.manualBillingMerchants}:
                     </p>
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
                       {manualMerchants.map((m: any) => (
@@ -1002,7 +1165,7 @@ export default function DashboardPage() {
                             title={t.createInvoiceTooltip}
                           >
                             <FileText size={12} />
-                            {adminLang === 'fr' ? 'Facture' : 'Rechnung'}
+                            {t.invoiceBadge}
                           </button>
                         </div>
                       ))}
@@ -1033,12 +1196,15 @@ export default function DashboardPage() {
                   <button 
                     onClick={() => {
                       if (financesData.length === 0) return;
+                      const dateLocale = adminLang === 'fr' ? 'fr-FR' : 'de-DE';
                       const csvRows = [
-                        ['Datum', 'Rechnungs-ID', 'Kunde', 'E-Mail', 'Betrag']
+                        adminLang === 'fr'
+                          ? ['Date', 'ID Facture', 'Client', 'E-Mail', 'Montant']
+                          : ['Datum', 'Rechnungs-ID', 'Kunde', 'E-Mail', 'Betrag']
                       ];
                       financesData.forEach(inv => {
                         csvRows.push([
-                          new Date(inv.created * 1000).toLocaleDateString('de-DE'),
+                          new Date(inv.created * 1000).toLocaleDateString(dateLocale),
                           inv.id,
                           inv.customer_name || '-',
                           inv.customer_email || '-',
@@ -1080,7 +1246,7 @@ export default function DashboardPage() {
                     ) : (
                       financesData.map((inv: any) => (
                         <tr key={inv.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
-                          <td className="p-4 text-white/70 text-sm">{new Date(inv.created * 1000).toLocaleDateString('de-DE')}</td>
+                          <td className="p-4 text-white/70 text-sm">{new Date(inv.created * 1000).toLocaleDateString(adminLang === 'fr' ? 'fr-FR' : 'de-DE')}</td>
                           <td className="p-4">
                             <p className="text-sm font-bold text-white">{inv.customer_name || t.unknown}</p>
                             <p className="text-xs text-white/40">{inv.customer_email || '-'}</p>
@@ -1128,7 +1294,7 @@ export default function DashboardPage() {
                     ) : (
                       failedFinancesData.map((inv: any) => (
                         <tr key={inv.id} className="border-b border-red-500/10 last:border-0 hover:bg-red-500/5 transition-colors">
-                          <td className="p-4 text-red-400/70 text-sm">{new Date(inv.created * 1000).toLocaleDateString('de-DE')}</td>
+                          <td className="p-4 text-red-400/70 text-sm">{new Date(inv.created * 1000).toLocaleDateString(adminLang === 'fr' ? 'fr-FR' : 'de-DE')}</td>
                           <td className="p-4">
                             <p className="text-sm font-bold text-red-400">{inv.customer_name || t.unknown}</p>
                             <p className="text-xs text-red-400/60">{inv.customer_email || '-'}</p>
@@ -1138,7 +1304,7 @@ export default function DashboardPage() {
                           </td>
                           <td className="p-4 text-right">
                             <span className="bg-red-500/20 text-red-500 px-3 py-1 rounded-full text-xs font-bold">
-                              {inv.attempt_count} Versuche
+                              {inv.attempt_count} {t.attempts}
                             </span>
                           </td>
                         </tr>

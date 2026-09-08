@@ -16,8 +16,8 @@ interface InvoiceModalProps {
   adminLang?: string;
 }
 
-export default function InvoiceModal({ merchant, onClose }: InvoiceModalProps) {
-  const initialLang = merchant?.language === 'fr' ? 'fr' : 'de';
+export default function InvoiceModal({ merchant, onClose, adminLang }: InvoiceModalProps) {
+  const initialLang = merchant?.language === 'fr' ? 'fr' : (merchant?.language === 'de' ? 'de' : (adminLang === 'fr' ? 'fr' : 'de'));
   const [invoiceLang, setInvoiceLang] = useState<'de' | 'fr'>(initialLang);
 
   // Generate default invoice number: RE-YYYYMM-XXXX or FAC-YYYYMM-XXXX
