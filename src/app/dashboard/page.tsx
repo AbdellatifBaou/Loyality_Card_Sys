@@ -609,6 +609,7 @@ export default function DashboardPage() {
                   <thead>
                     <tr style={{ background: 'rgba(255,255,255,0.03)' }} className="text-white/50 text-xs uppercase tracking-wider">
                       <th className="p-4 font-medium">{t.merchant}</th>
+                      <th className="p-4 font-medium">{t.language || 'Land / Sprache'}</th>
                       <th className="p-4 font-medium">{t.slug}</th>
                       <th className="p-4 font-medium">{t.package}</th>
                       <th className="p-4 font-medium">{t.customers}</th>
@@ -635,11 +636,24 @@ export default function DashboardPage() {
                         <tr key={m.id} className="border-b border-white/5 last:border-0 hover:bg-white/5 transition-colors">
                           <td className="p-4">
                             <div className="flex items-center gap-3">
-                              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold" style={{ background: `${m.primary_color || '#D4AF37'}20`, color: m.primary_color || '#D4AF37' }}>
+                              <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold shrink-0" style={{ background: `${m.primary_color || '#D4AF37'}20`, color: m.primary_color || '#D4AF37', border: `1px solid ${m.primary_color || '#D4AF37'}40` }}>
                                 {m.name?.substring(0, 1)}
                               </div>
-                              <span className="font-bold text-white">{m.name}</span>
+                              <span className="font-bold text-white text-sm">{m.name}</span>
                             </div>
+                          </td>
+                          <td className="p-4">
+                            {m.language === 'fr' ? (
+                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20 font-bold text-xs shadow-sm" title="Marokko (Französisch)">
+                                <span className="text-sm">🇲🇦</span>
+                                <span>Maroc (FR)</span>
+                              </div>
+                            ) : (
+                              <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold text-xs shadow-sm" title="Deutschland (Deutsch)">
+                                <span className="text-sm">🇩🇪</span>
+                                <span>Deutschland (DE)</span>
+                              </div>
+                            )}
                           </td>
                           <td className="p-4 font-mono text-xs text-white/40">
                             <div>{m.slug}</div>
@@ -927,12 +941,12 @@ export default function DashboardPage() {
                   <select
                     value={manualInvoiceMerchantId}
                     onChange={(e) => setManualInvoiceMerchantId(e.target.value)}
-                    className="flex-1 sm:flex-initial bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-white outline-none focus:border-[#D4AF37] transition-all text-sm"
+                    className="flex-1 sm:flex-initial bg-[#111111] border border-white/10 rounded-xl px-4 py-2.5 text-white outline-none focus:border-[#D4AF37] transition-all text-sm"
                   >
-                    <option value="">{t.selectMerchant}</option>
+                    <option value="" className="bg-[#111111] text-white/50">{t.selectMerchant}</option>
                     {allMerchants.map((m: any) => (
-                      <option key={m.id} value={m.id}>
-                        {m.name} ({m.package_type?.toUpperCase() || 'SILBER'}) {m.language === 'fr' ? '🇲🇦 FR' : '🇩🇪 DE'}
+                      <option key={m.id} value={m.id} className="bg-[#111111] text-white">
+                        {m.language === 'fr' ? '🇲🇦 [FR]' : '🇩🇪 [DE]'} {m.name} ({m.package_type?.toUpperCase() || 'SILBER'})
                       </option>
                     ))}
                   </select>
@@ -1009,11 +1023,11 @@ export default function DashboardPage() {
                   <select 
                     value={financesYear}
                     onChange={(e) => setFinancesYear(Number(e.target.value))}
-                    className="bg-black/50 border border-white/10 rounded-xl px-4 py-2 text-white outline-none focus:border-[#D4AF37] transition-all text-sm appearance-none"
+                    className="bg-[#111111] border border-white/10 rounded-xl px-4 py-2 text-white outline-none focus:border-[#D4AF37] transition-all text-sm appearance-none"
                   >
-                    <option value={2026}>2026</option>
-                    <option value={2027}>2027</option>
-                    <option value={2028}>2028</option>
+                    <option className="bg-[#111111] text-white" value={2026}>2026</option>
+                    <option className="bg-[#111111] text-white" value={2027}>2027</option>
+                    <option className="bg-[#111111] text-white" value={2028}>2028</option>
                   </select>
 
                   <button 

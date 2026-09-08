@@ -305,11 +305,11 @@ export default function InvoiceModal({ merchant, onClose }: InvoiceModalProps) {
                   <select
                     value={paymentMethod}
                     onChange={(e) => setPaymentMethod(e.target.value as any)}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-[#D4AF37]"
+                    className="w-full bg-[#111111] border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-[#D4AF37]"
                   >
-                    <option value="transfer">{invoiceLang === 'fr' ? 'Virement bancaire' : 'Überweisung'}</option>
-                    <option value="cash">{invoiceLang === 'fr' ? 'Espèces' : 'Barzahlung'}</option>
-                    <option value="card">{invoiceLang === 'fr' ? 'Carte Bancaire' : 'Kartenzahlung'}</option>
+                    <option className="bg-[#111111] text-white" value="transfer">{invoiceLang === 'fr' ? 'Virement bancaire' : 'Überweisung'}</option>
+                    <option className="bg-[#111111] text-white" value="cash">{invoiceLang === 'fr' ? 'Espèces' : 'Barzahlung'}</option>
+                    <option className="bg-[#111111] text-white" value="card">{invoiceLang === 'fr' ? 'Carte Bancaire' : 'Kartenzahlung'}</option>
                   </select>
                 </div>
                 <div>
@@ -317,10 +317,10 @@ export default function InvoiceModal({ merchant, onClose }: InvoiceModalProps) {
                   <select
                     value={currency}
                     onChange={(e) => setCurrency(e.target.value as any)}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-[#D4AF37]"
+                    className="w-full bg-[#111111] border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-[#D4AF37]"
                   >
-                    <option value="EUR">EUR (€)</option>
-                    <option value="MAD">MAD (Dirham)</option>
+                    <option className="bg-[#111111] text-white" value="EUR">EUR (€)</option>
+                    <option className="bg-[#111111] text-white" value="MAD">MAD (Dirham)</option>
                   </select>
                 </div>
               </div>
