@@ -192,7 +192,15 @@ export const ADMIN_DICT = {
     creatingBtn: "Erstelle...",
     createMerchantSubmitBtn: "Händler erstellen",
     deleteMerchantWarning1: "Willst du den Händler",
-    deleteMerchantWarning2: "wirklich unwiderruflich löschen? Alle Daten (Kunden, Stempel, Logins, Zahlungen) werden sofort vernichtet."
+    deleteMerchantWarning2: "wirklich unwiderruflich löschen? Alle Daten (Kunden, Stempel, Logins, Zahlungen) werden sofort vernichtet.",
+    createInvoiceBtn: "Rechnung erstellen",
+    manualInvoicesTitle: "Manuelle Rechnungen & Barzahler",
+    manualInvoicesDesc: "Erstelle und drucke professionelle PDF-Rechnungen für Händler (Überweisung / Barzahlung).",
+    generateInvoice: "Rechnung generieren",
+    createInvoiceTooltip: "Rechnung für diesen Händler erstellen",
+    selectMerchant: "Händler auswählen...",
+    allMerchantsOption: "Alle Händler",
+    invoiceForMerchant: "Rechnung für Händler"
   },
   fr: {
     pkgGold: "Forfait Or",
@@ -461,6 +469,14 @@ export const SCANNER_DICT = {
     offlineSavedDesc: "Enregistré hors ligne - sera automatiquement synchronisé lorsque vous serez de nouveau en ligne.",
     scansWaitingForSync: (count: number) => `${count} scan${count !== 1 ? 's' : ''} en attente de synchronisation`,
     errorTitle: "Erreur",
-    errorStamping: "Erreur lors de l'ajout du tampon"
+    errorStamping: "Erreur lors de l'ajout du tampon",
+    createInvoiceBtn: "Créer une facture",
+    manualInvoicesTitle: "Factures Manuelles & Espèces",
+    manualInvoicesDesc: "Générez et imprimez des factures professionnelles pour les commerçants (virement / espèces).",
+    generateInvoice: "Générer la facture",
+    createInvoiceTooltip: "Créer une facture pour ce commerçant",
+    selectMerchant: "Sélectionner un commerçant...",
+    allMerchantsOption: "Tous les commerçants",
+    invoiceForMerchant: "Facture pour commerçant"
   }
 };

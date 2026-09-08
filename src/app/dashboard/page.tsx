@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Unlock, Lock, LogOut, BarChart2, Store, DollarSign, Download, FileText, X, Edit3 } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { ADMIN_DICT } from '@/locales/admin';
+import InvoiceModal from '@/components/InvoiceModal';
 
 export default function DashboardPage() {
   const [adminLang, setAdminLang] = useState('de');
@@ -58,6 +59,8 @@ export default function DashboardPage() {
   const [financesData, setFinancesData] = useState<any[]>([]);
   const [failedFinancesData, setFailedFinancesData] = useState<any[]>([]);
   const [financesLoading, setFinancesLoading] = useState(false);
+  const [invoiceMerchant, setInvoiceMerchant] = useState<any>(null);
+  const [manualInvoiceMerchantId, setManualInvoiceMerchantId] = useState<string>('');
 
 
   const [showCreateMerchant, setShowCreateMerchant] = useState(false);
@@ -685,6 +688,13 @@ export default function DashboardPage() {
                           <td className="p-4 text-right">
                             <div className="flex items-center justify-end gap-2">
                               <button 
+                                onClick={() => setInvoiceMerchant(m)}
+                                title={t.createInvoiceTooltip || "Rechnung erstellen"}
+                                className="p-2 bg-[#D4AF37]/10 text-[#D4AF37] hover:bg-[#D4AF37]/20 rounded-lg transition-colors border border-[#D4AF37]/20"
+                              >
+                                <FileText size={14} />
+                              </button>
+                              <button 
                                 onClick={() => setEditMerchant(m)}
                                 title="Bearbeiten"
                                 className="p-2 bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 rounded-lg transition-colors border border-yellow-500/20"
@@ -895,6 +905,97 @@ export default function DashboardPage() {
                 )}
                 <p className="text-xs text-white/40 mt-2">{t.basedOnStripeInvoices}</p>
               </div>
+            </div>
+
+            {/* Manual Invoices & Cash Payments Card */}
+            <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+                <div>
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-[#D4AF37]/10 text-[#D4AF37] border border-[#D4AF37]/20">
+                      <FileText size={20} />
+                    </div>
+                    <h2 className="text-lg font-bold text-white">{t.manualInvoicesTitle}</h2>
+                  </div>
+                  <p className="text-xs text-white/50 mt-1.5 sm:ml-11">
+                    {t.manualInvoicesDesc}
+                  </p>
+                </div>
+
+                {/* Quick Generate Action */}
+                <div className="flex items-center gap-3 w-full sm:w-auto">
+                  <select
+                    value={manualInvoiceMerchantId}
+                    onChange={(e) => setManualInvoiceMerchantId(e.target.value)}
+                    className="flex-1 sm:flex-initial bg-black/50 border border-white/10 rounded-xl px-4 py-2.5 text-white outline-none focus:border-[#D4AF37] transition-all text-sm"
+                  >
+                    <option value="">{t.selectMerchant}</option>
+                    {allMerchants.map((m: any) => (
+                      <option key={m.id} value={m.id}>
+                        {m.name} ({m.package_type?.toUpperCase() || 'SILBER'}) {m.language === 'fr' ? '🇲🇦 FR' : '🇩🇪 DE'}
+                      </option>
+                    ))}
+                  </select>
+
+                  <button
+                    onClick={() => {
+                      const selected = allMerchants.find((m: any) => m.id === manualInvoiceMerchantId);
+                      if (selected) {
+                        setInvoiceMerchant(selected);
+                      } else {
+                        showToast(t.selectMerchant, 'error');
+                      }
+                    }}
+                    disabled={!manualInvoiceMerchantId}
+                    className="flex items-center gap-2 px-5 py-2.5 bg-[#D4AF37] hover:bg-[#b0922e] text-black font-bold text-sm rounded-xl transition-all disabled:opacity-40 disabled:hover:bg-[#D4AF37]"
+                  >
+                    <FileText size={16} />
+                    {t.createInvoiceBtn}
+                  </button>
+                </div>
+              </div>
+
+              {/* Quick list of merchants with manual billing or inactive Stripe */}
+              {(() => {
+                const manualMerchants = allMerchants.filter((m: any) => m.stripe_subscription_id === 'manual_invoice' || !m.stripe_subscription_id);
+                if (manualMerchants.length === 0) return null;
+
+                return (
+                  <div className="mt-4 pt-4 border-t border-white/5">
+                    <p className="text-xs font-bold uppercase tracking-wider text-white/40 mb-3">
+                      {adminLang === 'fr' ? 'Commerçants en facturation manuelle / Espèces' : 'Händler mit manueller Abrechnung / Barzahlung'}:
+                    </p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                      {manualMerchants.map((m: any) => (
+                        <div
+                          key={m.id}
+                          className="p-3.5 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-[#D4AF37]/30 transition-all flex items-center justify-between gap-3 group"
+                        >
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2">
+                              <span className="text-sm font-bold text-white truncate">{m.name}</span>
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-white/10 text-white/60 font-mono">
+                                {m.language === 'fr' ? '🇲🇦 FR' : '🇩🇪 DE'}
+                              </span>
+                            </div>
+                            <p className="text-xs text-white/40 mt-0.5 truncate">
+                              {m.package_type?.toUpperCase() || 'SILBER'} · {m.stripe_subscription_id === 'manual_invoice' ? t.manualInvoice : t.noAbo}
+                            </p>
+                          </div>
+                          <button
+                            onClick={() => setInvoiceMerchant(m)}
+                            className="px-3 py-1.5 bg-[#D4AF37]/10 hover:bg-[#D4AF37] text-[#D4AF37] hover:text-black font-bold text-xs rounded-lg transition-all shrink-0 flex items-center gap-1.5 border border-[#D4AF37]/20"
+                            title={t.createInvoiceTooltip}
+                          >
+                            <FileText size={12} />
+                            {adminLang === 'fr' ? 'Facture' : 'Rechnung'}
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
 
             <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -1575,6 +1676,15 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {/* Invoice Generator Modal */}
+      {invoiceMerchant && (
+        <InvoiceModal
+          merchant={invoiceMerchant}
+          onClose={() => setInvoiceMerchant(null)}
+          adminLang={adminLang}
+        />
       )}
     </main>
   );
