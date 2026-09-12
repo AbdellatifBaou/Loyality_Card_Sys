@@ -18,7 +18,21 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Zu viele Anfragen. Bitte später erneut versuchen.' }, { status: 429 });
     }
 
-    const { name, primaryColor, packageType, customPrice, stampSymbol, logoUrl: logoBase64, language, stampGoal, rewardText } = await req.json();
+    const { 
+      name, 
+      primaryColor, 
+      packageType, 
+      customPrice, 
+      stampSymbol, 
+      logoUrl: logoBase64, 
+      language, 
+      stampGoal, 
+      rewardText,
+      address,
+      contactName,
+      contactPhone,
+      contactEmail
+    } = await req.json();
 
     const authValidation = await validateAuth(req);
     if (!authValidation.authorized) {
@@ -50,24 +64,44 @@ export async function POST(req: Request) {
     }
 
     // Insert Merchant
-    const { data: newMerchant, error: insertError } = await adminSupabase
+    const insertPayload: any = {
+      name: name,
+      slug: slug,
+      primary_color: primaryColor,
+      stamp_symbol: stampSymbol || '☕️',
+      logo_url: finalLogoUrl,
+      is_active: true,
+      subscription_status: 'active',
+      package_type: packageType,
+      language: language || 'de',
+      custom_price: packageType === 'custom' && customPrice ? parseFloat(customPrice) : null,
+      stamp_goal: stampGoal ? parseInt(stampGoal) : 9,
+      reward_text: rewardText || null,
+      address: address || null,
+      contact_name: contactName || null,
+      contact_phone: contactPhone || null,
+      contact_email: contactEmail || null,
+    };
+
+    let { data: newMerchant, error: insertError } = await adminSupabase
       .from('merchants_loyality')
-      .insert({
-        name: name,
-        slug: slug,
-        primary_color: primaryColor,
-        stamp_symbol: stampSymbol || '☕️',
-        logo_url: finalLogoUrl,
-        is_active: true,
-        subscription_status: 'active',
-        package_type: packageType,
-        language: language || 'de',
-        custom_price: packageType === 'custom' && customPrice ? parseFloat(customPrice) : null,
-        stamp_goal: stampGoal ? parseInt(stampGoal) : 9,
-        reward_text: rewardText || null,
-      })
+      .insert(insertPayload)
       .select('id')
       .single();
+
+    // Graceful fallback if the contact_* columns have not been created yet in SQL
+    if (insertError && insertError.message && insertError.message.includes('column')) {
+      delete insertPayload.contact_name;
+      delete insertPayload.contact_phone;
+      delete insertPayload.contact_email;
+      const retry = await adminSupabase
+        .from('merchants_loyality')
+        .insert(insertPayload)
+        .select('id')
+        .single();
+      newMerchant = retry.data;
+      insertError = retry.error;
+    }
 
     if (insertError) {
       console.error('Error creating merchant:', insertError);

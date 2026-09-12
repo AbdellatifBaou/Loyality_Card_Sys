@@ -42,6 +42,9 @@ export default function InvoiceModal({ merchant, onClose, adminLang }: InvoiceMo
 
   // Customer info
   const [customerName, setCustomerName] = useState(merchant?.name || '');
+  const [customerContactName, setCustomerContactName] = useState(merchant?.contact_name || '');
+  const [customerPhone, setCustomerPhone] = useState(merchant?.contact_phone || '');
+  const [customerEmail, setCustomerEmail] = useState(merchant?.contact_email || '');
   const [customerAddress, setCustomerAddress] = useState(merchant?.address || '');
   const [customerTaxId, setCustomerTaxId] = useState('');
 
@@ -334,16 +337,45 @@ export default function InvoiceModal({ merchant, onClose, adminLang }: InvoiceMo
                   type="text"
                   value={customerName}
                   onChange={(e) => setCustomerName(e.target.value)}
-                  placeholder={invoiceLang === 'fr' ? 'Nom du client / commerce' : 'Kundenname / Firma'}
+                  placeholder={invoiceLang === 'fr' ? 'Nom du commerce / entreprise' : 'Kundenname / Firma'}
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-[#D4AF37]"
                 />
+              </div>
+              <div>
+                <input
+                  type="text"
+                  value={customerContactName}
+                  onChange={(e) => setCustomerContactName(e.target.value)}
+                  placeholder={invoiceLang === 'fr' ? 'Responsable / Gérant (Attn:)' : 'Ansprechpartner / Inhaber (z.Hd.)'}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-[#D4AF37]"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <input
+                    type="tel"
+                    value={customerPhone}
+                    onChange={(e) => setCustomerPhone(e.target.value)}
+                    placeholder={invoiceLang === 'fr' ? 'Téléphone' : 'Telefon'}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-[#D4AF37]"
+                  />
+                </div>
+                <div>
+                  <input
+                    type="email"
+                    value={customerEmail}
+                    onChange={(e) => setCustomerEmail(e.target.value)}
+                    placeholder={invoiceLang === 'fr' ? 'Email' : 'E-Mail'}
+                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-[#D4AF37]"
+                  />
+                </div>
               </div>
               <div>
                 <textarea
                   rows={2}
                   value={customerAddress}
                   onChange={(e) => setCustomerAddress(e.target.value)}
-                  placeholder={invoiceLang === 'fr' ? 'Adresse complète du client' : 'Kundenadresse'}
+                  placeholder={invoiceLang === 'fr' ? 'Adresse complète du commerce' : 'Anschrift des Ladens'}
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-[#D4AF37]"
                 />
               </div>
@@ -507,9 +539,20 @@ export default function InvoiceModal({ merchant, onClose, adminLang }: InvoiceMo
                       {invoiceLang === 'fr' ? 'FACTURÉ À (CLIENT)' : 'EMPFÄNGER'}
                     </span>
                     <h3 className="font-bold text-gray-900 text-base">{customerName || 'Nom du Client'}</h3>
-                    <p className="text-xs text-gray-600 whitespace-pre-line mt-1">{customerAddress || (invoiceLang === 'fr' ? 'Adresse non renseignée' : 'Adresse nicht angegeben')}</p>
+                    {customerContactName && (
+                      <p className="text-xs font-semibold text-gray-700 mt-0.5">
+                        {invoiceLang === 'fr' ? 'Attn: ' : 'z.Hd.: '} {customerContactName}
+                      </p>
+                    )}
+                    <p className="text-xs text-gray-600 whitespace-pre-line mt-1.5">{customerAddress || (invoiceLang === 'fr' ? 'Adresse non renseignée' : 'Adresse nicht angegeben')}</p>
+                    {(customerPhone || customerEmail) && (
+                      <div className="mt-2 text-[11px] text-gray-500 space-y-0.5 border-t border-gray-200/60 pt-1.5">
+                        {customerPhone && <p><span className="text-gray-400">{invoiceLang === 'fr' ? 'Tél:' : 'Tel:'}</span> <span className="text-gray-700 font-medium">{customerPhone}</span></p>}
+                        {customerEmail && <p><span className="text-gray-400">Email:</span> <span className="text-gray-700 font-medium">{customerEmail}</span></p>}
+                      </div>
+                    )}
                     {customerTaxId && (
-                      <p className="text-[11px] font-mono text-gray-500 mt-2">
+                      <p className="text-[11px] font-mono text-gray-500 mt-2 border-t border-gray-200/60 pt-1">
                         {invoiceLang === 'fr' ? 'ICE/ID:' : 'USt-IdNr:'} {customerTaxId}
                       </p>
                     )}

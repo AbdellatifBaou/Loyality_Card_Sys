@@ -4,7 +4,19 @@ import { validateAuth } from '@/lib/auth';
 
 export async function POST(req: Request) {
   try {
-    const { merchantId, name, primaryColor, logoUrl, rewardText, stampGoal, language } = await req.json();
+    const { 
+      merchantId, 
+      name, 
+      primaryColor, 
+      logoUrl, 
+      rewardText, 
+      stampGoal, 
+      language,
+      address,
+      contactName,
+      contactPhone,
+      contactEmail
+    } = await req.json();
 
     const authValidation = await validateAuth(req);
     if (!authValidation.authorized) {
@@ -15,17 +27,35 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Missing merchant ID' }, { status: 400 });
     }
 
-    const { error } = await supabase
+    const updatePayload: any = {
+      name,
+      primary_color: primaryColor,
+      logo_url: logoUrl,
+      reward_text: rewardText,
+      stamp_goal: stampGoal,
+      language,
+      address: address !== undefined ? address : null,
+      contact_name: contactName !== undefined ? contactName : null,
+      contact_phone: contactPhone !== undefined ? contactPhone : null,
+      contact_email: contactEmail !== undefined ? contactEmail : null,
+    };
+
+    let { error } = await supabase
       .from('merchants_loyality')
-      .update({
-        name,
-        primary_color: primaryColor,
-        logo_url: logoUrl,
-        reward_text: rewardText,
-        stamp_goal: stampGoal,
-        language
-      })
+      .update(updatePayload)
       .eq('id', merchantId);
+
+    // Graceful fallback if contact_* columns are not added yet
+    if (error && error.message && error.message.includes('column')) {
+      delete updatePayload.contact_name;
+      delete updatePayload.contact_phone;
+      delete updatePayload.contact_email;
+      const retry = await supabase
+        .from('merchants_loyality')
+        .update(updatePayload)
+        .eq('id', merchantId);
+      error = retry.error;
+    }
 
     if (error) {
       console.error('Update merchant error:', error);

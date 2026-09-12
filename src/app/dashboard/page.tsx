@@ -80,6 +80,10 @@ export default function DashboardPage() {
   const [newMerchantLanguage, setNewMerchantLanguage] = useState('de');
   const [newMerchantStampGoal, setNewMerchantStampGoal] = useState<number>(9);
   const [newMerchantRewardText, setNewMerchantRewardText] = useState('');
+  const [newMerchantContactName, setNewMerchantContactName] = useState('');
+  const [newMerchantContactPhone, setNewMerchantContactPhone] = useState('');
+  const [newMerchantContactEmail, setNewMerchantContactEmail] = useState('');
+  const [newMerchantAddress, setNewMerchantAddress] = useState('');
   const [creatingMerchant, setCreatingMerchant] = useState(false);
   const [createdMerchantResult, setCreatedMerchantResult] = useState<any>(null);
 
@@ -97,6 +101,10 @@ export default function DashboardPage() {
   const [editMerchantRewardText, setEditMerchantRewardText] = useState('');
   const [editMerchantStampGoal, setEditMerchantStampGoal] = useState<number>(9);
   const [editMerchantLanguage, setEditMerchantLanguage] = useState('de');
+  const [editMerchantContactName, setEditMerchantContactName] = useState('');
+  const [editMerchantContactPhone, setEditMerchantContactPhone] = useState('');
+  const [editMerchantContactEmail, setEditMerchantContactEmail] = useState('');
+  const [editMerchantAddress, setEditMerchantAddress] = useState('');
   const [savingEditMerchant, setSavingEditMerchant] = useState(false);
 
   useEffect(() => {
@@ -107,6 +115,10 @@ export default function DashboardPage() {
       setEditMerchantRewardText(editMerchant.reward_text || '');
       setEditMerchantStampGoal(editMerchant.stamp_goal || 9);
       setEditMerchantLanguage(editMerchant.language || 'de');
+      setEditMerchantContactName(editMerchant.contact_name || '');
+      setEditMerchantContactPhone(editMerchant.contact_phone || '');
+      setEditMerchantContactEmail(editMerchant.contact_email || '');
+      setEditMerchantAddress(editMerchant.address || '');
     }
   }, [editMerchant]);
 
@@ -145,7 +157,11 @@ export default function DashboardPage() {
           logoUrl: editMerchantLogo,
           rewardText: editMerchantRewardText,
           stampGoal: editMerchantStampGoal,
-          language: editMerchantLanguage
+          language: editMerchantLanguage,
+          contactName: editMerchantContactName,
+          contactPhone: editMerchantContactPhone,
+          contactEmail: editMerchantContactEmail,
+          address: editMerchantAddress
         })
       });
       const data = await res.json();
@@ -353,7 +369,22 @@ export default function DashboardPage() {
       const response = await fetch('/api/admin/create-merchant', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_auth')}` },
-        body: JSON.stringify({ password: '2025', name: newMerchantName, primaryColor: newMerchantColor, logoUrl: newMerchantLogo, stampSymbol: newMerchantSymbol, language: newMerchantLanguage, packageType: newMerchantPackage, customPrice: newMerchantPackage === 'custom' ? parseFloat(newMerchantPrice) : null, stampGoal: newMerchantStampGoal, rewardText: newMerchantRewardText })
+        body: JSON.stringify({ 
+          password: '2025', 
+          name: newMerchantName, 
+          primaryColor: newMerchantColor, 
+          logoUrl: newMerchantLogo, 
+          stampSymbol: newMerchantSymbol, 
+          language: newMerchantLanguage, 
+          packageType: newMerchantPackage, 
+          customPrice: newMerchantPackage === 'custom' ? parseFloat(newMerchantPrice) : null, 
+          stampGoal: newMerchantStampGoal, 
+          rewardText: newMerchantRewardText,
+          contactName: newMerchantContactName,
+          contactPhone: newMerchantContactPhone,
+          contactEmail: newMerchantContactEmail,
+          address: newMerchantAddress
+        })
       });
       const data = await response.json();
       if (data.success) {
@@ -1508,6 +1539,51 @@ export default function DashboardPage() {
               </div>
 
               <div>
+                <label className="block text-white/60 text-xs uppercase tracking-widest mb-2 font-bold">{t.contactPerson || 'Ansprechpartner / Inhaber'}</label>
+                <input
+                  type="text"
+                  value={editMerchantContactName}
+                  onChange={e => setEditMerchantContactName(e.target.value)}
+                  placeholder={t.contactPersonPlaceholder || 'z.B. Max Mustermann'}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                />
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-white/60 text-xs uppercase tracking-widest mb-2 font-bold">{t.contactPhone || 'Telefon / WhatsApp'}</label>
+                  <input
+                    type="tel"
+                    value={editMerchantContactPhone}
+                    onChange={e => setEditMerchantContactPhone(e.target.value)}
+                    placeholder={t.contactPhonePlaceholder || 'z.B. +49 176 12345678'}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-white/60 text-xs uppercase tracking-widest mb-2 font-bold">{t.contactEmail || 'E-Mail'}</label>
+                  <input
+                    type="email"
+                    value={editMerchantContactEmail}
+                    onChange={e => setEditMerchantContactEmail(e.target.value)}
+                    placeholder={t.contactEmailPlaceholder || 'z.B. info@geschaeft.de'}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-white/60 text-xs uppercase tracking-widest mb-2 font-bold">{t.storeAddress || 'Anschrift des Ladens (Für Wallet & Rechnung)'}</label>
+                <input
+                  type="text"
+                  value={editMerchantAddress}
+                  onChange={e => setEditMerchantAddress(e.target.value)}
+                  placeholder={t.storeAddressPlaceholder || 'z.B. Musterstraße 12, 10115 Berlin'}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                />
+              </div>
+
+              <div>
                 <label className="block text-white/60 text-xs uppercase tracking-widest mb-2 font-bold">Logo (URL oder Base64)</label>
                 <input
                   type="text"
@@ -1611,6 +1687,10 @@ export default function DashboardPage() {
                     setNewMerchantName('');
                     setNewMerchantLogo('');
                     setNewMerchantSymbol('☕️');
+                    setNewMerchantContactName('');
+                    setNewMerchantContactPhone('');
+                    setNewMerchantContactEmail('');
+                    setNewMerchantAddress('');
                   }}
                   className="w-full py-3 bg-white/10 hover:bg-white/20 text-white font-bold rounded-xl transition-colors"
                 >
@@ -1626,6 +1706,51 @@ export default function DashboardPage() {
                     value={newMerchantName}
                     onChange={(e) => setNewMerchantName(e.target.value)}
                     placeholder={t.merchantNamePlaceholder}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-white/50 mb-2">{t.contactPerson || 'Ansprechpartner / Inhaber'}</label>
+                  <input 
+                    type="text"
+                    value={newMerchantContactName}
+                    onChange={(e) => setNewMerchantContactName(e.target.value)}
+                    placeholder={t.contactPersonPlaceholder || 'z.B. Max Mustermann'}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-white/50 mb-2">{t.contactPhone || 'Telefon / WhatsApp'}</label>
+                    <input 
+                      type="tel"
+                      value={newMerchantContactPhone}
+                      onChange={(e) => setNewMerchantContactPhone(e.target.value)}
+                      placeholder={t.contactPhonePlaceholder || 'z.B. +49 176 12345678'}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-white/50 mb-2">{t.contactEmail || 'E-Mail-Adresse'}</label>
+                    <input 
+                      type="email"
+                      value={newMerchantContactEmail}
+                      onChange={(e) => setNewMerchantContactEmail(e.target.value)}
+                      placeholder={t.contactEmailPlaceholder || 'z.B. info@geschaeft.de'}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-white/50 mb-2">{t.storeAddress || 'Anschrift des Ladens (Für Wallet & Rechnung)'}</label>
+                  <input 
+                    type="text"
+                    value={newMerchantAddress}
+                    onChange={(e) => setNewMerchantAddress(e.target.value)}
+                    placeholder={t.storeAddressPlaceholder || 'z.B. Musterstraße 12, 10115 Berlin'}
                     className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
                   />
                 </div>

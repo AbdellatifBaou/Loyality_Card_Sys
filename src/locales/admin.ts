@@ -1,5 +1,15 @@
 export const ADMIN_DICT = {
   de: {
+    contactPerson: "Ansprechpartner / Inhaber",
+    contactPersonPlaceholder: "z.B. Max Mustermann",
+    contactPhone: "Telefon / WhatsApp",
+    contactPhonePlaceholder: "z.B. +49 176 12345678",
+    contactEmail: "E-Mail-Adresse",
+    contactEmailPlaceholder: "z.B. info@geschaeft.de",
+    storeAddress: "Anschrift des Ladens (Straße, Hausnr., PLZ, Ort)",
+    storeAddressPlaceholder: "z.B. Musterstraße 12, 10115 Berlin",
+    editMerchantTitle: "Händler bearbeiten",
+    editMerchantDesc: "Passe die Daten und Kontaktdetails des Händlers an.",
     pkgGold: "Gold Paket",
     pkgSilver: "Silber Paket",
     langFr: "Französisch",
@@ -219,6 +229,16 @@ export const ADMIN_DICT = {
     invoiceBadge: "Rechnung"
   },
   fr: {
+    contactPerson: "Responsable / Gérant",
+    contactPersonPlaceholder: "ex. Karim Benani",
+    contactPhone: "Téléphone / WhatsApp",
+    contactPhonePlaceholder: "ex. +212 6 66 12 34 56",
+    contactEmail: "Adresse E-mail",
+    contactEmailPlaceholder: "ex. contact@commerce.ma",
+    storeAddress: "Adresse du commerce (Rue, CP, Ville)",
+    storeAddressPlaceholder: "ex. 12 Bd Mohammed V, 20000 Casablanca",
+    editMerchantTitle: "Modifier le commerce",
+    editMerchantDesc: "Modifiez les informations et coordonnées du commerce.",
     pkgGold: "Forfait Or",
     pkgSilver: "Forfait Argent",
     langFr: "Français",
