@@ -15,7 +15,10 @@ export async function POST(req: Request) {
       address,
       contactName,
       contactPhone,
-      contactEmail
+      contactEmail,
+      packageType,
+      customPrice,
+      setupPrice
     } = await req.json();
 
     const authValidation = await validateAuth(req);
@@ -38,6 +41,9 @@ export async function POST(req: Request) {
       contact_name: contactName !== undefined ? contactName : null,
       contact_phone: contactPhone !== undefined ? contactPhone : null,
       contact_email: contactEmail !== undefined ? contactEmail : null,
+      ...(packageType ? { package_type: packageType } : {}),
+      custom_price: packageType === 'custom' && customPrice !== undefined && customPrice !== '' ? parseFloat(customPrice) : null,
+      ...(setupPrice !== undefined && setupPrice !== '' ? { setup_price: parseFloat(setupPrice) } : {}),
     };
 
     let { error } = await supabase
@@ -45,11 +51,12 @@ export async function POST(req: Request) {
       .update(updatePayload)
       .eq('id', merchantId);
 
-    // Graceful fallback if contact_* columns are not added yet
+    // Graceful fallback if new columns are not added yet
     if (error && error.message && error.message.includes('column')) {
       delete updatePayload.contact_name;
       delete updatePayload.contact_phone;
       delete updatePayload.contact_email;
+      delete updatePayload.setup_price;
       const retry = await supabase
         .from('merchants_loyality')
         .update(updatePayload)

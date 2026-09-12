@@ -72,24 +72,40 @@ export async function POST(req: Request) {
 
     const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
     
-    // Create checkout session with NO setup fee
+    const lineItems: any[] = [];
+
+    // If setup fee is configured and > 0, include one-time setup fee
+    const setupFee = merchant.setup_price !== undefined && merchant.setup_price !== null ? parseFloat(merchant.setup_price) : 299;
+    if (setupFee > 0 && (!billingData?.stripe_subscription_id || billingData?.stripe_subscription_id === 'manual_invoice')) {
+      lineItems.push({
+        price_data: {
+          currency: 'eur',
+          product_data: { name: 'Einmalige Einrichtungsgebühr – Marketif Treue' },
+          unit_amount: Math.round(setupFee * 100),
+        },
+        quantity: 1,
+      });
+    }
+
+    // Monthly recurring subscription
+    lineItems.push({
+      price_data: {
+        currency: 'eur',
+        product_data: { name: `Marketif Treue – ${planName}` },
+        unit_amount: Math.round(monthly * 100),
+        recurring: { interval: 'month' },
+      },
+      quantity: 1,
+    });
+
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
-      line_items: [
-        {
-          price_data: {
-            currency: 'eur',
-            product_data: { name: `Marketif Treue – ${planName}` },
-            unit_amount: monthly * 100,
-            recurring: { interval: 'month' },
-          },
-          quantity: 1,
-        },
-      ],
+      line_items: lineItems,
       metadata: { 
         merchant_id: merchant.id,
         plan: plan,
+        setup_fee: setupFee.toString(),
         is_reactivation: 'true' 
       },
       success_url: `${appUrl}/dashboard/${merchant.slug}?checkout=success`,

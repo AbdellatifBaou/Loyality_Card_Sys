@@ -75,6 +75,7 @@ export default function DashboardPage() {
   const [newMerchantColor, setNewMerchantColor] = useState('#D4AF37');
   const [newMerchantPackage, setNewMerchantPackage] = useState('custom');
   const [newMerchantPrice, setNewMerchantPrice] = useState('49');
+  const [newMerchantSetupPrice, setNewMerchantSetupPrice] = useState('299');
   const [newMerchantLogo, setNewMerchantLogo] = useState('');
   const [newMerchantSymbol, setNewMerchantSymbol] = useState('☕️');
   const [newMerchantLanguage, setNewMerchantLanguage] = useState('de');
@@ -105,6 +106,9 @@ export default function DashboardPage() {
   const [editMerchantContactPhone, setEditMerchantContactPhone] = useState('');
   const [editMerchantContactEmail, setEditMerchantContactEmail] = useState('');
   const [editMerchantAddress, setEditMerchantAddress] = useState('');
+  const [editMerchantPackage, setEditMerchantPackage] = useState('silber');
+  const [editMerchantCustomPrice, setEditMerchantCustomPrice] = useState('49');
+  const [editMerchantSetupPrice, setEditMerchantSetupPrice] = useState('299');
   const [savingEditMerchant, setSavingEditMerchant] = useState(false);
 
   useEffect(() => {
@@ -119,6 +123,9 @@ export default function DashboardPage() {
       setEditMerchantContactPhone(editMerchant.contact_phone || '');
       setEditMerchantContactEmail(editMerchant.contact_email || '');
       setEditMerchantAddress(editMerchant.address || '');
+      setEditMerchantPackage(editMerchant.package_type || 'silber');
+      setEditMerchantCustomPrice(editMerchant.custom_price ? editMerchant.custom_price.toString() : '49');
+      setEditMerchantSetupPrice(editMerchant.setup_price !== undefined && editMerchant.setup_price !== null ? editMerchant.setup_price.toString() : '299');
     }
   }, [editMerchant]);
 
@@ -161,7 +168,10 @@ export default function DashboardPage() {
           contactName: editMerchantContactName,
           contactPhone: editMerchantContactPhone,
           contactEmail: editMerchantContactEmail,
-          address: editMerchantAddress
+          address: editMerchantAddress,
+          packageType: editMerchantPackage,
+          customPrice: editMerchantPackage === 'custom' && editMerchantCustomPrice ? parseFloat(editMerchantCustomPrice) : null,
+          setupPrice: parseFloat(editMerchantSetupPrice) || 0
         })
       });
       const data = await res.json();
@@ -378,6 +388,7 @@ export default function DashboardPage() {
           language: newMerchantLanguage, 
           packageType: newMerchantPackage, 
           customPrice: newMerchantPackage === 'custom' ? parseFloat(newMerchantPrice) : null, 
+          setupPrice: parseFloat(newMerchantSetupPrice) || 0,
           stampGoal: newMerchantStampGoal, 
           rewardText: newMerchantRewardText,
           contactName: newMerchantContactName,
@@ -1600,13 +1611,110 @@ export default function DashboardPage() {
                 />
               </div>
 
+              {/* Logo File Upload with Preview */}
               <div>
-                <label className="block text-white/60 text-xs uppercase tracking-widest mb-2 font-bold">Logo (URL oder Base64)</label>
-                <input
-                  type="text"
-                  value={editMerchantLogo}
-                  onChange={e => setEditMerchantLogo(e.target.value)}
+                <label className="block text-white/60 text-xs uppercase tracking-widest mb-2 font-bold">{t.logoUpload || 'Logo hochladen'}</label>
+                <input 
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (event) => {
+                        const img = new Image();
+                        img.onload = () => {
+                          const canvas = document.createElement('canvas');
+                          let width = img.width;
+                          let height = img.height;
+                          const maxSize = 500;
+                          
+                          if (width > height) {
+                            if (width > maxSize) {
+                              height *= maxSize / width;
+                              width = maxSize;
+                            }
+                          } else {
+                            if (height > maxSize) {
+                              width *= maxSize / height;
+                              height = maxSize;
+                            }
+                          }
+                          
+                          canvas.width = width;
+                          canvas.height = height;
+                          const ctx = canvas.getContext('2d');
+                          if (ctx) {
+                            ctx.drawImage(img, 0, 0, width, height);
+                            const dataUrl = canvas.toDataURL('image/png');
+                            setEditMerchantLogo(dataUrl);
+                          }
+                        };
+                        img.src = event.target?.result as string;
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
                   className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37] transition-colors"
+                />
+                {editMerchantLogo && (
+                  <div className="mt-3 flex items-center justify-between p-3 bg-white/5 border border-white/10 rounded-xl">
+                    <div className="flex items-center gap-3">
+                      <img src={editMerchantLogo} alt="Logo" className="w-12 h-12 object-contain rounded-lg bg-black/50 p-1 border border-white/10" />
+                      <div>
+                        <p className="text-xs text-green-400 font-bold flex items-center gap-1.5">
+                          <span className="w-2 h-2 rounded-full bg-green-400"></span>
+                          Logo aktiv & optimiert
+                        </p>
+                        <p className="text-[10px] text-white/40">PNG Format (500px)</p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setEditMerchantLogo('')}
+                      className="px-3 py-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 text-xs font-bold rounded-lg border border-red-500/20 transition-all"
+                    >
+                      Entfernen
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Package, Custom Price & Setup Fee */}
+              <div>
+                <label className="block text-white/60 text-xs uppercase tracking-widest mb-2 font-bold">{t.package || 'Paket'}</label>
+                <select 
+                  value={editMerchantPackage}
+                  onChange={(e) => setEditMerchantPackage(e.target.value)}
+                  className="w-full bg-[#111111] border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
+                >
+                  <option className="bg-[#111111] text-white" value="silber">{t.pkgSilver || 'Silber Paket (49€/Monat)'}</option>
+                  <option className="bg-[#111111] text-white" value="gold">{t.pkgGold || 'Gold Paket (89€/Monat)'}</option>
+                  <option className="bg-[#111111] text-white" value="custom">{t.customPackage || 'Individuelles Paket (Custom)'}</option>
+                </select>
+              </div>
+
+              {editMerchantPackage === 'custom' && (
+                <div>
+                  <label className="block text-white/60 text-xs uppercase tracking-widest mb-2 font-bold">{t.customPrice || 'Monatspreis (€/Monat)'}</label>
+                  <input 
+                    type="number"
+                    value={editMerchantCustomPrice}
+                    onChange={(e) => setEditMerchantCustomPrice(e.target.value)}
+                    placeholder="z.B. 49"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
+                  />
+                </div>
+              )}
+
+              <div>
+                <label className="block text-white/60 text-xs uppercase tracking-widest mb-2 font-bold">{t.setupFee || 'Einmalige Setup-Gebühr (€)'}</label>
+                <input 
+                  type="number"
+                  value={editMerchantSetupPrice}
+                  onChange={(e) => setEditMerchantSetupPrice(e.target.value)}
+                  placeholder={t.setupFeePlaceholder || 'z.B. 299 (oder 0 für Rabatt)'}
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
                 />
               </div>
 
@@ -1918,6 +2026,17 @@ export default function DashboardPage() {
                     />
                   </div>
                 )}
+
+                <div>
+                  <label className="block text-xs font-medium text-white/50 mb-2">{t.setupFee || 'Einmalige Setup-Gebühr (€)'}</label>
+                  <input 
+                    type="number"
+                    value={newMerchantSetupPrice}
+                    onChange={(e) => setNewMerchantSetupPrice(e.target.value)}
+                    placeholder={t.setupFeePlaceholder || 'z.B. 299 (oder 0 für Rabatt)'}
+                    className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
+                  />
+                </div>
 
                 <div>
                   <label className="block text-xs font-medium text-white/50 mb-2">Stempel-Ziel (Anzahl Stempel für Belohnung)</label>

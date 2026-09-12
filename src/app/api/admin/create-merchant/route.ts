@@ -23,6 +23,7 @@ export async function POST(req: Request) {
       primaryColor, 
       packageType, 
       customPrice, 
+      setupPrice,
       stampSymbol, 
       logoUrl: logoBase64, 
       language, 
@@ -75,6 +76,7 @@ export async function POST(req: Request) {
       package_type: packageType,
       language: language || 'de',
       custom_price: packageType === 'custom' && customPrice ? parseFloat(customPrice) : null,
+      setup_price: setupPrice !== undefined && setupPrice !== null && setupPrice !== '' ? parseFloat(setupPrice) : 299,
       stamp_goal: stampGoal ? parseInt(stampGoal) : 9,
       reward_text: rewardText || null,
       address: address || null,
@@ -89,11 +91,12 @@ export async function POST(req: Request) {
       .select('id')
       .single();
 
-    // Graceful fallback if the contact_* columns have not been created yet in SQL
+    // Graceful fallback if any new columns have not been created yet in SQL
     if (insertError && insertError.message && insertError.message.includes('column')) {
       delete insertPayload.contact_name;
       delete insertPayload.contact_phone;
       delete insertPayload.contact_email;
+      delete insertPayload.setup_price;
       const retry = await adminSupabase
         .from('merchants_loyality')
         .insert(insertPayload)
