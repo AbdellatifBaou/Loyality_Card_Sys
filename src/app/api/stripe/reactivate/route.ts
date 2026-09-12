@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { validateAuth } from '@/lib/auth';
 
 const getStripe = () => new Stripe(process.env.STRIPE_SECRET_KEY || '', {
   apiVersion: '2026-04-22.dahlia',
@@ -18,6 +19,11 @@ export async function POST(req: Request) {
 
     if (!merchantId || !plan) {
       return NextResponse.json({ error: 'Missing merchantId or plan' }, { status: 400 });
+    }
+
+    const authValidation = await validateAuth(req, merchantId);
+    if (!authValidation.authorized) {
+      return NextResponse.json({ error: authValidation.error || 'Unauthorized' }, { status: 401 });
     }
 
     const adminSupabase = getAdmin();
@@ -72,40 +78,45 @@ export async function POST(req: Request) {
 
     const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
     
-    const lineItems: any[] = [];
-
-    // If setup fee is configured and > 0, include one-time setup fee
-    const setupFee = merchant.setup_price !== undefined && merchant.setup_price !== null ? parseFloat(merchant.setup_price) : 299;
-    if (setupFee > 0 && (!billingData?.stripe_subscription_id || billingData?.stripe_subscription_id === 'manual_invoice')) {
-      lineItems.push({
+    // For existing merchants reactivating or switching to Stripe, setup fee is NEVER charged.
+    // Only the monthly recurring subscription is added.
+    const lineItems: any[] = [
+      {
         price_data: {
           currency: 'eur',
-          product_data: { name: 'Einmalige Einrichtungsgebühr – Marketif Treue' },
-          unit_amount: Math.round(setupFee * 100),
+          product_data: { name: `Marketif Treue – ${planName}` },
+          unit_amount: Math.round(monthly * 100),
+          recurring: { interval: 'month' },
         },
         quantity: 1,
-      });
-    }
-
-    // Monthly recurring subscription
-    lineItems.push({
-      price_data: {
-        currency: 'eur',
-        product_data: { name: `Marketif Treue – ${planName}` },
-        unit_amount: Math.round(monthly * 100),
-        recurring: { interval: 'month' },
       },
-      quantity: 1,
-    });
+    ];
+
+    const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {
+      metadata: {
+        merchant_id: merchant.id,
+        plan: plan,
+      },
+    };
+
+    // If merchant has an active paid period in the future (e.g. paid 1 month cash/manual invoice),
+    // set trial_end in Stripe to that date so Stripe only starts charging when their current period expires!
+    if (merchant.current_period_end) {
+      const periodEndMs = new Date(merchant.current_period_end).getTime();
+      const minTrialMs = Date.now() + 48 * 3600 * 1000; // Stripe requires trial_end >= 48 hours in future
+      if (periodEndMs > minTrialMs) {
+        subscriptionData.trial_end = Math.floor(periodEndMs / 1000);
+      }
+    }
 
     const session = await stripe.checkout.sessions.create({
       customer: customerId,
       mode: 'subscription',
       line_items: lineItems,
+      subscription_data: subscriptionData,
       metadata: { 
         merchant_id: merchant.id,
         plan: plan,
-        setup_fee: setupFee.toString(),
         is_reactivation: 'true' 
       },
       success_url: `${appUrl}/dashboard/${merchant.slug}?checkout=success`,

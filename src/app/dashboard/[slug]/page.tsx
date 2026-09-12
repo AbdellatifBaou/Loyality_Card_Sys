@@ -1408,7 +1408,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                     className="w-full py-4 rounded-xl flex items-center justify-center gap-2 font-bold text-black disabled:opacity-50 transition-all hover:scale-[1.02] active:scale-95 bg-white/10 hover:bg-white/20"
                     style={{ backgroundColor: primaryColor }}
                   >
-                    {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : '{t.reactivateSubscriptionStripe}'}
+                    {billingLoading ? <RefreshCw className="animate-spin" size={20} /> : t.reactivateSubscriptionStripe}
                   </button>
                 </>
               ) : merchant?.subscription_status === 'active' || merchant?.subscription_status === 'cancels_at_period_end' ? (
