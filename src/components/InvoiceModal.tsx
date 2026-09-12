@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Printer, Plus, Trash2, Globe, Building2, Check, FileText } from 'lucide-react';
+import { X, Printer, Plus, Trash2, Globe, Building2, Check, FileText, MessageCircle } from 'lucide-react';
 
 interface InvoiceItem {
   id: string;
@@ -160,6 +160,44 @@ export default function InvoiceModal({ merchant, onClose, adminLang }: InvoiceMo
     window.print();
   };
 
+  const handleSendWhatsApp = () => {
+    let phone = (customerPhone || '').replace(/[^0-9+]/g, '');
+    if (phone.startsWith('+')) {
+      phone = phone.substring(1);
+    } else if (phone.startsWith('00')) {
+      phone = phone.substring(2);
+    } else if (phone.startsWith('0')) {
+      const defaultPrefix = invoiceLang === 'fr' ? '212' : '49';
+      phone = defaultPrefix + phone.substring(1);
+    }
+
+    const greeting = customerContactName 
+      ? (invoiceLang === 'fr' ? `Bonjour ${customerContactName}` : `Hallo ${customerContactName}`) 
+      : (customerName ? (invoiceLang === 'fr' ? `Bonjour ${customerName}` : `Hallo ${customerName}`) : (invoiceLang === 'fr' ? 'Bonjour' : 'Hallo'));
+    
+    const paymentMethodLabel = paymentMethod === 'transfer' 
+      ? (invoiceLang === 'fr' ? 'Virement Bancaire' : 'Banküberweisung') 
+      : paymentMethod === 'cash' 
+      ? (invoiceLang === 'fr' ? 'Espèces' : 'Barzahlung') 
+      : (invoiceLang === 'fr' ? 'Carte Bancaire' : 'Kartenzahlung');
+
+    const curr = currency === 'EUR' ? '€' : 'MAD';
+    const formattedDate = new Date(invoiceDate).toLocaleDateString(invoiceLang === 'fr' ? 'fr-FR' : 'de-DE');
+    const formattedDueDate = new Date(dueDate).toLocaleDateString(invoiceLang === 'fr' ? 'fr-FR' : 'de-DE');
+
+    const text = invoiceLang === 'fr' 
+      ? `${greeting},\n\nVoici le récapitulatif de votre facture pour ${period} de la part de Marketif :\n\n📄 *N° Facture :* ${invoiceNumber}\n💰 *Montant Total :* ${total.toFixed(2)} ${curr}\n📅 *Date :* ${formattedDate}\n⏳ *Échéance :* ${formattedDueDate}\n💳 *Mode de paiement :* ${paymentMethodLabel}\n\nMerci pour votre confiance !\n_Marketif Support_`
+      : `${greeting},\n\nhier ist die Abrechnung für ${period} von Marketif:\n\n📄 *Rechnungs-Nr.:* ${invoiceNumber}\n💰 *Gesamtbetrag:* ${total.toFixed(2)} ${curr}\n📅 *Rechnungsdatum:* ${formattedDate}\n⏳ *Fälligkeit:* ${formattedDueDate}\n💳 *Zahlungsart:* ${paymentMethodLabel}\n\nVielen Dank für die partnerschaftliche Zusammenarbeit!\n_Marketif Support_`;
+
+    if (!phone) {
+      alert(invoiceLang === 'fr' ? 'Veuillez saisir un numéro de téléphone' : 'Bitte gib eine Telefonnummer ein');
+      return;
+    }
+
+    const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank');
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex items-start justify-center p-2 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto">
       {/* Container with print styles */}
@@ -229,6 +267,17 @@ export default function InvoiceModal({ merchant, onClose, adminLang }: InvoiceMo
                 <span>🇩🇪</span> Deutsch
               </button>
             </div>
+
+            {/* WhatsApp Send Button */}
+            <button
+              type="button"
+              onClick={handleSendWhatsApp}
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-sm rounded-xl transition-all shadow-lg hover:shadow-[#25D366]/20"
+              title={invoiceLang === 'fr' ? 'Envoyer le récapitulatif par WhatsApp' : 'Rechnungsübersicht per WhatsApp senden'}
+            >
+              <MessageCircle size={16} />
+              <span>WhatsApp</span>
+            </button>
 
             {/* Print / PDF Button */}
             <button
@@ -387,6 +436,26 @@ export default function InvoiceModal({ merchant, onClose, adminLang }: InvoiceMo
                   placeholder={invoiceLang === 'fr' ? 'ICE / Identifiant fiscal (optionnel)' : 'USt-IdNr. / Steuernummer (optional)'}
                   className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-[#D4AF37]"
                 />
+              </div>
+
+              {/* WhatsApp Quick Action Box */}
+              <div className="p-3 bg-[#25D366]/10 border border-[#25D366]/30 rounded-xl flex items-center justify-between gap-2 mt-2">
+                <div className="min-w-0 flex-1">
+                  <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <MessageCircle size={14} className="text-[#25D366] shrink-0" />
+                    {invoiceLang === 'fr' ? 'Envoi WhatsApp' : 'WhatsApp Versand'}
+                  </span>
+                  <p className="text-[11px] text-white/50 truncate mt-0.5">
+                    {customerPhone ? customerPhone : (invoiceLang === 'fr' ? 'Numéro manquant' : 'Keine Nummer angegeben')}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSendWhatsApp}
+                  className="px-3 py-1.5 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs rounded-lg transition-all shadow-md flex items-center gap-1 shrink-0"
+                >
+                  {invoiceLang === 'fr' ? 'Envoyer' : 'Senden'}
+                </button>
               </div>
             </div>
 

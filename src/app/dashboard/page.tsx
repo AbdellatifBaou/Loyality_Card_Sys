@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Unlock, Lock, LogOut, BarChart2, Store, DollarSign, Download, FileText, X, Edit3, Search, Filter, RotateCcw } from 'lucide-react';
+import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Unlock, Lock, LogOut, BarChart2, Store, DollarSign, Download, FileText, X, Edit3, Search, Filter, RotateCcw, MessageCircle } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { ADMIN_DICT } from '@/locales/admin';
 import InvoiceModal from '@/components/InvoiceModal';
@@ -893,8 +893,25 @@ export default function DashboardPage() {
                           <td className="p-4 text-white/50 text-xs">
                             {new Date(m.created_at).toLocaleDateString('de-DE')}
                           </td>
-                          <td className="p-4 pr-6 text-right whitespace-nowrap min-w-[180px]">
+                          <td className="p-4 pr-6 text-right whitespace-nowrap min-w-[190px]">
                             <div className="flex items-center justify-end gap-2">
+                              {m.contact_phone && (
+                                <a
+                                  href={`https://wa.me/${(() => {
+                                    let p = m.contact_phone.replace(/[^0-9+]/g, '');
+                                    if (p.startsWith('+')) return p.substring(1);
+                                    if (p.startsWith('00')) return p.substring(2);
+                                    if (p.startsWith('0')) return (m.language === 'fr' ? '212' : '49') + p.substring(1);
+                                    return p;
+                                  })()}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  title={adminLang === 'fr' ? `Contacter ${m.contact_name || m.name} par WhatsApp` : `${m.contact_name || m.name} per WhatsApp kontaktieren`}
+                                  className="p-2 bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 rounded-lg transition-colors border border-[#25D366]/20 shrink-0"
+                                >
+                                  <MessageCircle size={14} />
+                                </a>
+                              )}
                               <button 
                                 onClick={() => setInvoiceMerchant(m)}
                                 title={t.createInvoiceTooltip || "Rechnung erstellen"}
