@@ -153,10 +153,23 @@ export async function POST(req: Request) {
       stampsGrowthPercent = 100;
     }
 
-    // 7. Weekday Distribution
+    // Helper for Timezone-safe Local Hour & Day
+    const targetTimeZone = lang === 'fr' ? 'Europe/Paris' : 'Europe/Berlin';
+    const getLocalTime = (isoString: string) => {
+      try {
+        const d = new Date(isoString);
+        const local = new Date(d.toLocaleString('en-US', { timeZone: targetTimeZone }));
+        return { hour: local.getHours(), day: local.getDay() };
+      } catch {
+        const d = new Date(isoString);
+        return { hour: d.getHours(), day: d.getDay() };
+      }
+    };
+
+    // 7. Weekday Distribution (Strictly based on earnStamps)
     const weekdayCounts = [0, 0, 0, 0, 0, 0, 0]; // Sun(0) to Sat(6)
-    periodStamps.forEach(s => {
-      const day = new Date(s.created_at).getDay();
+    earnStamps.forEach(s => {
+      const { day } = getLocalTime(s.created_at);
       weekdayCounts[day] += (s.amount || 1);
     });
 
@@ -170,14 +183,14 @@ export async function POST(req: Request) {
       count: weekdayCounts[idx]
     }));
 
-    // 8. Hourly / Time-of-Day Distribution
+    // 8. Hourly / Time-of-Day Distribution (Strictly based on earnStamps)
     let morning = 0;   // 06:00 - 11:59
     let afternoon = 0; // 12:00 - 16:59
     let evening = 0;   // 17:00 - 22:59
     let night = 0;     // 23:00 - 05:59
 
-    periodStamps.forEach(s => {
-      const h = new Date(s.created_at).getHours();
+    earnStamps.forEach(s => {
+      const { hour: h } = getLocalTime(s.created_at);
       const count = s.amount || 1;
       if (h >= 6 && h < 12) morning += count;
       else if (h >= 12 && h < 17) afternoon += count;
@@ -192,7 +205,7 @@ export async function POST(req: Request) {
       { key: 'night', label: lang === 'fr' ? 'Nuit (23h - 06h)' : 'Nacht (23:00 - 06:00)', count: night },
     ];
 
-    // 9. Staff Performance
+    // 9. Staff Performance (Strictly consistent)
     const staffCountMap = new Map<string, { name: string; stamps: number; redeems: number }>();
     periodStamps.forEach(s => {
       const staffName = s.staff_id ? (staffMap.get(s.staff_id) || 'Mitarbeiter') : 'Admin / Scanner';
