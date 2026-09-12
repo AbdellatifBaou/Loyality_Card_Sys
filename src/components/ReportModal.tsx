@@ -186,7 +186,7 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
         @media print {
           @page {
             size: A4 portrait;
-            margin: 8mm 10mm;
+            margin: 10mm 12mm;
           }
           *, *::before, *::after {
             box-shadow: none !important;
@@ -197,7 +197,6 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
             color: #111827 !important;
             height: 100% !important;
             max-height: 100vh !important;
-            min-height: 0 !important;
             overflow: hidden !important;
             margin: 0 !important;
             padding: 0 !important;
@@ -222,7 +221,8 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
             overflow: hidden !important;
             z-index: 9999999 !important;
             visibility: visible !important;
-            display: block !important;
+            display: flex !important;
+            flex-direction: column !important;
           }
           #report-modal-dialog {
             position: static !important;
@@ -231,27 +231,32 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
             background: #ffffff !important;
             max-width: 100% !important;
             width: 100% !important;
+            height: 100% !important;
+            max-height: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
             border-radius: 0 !important;
             visibility: visible !important;
             overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+            flex: 1 1 100% !important;
           }
           #printable-report-container {
             position: static !important;
             width: 100% !important;
             max-width: 100% !important;
+            height: 100% !important;
+            max-height: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
             background: #ffffff !important;
             color: #111827 !important;
             visibility: visible !important;
-            page-break-inside: avoid !important;
-            page-break-before: avoid !important;
-            page-break-after: avoid !important;
-            break-inside: avoid !important;
-            break-before: avoid !important;
-            break-after: avoid !important;
+            box-sizing: border-box !important;
+            display: flex !important;
+            flex-direction: column !important;
+            flex: 1 1 100% !important;
           }
           #printable-report-container * {
             visibility: visible !important;
@@ -445,7 +450,7 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
               </p>
             </div>
           ) : reportData ? (
-            <div className="space-y-6 print:space-y-4">
+            <div className="space-y-6 print:space-y-0 print:h-full print:flex print:flex-col print:justify-between">
               
               {/* HEADER SECTION */}
               <div className="flex items-center justify-between gap-4 pb-4 border-b border-white/10 print:border-gray-200">
