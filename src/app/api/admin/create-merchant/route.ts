@@ -80,6 +80,12 @@ export async function POST(req: Request) {
       stamp_goal: stampGoal ? parseInt(stampGoal) : 9,
       reward_text: rewardText || null,
       address: address || null,
+      push_settings: {
+        contact_name: contactName || null,
+        contact_phone: contactPhone || null,
+        contact_email: contactEmail || null,
+        setup_price: setupPrice !== undefined && setupPrice !== null && setupPrice !== '' ? parseFloat(setupPrice) : 299,
+      },
       contact_name: contactName || null,
       contact_phone: contactPhone || null,
       contact_email: contactEmail || null,

@@ -1,6 +1,13 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { validateAuth } from '@/lib/auth';
+
+function getAdminSupabase() {
+  return createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.SUPABASE_SERVICE_ROLE_KEY!
+  );
+}
 
 export async function POST(req: Request) {
   try {
@@ -30,6 +37,24 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: 'Missing merchant ID' }, { status: 400 });
     }
 
+    const adminSupabase = getAdminSupabase();
+
+    // Fetch existing merchant data including current push_settings
+    const { data: currentMerchant } = await adminSupabase
+      .from('merchants_loyality')
+      .select('push_settings')
+      .eq('id', merchantId)
+      .maybeSingle();
+
+    const currentPush = currentMerchant?.push_settings || {};
+    const updatedPush = {
+      ...currentPush,
+      contact_name: contactName !== undefined ? contactName : (currentPush.contact_name || null),
+      contact_phone: contactPhone !== undefined ? contactPhone : (currentPush.contact_phone || null),
+      contact_email: contactEmail !== undefined ? contactEmail : (currentPush.contact_email || null),
+      setup_price: setupPrice !== undefined && setupPrice !== '' ? parseFloat(setupPrice) : (currentPush.setup_price || null),
+    };
+
     const updatePayload: any = {
       name,
       primary_color: primaryColor,
@@ -38,6 +63,7 @@ export async function POST(req: Request) {
       stamp_goal: stampGoal,
       language,
       address: address !== undefined ? address : null,
+      push_settings: updatedPush,
       contact_name: contactName !== undefined ? contactName : null,
       contact_phone: contactPhone !== undefined ? contactPhone : null,
       contact_email: contactEmail !== undefined ? contactEmail : null,
@@ -46,18 +72,18 @@ export async function POST(req: Request) {
       ...(setupPrice !== undefined && setupPrice !== '' ? { setup_price: parseFloat(setupPrice) } : {}),
     };
 
-    let { error } = await supabase
+    let { error } = await adminSupabase
       .from('merchants_loyality')
       .update(updatePayload)
       .eq('id', merchantId);
 
-    // Graceful fallback if new columns are not added yet
+    // Graceful fallback if top-level columns don't exist in Supabase schema
     if (error && error.message && error.message.includes('column')) {
       delete updatePayload.contact_name;
       delete updatePayload.contact_phone;
       delete updatePayload.contact_email;
       delete updatePayload.setup_price;
-      const retry = await supabase
+      const retry = await adminSupabase
         .from('merchants_loyality')
         .update(updatePayload)
         .eq('id', merchantId);

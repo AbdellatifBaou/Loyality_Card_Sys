@@ -38,11 +38,17 @@ export async function POST(req: Request) {
 
     const formattedMerchants = (merchants || []).map((m: any) => {
       const adminStaff = (m.staff_loyality || []).find((s: any) => s.name?.toLowerCase().includes('admin')) || (m.staff_loyality || [])[0];
+      const pushSettings = m.push_settings || {};
       return {
         admin_pin: adminStaff?.pin || 'N/A',
-      ...m,
-      stripe_subscription_id: m.merchant_billing?.[0]?.stripe_subscription_id || m.merchant_billing?.stripe_subscription_id || null
-    }; });
+        ...m,
+        contact_name: m.contact_name || pushSettings.contact_name || '',
+        contact_phone: m.contact_phone || pushSettings.contact_phone || '',
+        contact_email: m.contact_email || pushSettings.contact_email || '',
+        setup_price: m.setup_price !== undefined && m.setup_price !== null ? m.setup_price : (pushSettings.setup_price !== undefined && pushSettings.setup_price !== null ? pushSettings.setup_price : 299),
+        stripe_subscription_id: m.merchant_billing?.[0]?.stripe_subscription_id || m.merchant_billing?.stripe_subscription_id || null
+      }; 
+    });
 
     return NextResponse.json({
       success: true,
