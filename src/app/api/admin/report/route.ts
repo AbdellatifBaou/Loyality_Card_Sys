@@ -154,7 +154,8 @@ export async function POST(req: Request) {
     }
 
     // Helper for Timezone-safe Local Hour & Day
-    const targetTimeZone = lang === 'fr' ? 'Europe/Paris' : 'Europe/Berlin';
+    const isFrench = lang === 'fr' || merchant?.language === 'fr';
+    const targetTimeZone = isFrench ? 'Africa/Casablanca' : 'Europe/Berlin';
     const getLocalTime = (isoString: string) => {
       try {
         const d = new Date(isoString);
