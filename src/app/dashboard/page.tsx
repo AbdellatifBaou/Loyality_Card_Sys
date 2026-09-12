@@ -748,18 +748,18 @@ export default function DashboardPage() {
                     </div>
 
                     <div className="overflow-x-auto">
-                      <table className="w-full text-left border-collapse">
+                      <table className="w-full text-left border-collapse min-w-[1050px]">
                         <thead>
                           <tr style={{ background: 'rgba(255,255,255,0.03)' }} className="text-white/50 text-xs uppercase tracking-wider">
-                            <th className="p-4 font-medium">{t.merchant}</th>
-                            <th className="p-4 font-medium">{t.language || 'Land / Sprache'}</th>
-                            <th className="p-4 font-medium">{t.slug}</th>
-                            <th className="p-4 font-medium">{t.package}</th>
-                            <th className="p-4 font-medium">{t.customers}</th>
-                            <th className="p-4 font-medium">{t.status}</th>
-                            <th className="p-4 font-medium">{t.aboAndPayment}</th>
-                            <th className="p-4 font-medium">{t.registered}</th>
-                            <th className="p-4 font-medium">{t.actions}</th>
+                            <th className="p-4 font-medium min-w-[180px]">{t.merchant}</th>
+                            <th className="p-4 font-medium min-w-[150px]">{t.language || 'Land / Sprache'}</th>
+                            <th className="p-4 font-medium min-w-[140px]">{t.slug}</th>
+                            <th className="p-4 font-medium min-w-[100px]">{t.package}</th>
+                            <th className="p-4 font-medium min-w-[100px]">{t.customers}</th>
+                            <th className="p-4 font-medium min-w-[100px]">{t.status}</th>
+                            <th className="p-4 font-medium min-w-[160px]">{t.aboAndPayment}</th>
+                            <th className="p-4 font-medium min-w-[110px]">{t.registered}</th>
+                            <th className="p-4 pr-6 font-medium text-right min-w-[180px]">{t.actions}</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -862,33 +862,33 @@ export default function DashboardPage() {
                           <td className="p-4 text-white/50 text-xs">
                             {new Date(m.created_at).toLocaleDateString('de-DE')}
                           </td>
-                          <td className="p-4 text-right">
+                          <td className="p-4 pr-6 text-right whitespace-nowrap min-w-[180px]">
                             <div className="flex items-center justify-end gap-2">
                               <button 
                                 onClick={() => setInvoiceMerchant(m)}
                                 title={t.createInvoiceTooltip || "Rechnung erstellen"}
-                                className="p-2 bg-[#D4AF37]/10 text-[#D4AF37] hover:bg-[#D4AF37]/20 rounded-lg transition-colors border border-[#D4AF37]/20"
+                                className="p-2 bg-[#D4AF37]/10 text-[#D4AF37] hover:bg-[#D4AF37]/20 rounded-lg transition-colors border border-[#D4AF37]/20 shrink-0"
                               >
                                 <FileText size={14} />
                               </button>
                               <button 
                                 onClick={() => setEditMerchant(m)}
                                 title="Bearbeiten"
-                                className="p-2 bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 rounded-lg transition-colors border border-yellow-500/20"
+                                className="p-2 bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 rounded-lg transition-colors border border-yellow-500/20 shrink-0"
                               >
                                 <Edit3 size={14} />
                               </button>
                               <button 
                                 onClick={() => setManualActivationMerchant(m)}
                                 title={t.manualActivationTooltip}
-                                className="p-2 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors border border-blue-500/20"
+                                className="p-2 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors border border-blue-500/20 shrink-0"
                               >
                                 <Unlock size={14} />
                               </button>
                               <button
                                 onClick={() => setConfirmDeleteMerchant(m)}
                                 title={t.deleteMerchantTooltip}
-                                className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors border border-red-500/20"
+                                className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors border border-red-500/20 shrink-0"
                               >
                                 <Trash2 size={14} />
                               </button>
