@@ -186,14 +186,19 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
         @media print {
           @page {
             size: A4 portrait;
-            margin: 6mm 10mm;
+            margin: 5mm 8mm;
+          }
+          *, *::before, *::after {
+            box-shadow: none !important;
+            text-shadow: none !important;
           }
           html, body {
             background: #ffffff !important;
             color: #111827 !important;
-            height: auto !important;
+            height: 100% !important;
+            max-height: 100vh !important;
             min-height: 0 !important;
-            overflow: visible !important;
+            overflow: hidden !important;
             margin: 0 !important;
             padding: 0 !important;
             -webkit-print-color-adjust: exact !important;
@@ -202,43 +207,60 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
           body * {
             visibility: hidden;
           }
-          #printable-report-container, #printable-report-container * {
-            visibility: visible;
-          }
           #report-modal-overlay {
-            position: absolute !important;
+            position: fixed !important;
             left: 0 !important;
             top: 0 !important;
-            width: 100% !important;
-            height: auto !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            max-height: 100vh !important;
             padding: 0 !important;
             margin: 0 !important;
-            background: white !important;
-            overflow: visible !important;
+            background: #ffffff !important;
+            overflow: hidden !important;
+            z-index: 9999999 !important;
+            visibility: visible !important;
+            display: block !important;
           }
           #report-modal-dialog {
+            position: static !important;
             border: none !important;
             box-shadow: none !important;
-            background: white !important;
+            background: #ffffff !important;
             max-width: 100% !important;
             width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
             border-radius: 0 !important;
+            visibility: visible !important;
+            overflow: hidden !important;
           }
           #printable-report-container {
-            position: relative !important;
+            position: static !important;
             width: 100% !important;
             max-width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
-            background: white !important;
+            background: #ffffff !important;
             color: #111827 !important;
+            visibility: visible !important;
             page-break-inside: avoid !important;
+            page-break-before: avoid !important;
             page-break-after: avoid !important;
+            break-inside: avoid !important;
+            break-before: avoid !important;
+            break-after: avoid !important;
+          }
+          #printable-report-container * {
+            visibility: visible !important;
           }
           .no-print {
             display: none !important;
+            height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
         }
       `}</style>
@@ -476,18 +498,18 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
                   {lang === 'fr' ? 'Indicateurs Clés de Performance (KPIs)' : 'Kern-Leistungsdaten (Executive Summary)'}
                 </h3>
 
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 print:gap-2">
+                <div className="grid grid-cols-2 lg:grid-cols-4 print:grid-cols-4 gap-2.5 print:gap-2">
                   
                   {/* KPI 1: Vergebene Stempel */}
-                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 print:bg-gray-50 print:border-gray-200">
-                    <div className="flex items-center justify-between text-white/50 print:text-gray-500 mb-1">
-                      <span className="text-[11px] font-medium">{lang === 'fr' ? 'Tampons Distribués' : 'Vergebene Stempel'}</span>
-                      <Award size={14} className="text-[#8097ff]" />
+                  <div className="p-3 print:p-2 rounded-xl bg-white/[0.03] border border-white/10 print:bg-gray-50 print:border-gray-200">
+                    <div className="flex items-center justify-between text-white/50 print:text-gray-500 mb-0.5">
+                      <span className="text-[11px] print:text-[10px] font-medium">{lang === 'fr' ? 'Tampons Distribués' : 'Vergebene Stempel'}</span>
+                      <Award size={13} className="text-[#8097ff]" />
                     </div>
-                    <div className="text-xl sm:text-2xl font-black text-white print:text-black">
+                    <div className="text-xl sm:text-2xl print:text-xl font-black text-white print:text-black">
                       {reportData.summary.stampsGiven}
                     </div>
-                    <div className="mt-1 text-[10px] flex items-center gap-1">
+                    <div className="mt-0.5 text-[10px] print:text-[9px] flex items-center gap-1">
                       {reportData.summary.stampsGrowthPercent !== null ? (
                         reportData.summary.stampsGrowthPercent >= 0 ? (
                           <span className="text-emerald-400 print:text-emerald-600 font-bold flex items-center">
@@ -510,44 +532,44 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
                   </div>
 
                   {/* KPI 2: Neue Kunden */}
-                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 print:bg-gray-50 print:border-gray-200">
-                    <div className="flex items-center justify-between text-white/50 print:text-gray-500 mb-1">
-                      <span className="text-[11px] font-medium">{lang === 'fr' ? 'Nouveaux Clients' : 'Neue Stammkunden'}</span>
-                      <Users size={14} className="text-emerald-400" />
+                  <div className="p-3 print:p-2 rounded-xl bg-white/[0.03] border border-white/10 print:bg-gray-50 print:border-gray-200">
+                    <div className="flex items-center justify-between text-white/50 print:text-gray-500 mb-0.5">
+                      <span className="text-[11px] print:text-[10px] font-medium">{lang === 'fr' ? 'Nouveaux Clients' : 'Neue Stammkunden'}</span>
+                      <Users size={13} className="text-emerald-400" />
                     </div>
-                    <div className="text-xl sm:text-2xl font-black text-emerald-400 print:text-emerald-600">
+                    <div className="text-xl sm:text-2xl print:text-xl font-black text-emerald-400 print:text-emerald-600">
                       +{reportData.summary.newCustomersInPeriod}
                     </div>
-                    <div className="mt-1 text-[10px] text-white/50 print:text-gray-500">
+                    <div className="mt-0.5 text-[10px] print:text-[9px] text-white/50 print:text-gray-500">
                       {lang === 'fr' ? 'Total :' : 'Gesamt:'} <span className="font-bold text-white print:text-black">{reportData.summary.totalCustomersToDate}</span> {lang === 'fr' ? 'porteurs' : 'Karten'}
                     </div>
                   </div>
 
                   {/* KPI 3: Prämien eingelöst */}
-                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 print:bg-gray-50 print:border-gray-200">
-                    <div className="flex items-center justify-between text-white/50 print:text-gray-500 mb-1">
-                      <span className="text-[11px] font-medium">{lang === 'fr' ? 'Cadeaux Récupérés' : 'Prämien Eingelöst'}</span>
-                      <Gift size={14} className="text-amber-400" />
+                  <div className="p-3 print:p-2 rounded-xl bg-white/[0.03] border border-white/10 print:bg-gray-50 print:border-gray-200">
+                    <div className="flex items-center justify-between text-white/50 print:text-gray-500 mb-0.5">
+                      <span className="text-[11px] print:text-[10px] font-medium">{lang === 'fr' ? 'Cadeaux Récupérés' : 'Prämien Eingelöst'}</span>
+                      <Gift size={13} className="text-amber-400" />
                     </div>
-                    <div className="text-xl sm:text-2xl font-black text-amber-400 print:text-amber-600">
+                    <div className="text-xl sm:text-2xl print:text-xl font-black text-amber-400 print:text-amber-600">
                       {reportData.summary.rewardsRedeemed}
                     </div>
-                    <div className="mt-1 text-[10px] text-white/50 print:text-gray-500">
+                    <div className="mt-0.5 text-[10px] print:text-[9px] text-white/50 print:text-gray-500">
                       {lang === 'fr' ? 'Objectif :' : 'Ziel:'} {merchant?.stamp_goal || 10} {lang === 'fr' ? 'tampons' : 'Stempel'}
                     </div>
                   </div>
 
                   {/* KPI 4: Kundenkontakte / ROI */}
-                  <div className="p-3 rounded-xl bg-white/[0.03] border border-white/10 print:bg-gray-50 print:border-gray-200">
-                    <div className="flex items-center justify-between text-white/50 print:text-gray-500 mb-1">
-                      <span className="text-[11px] font-medium">{lang === 'fr' ? 'Visites Générées' : 'Ladenbesuche (ROI)'}</span>
-                      <Store size={14} className="text-purple-400" />
+                  <div className="p-3 print:p-2 rounded-xl bg-white/[0.03] border border-white/10 print:bg-gray-50 print:border-gray-200">
+                    <div className="flex items-center justify-between text-white/50 print:text-gray-500 mb-0.5">
+                      <span className="text-[11px] print:text-[10px] font-medium">{lang === 'fr' ? 'Visites Générées' : 'Ladenbesuche (ROI)'}</span>
+                      <Store size={13} className="text-purple-400" />
                     </div>
-                    <div className="text-xl sm:text-2xl font-black text-purple-400 print:text-purple-600">
+                    <div className="text-xl sm:text-2xl print:text-xl font-black text-purple-400 print:text-purple-600">
                       ~{reportData.summary.estimatedStoreVisits}
                     </div>
-                    <div className="mt-1 text-[10px] text-white/50 print:text-gray-500">
-                      {lang === 'fr' ? 'Visites physiques réelles' : 'Nachweisbare Kundenbesuche'}
+                    <div className="mt-0.5 text-[10px] print:text-[9px] text-white/50 print:text-gray-500">
+                      {lang === 'fr' ? 'Visites réelles' : 'Nachweisbare Besuche'}
                     </div>
                   </div>
 
@@ -555,22 +577,22 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
               </div>
 
               {/* DETAILED VISUAL BREAKDOWN */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 print:gap-2.5">
+              <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-3 print:gap-2">
                 
                 {/* Wochentage Verteilung */}
-                <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10 print:bg-gray-50 print:border-gray-200">
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-white/50 print:text-gray-600 mb-2 flex items-center gap-1.5">
-                    <Calendar size={13} className="text-[#8097ff]" />
+                <div className="p-3 print:p-2 rounded-xl bg-white/[0.02] border border-white/10 print:bg-gray-50 print:border-gray-200">
+                  <h4 className="text-[11px] print:text-[10px] font-bold uppercase tracking-wider text-white/50 print:text-gray-600 mb-1.5 flex items-center gap-1.5">
+                    <Calendar size={12} className="text-[#8097ff]" />
                     {lang === 'fr' ? 'Activité par Jour de la Semaine' : 'Aktivität nach Wochentag'}
                   </h4>
 
-                  <div className="space-y-1">
+                  <div className="space-y-0.5">
                     {reportData.weekdayDistribution.map((item: any, idx: number) => {
                       const pct = maxWeekdayCount > 0 ? (item.count / maxWeekdayCount) * 100 : 0;
                       return (
-                        <div key={idx} className="flex items-center gap-2 text-[10px]">
+                        <div key={idx} className="flex items-center gap-2 text-[10px] print:text-[9px]">
                           <span className="w-6 font-bold text-white/70 print:text-gray-700">{item.day}</span>
-                          <div className="flex-1 h-2 bg-white/5 print:bg-gray-200 rounded-full overflow-hidden">
+                          <div className="flex-1 h-1.5 bg-white/5 print:bg-gray-200 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-gradient-to-r from-[#8097ff] to-blue-500 print:bg-blue-600 rounded-full" 
                               style={{ width: `${Math.max(pct, item.count > 0 ? 6 : 0)}%` }}
@@ -586,18 +608,18 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
                 </div>
 
                 {/* Tageszeiten (Peak Hours) */}
-                <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10 print:bg-gray-50 print:border-gray-200">
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-white/50 print:text-gray-600 mb-2 flex items-center gap-1.5">
-                    <Clock size={13} className="text-amber-400" />
+                <div className="p-3 print:p-2 rounded-xl bg-white/[0.02] border border-white/10 print:bg-gray-50 print:border-gray-200">
+                  <h4 className="text-[11px] print:text-[10px] font-bold uppercase tracking-wider text-white/50 print:text-gray-600 mb-1.5 flex items-center gap-1.5">
+                    <Clock size={12} className="text-amber-400" />
                     {lang === 'fr' ? 'Moments Forts (Peak Hours)' : 'Beliebteste Tageszeiten (Peak Hours)'}
                   </h4>
 
-                  <div className="space-y-1.5">
+                  <div className="space-y-1">
                     {reportData.hourlyDistribution.map((item: any, idx: number) => {
                       const pct = maxHourlyCount > 0 ? (item.count / maxHourlyCount) * 100 : 0;
                       return (
                         <div key={idx} className="space-y-0.5">
-                          <div className="flex items-center justify-between text-[10px]">
+                          <div className="flex items-center justify-between text-[10px] print:text-[9px]">
                             <span className="text-white/70 print:text-gray-700 font-medium">{item.label}</span>
                             <span className="font-extrabold text-white print:text-black">{item.count} {lang === 'fr' ? 'tampons' : 'Stempel'}</span>
                           </div>
@@ -617,21 +639,21 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
 
               {/* STAFF LEADERBOARD */}
               {reportData.staffPerformance && reportData.staffPerformance.length > 0 && (
-                <div className="p-3 rounded-xl bg-white/[0.02] border border-white/10 print:bg-gray-50 print:border-gray-200">
-                  <h4 className="text-[11px] font-bold uppercase tracking-wider text-white/50 print:text-gray-600 mb-2 flex items-center gap-1.5">
-                    <Users size={13} className="text-emerald-400" />
+                <div className="p-3 print:p-2 rounded-xl bg-white/[0.02] border border-white/10 print:bg-gray-50 print:border-gray-200">
+                  <h4 className="text-[11px] print:text-[10px] font-bold uppercase tracking-wider text-white/50 print:text-gray-600 mb-1.5 flex items-center gap-1.5">
+                    <Users size={12} className="text-emerald-400" />
                     {lang === 'fr' ? "Performance de l'Équipe" : 'Team- & Mitarbeiter-Leistung'}
                   </h4>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 print:grid-cols-3 gap-2 print:gap-1.5">
                     {reportData.staffPerformance.slice(0, 6).map((staff: any, idx: number) => (
-                      <div key={idx} className="p-2 rounded-lg bg-white/[0.03] print:bg-white border border-white/5 print:border-gray-200 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
+                      <div key={idx} className="p-1.5 rounded-lg bg-white/[0.03] print:bg-white border border-white/5 print:border-gray-200 flex items-center justify-between">
+                        <div className="flex items-center gap-1.5">
                           <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[9px]">
                             {staff.name.charAt(0)}
                           </div>
                           <div>
-                            <div className="text-[10px] font-bold text-white print:text-black truncate max-w-[80px]">{staff.name}</div>
+                            <div className="text-[10px] print:text-[9px] font-bold text-white print:text-black truncate max-w-[70px]">{staff.name}</div>
                             <div className="text-[8px] text-white/40 print:text-gray-500">
                               {staff.redeems} {lang === 'fr' ? 'cadeaux' : 'Prämien'}
                             </div>

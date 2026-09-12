@@ -205,14 +205,19 @@ export default function InvoiceModal({ merchant, onClose, adminLang }: InvoiceMo
         @media print {
           @page {
             size: A4 portrait;
-            margin: 8mm 12mm;
+            margin: 6mm 10mm;
+          }
+          *, *::before, *::after {
+            box-shadow: none !important;
+            text-shadow: none !important;
           }
           html, body {
             background: #ffffff !important;
             color: #111827 !important;
-            height: auto !important;
+            height: 100% !important;
+            max-height: 100vh !important;
             min-height: 0 !important;
-            overflow: visible !important;
+            overflow: hidden !important;
             margin: 0 !important;
             padding: 0 !important;
             -webkit-print-color-adjust: exact !important;
@@ -221,43 +226,60 @@ export default function InvoiceModal({ merchant, onClose, adminLang }: InvoiceMo
           body * {
             visibility: hidden;
           }
-          #printable-invoice-container, #printable-invoice-container * {
-            visibility: visible;
-          }
           #invoice-modal-overlay {
-            position: absolute !important;
+            position: fixed !important;
             left: 0 !important;
             top: 0 !important;
-            width: 100% !important;
-            height: auto !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            max-height: 100vh !important;
             padding: 0 !important;
             margin: 0 !important;
-            background: white !important;
-            overflow: visible !important;
+            background: #ffffff !important;
+            overflow: hidden !important;
+            z-index: 9999999 !important;
+            visibility: visible !important;
+            display: block !important;
           }
           #invoice-modal-dialog {
+            position: static !important;
             border: none !important;
             box-shadow: none !important;
-            background: white !important;
+            background: #ffffff !important;
             max-width: 100% !important;
             width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
             border-radius: 0 !important;
+            visibility: visible !important;
+            overflow: hidden !important;
           }
           #printable-invoice-container {
-            position: relative !important;
+            position: static !important;
             width: 100% !important;
             max-width: 100% !important;
             margin: 0 !important;
             padding: 0 !important;
-            background: white !important;
+            background: #ffffff !important;
             color: black !important;
+            visibility: visible !important;
             page-break-inside: avoid !important;
+            page-break-before: avoid !important;
             page-break-after: avoid !important;
+            break-inside: avoid !important;
+            break-before: avoid !important;
+            break-after: avoid !important;
+          }
+          #printable-invoice-container * {
+            visibility: visible !important;
           }
           .no-print {
             display: none !important;
+            height: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
           }
         }
       `}</style>
