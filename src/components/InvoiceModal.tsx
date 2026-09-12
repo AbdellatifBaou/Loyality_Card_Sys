@@ -199,25 +199,62 @@ export default function InvoiceModal({ merchant, onClose, adminLang }: InvoiceMo
   };
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-start justify-center p-2 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto">
+    <div id="invoice-modal-overlay" className="fixed inset-0 z-[100] flex items-start justify-center p-2 sm:p-6 bg-black/80 backdrop-blur-md overflow-y-auto print:p-0 print:bg-white print:static print:inset-auto print:overflow-visible">
       {/* Container with print styles */}
       <style jsx global>{`
         @media print {
+          @page {
+            size: A4 portrait;
+            margin: 8mm 12mm;
+          }
+          html, body {
+            background: #ffffff !important;
+            color: #111827 !important;
+            height: auto !important;
+            min-height: 0 !important;
+            overflow: visible !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
           body * {
             visibility: hidden;
           }
           #printable-invoice-container, #printable-invoice-container * {
             visibility: visible;
           }
+          #invoice-modal-overlay {
+            position: absolute !important;
+            left: 0 !important;
+            top: 0 !important;
+            width: 100% !important;
+            height: auto !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            background: white !important;
+            overflow: visible !important;
+          }
+          #invoice-modal-dialog {
+            border: none !important;
+            box-shadow: none !important;
+            background: white !important;
+            max-width: 100% !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            border-radius: 0 !important;
+          }
           #printable-invoice-container {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
-            margin: 0;
-            padding: 0;
+            position: relative !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
             background: white !important;
             color: black !important;
+            page-break-inside: avoid !important;
+            page-break-after: avoid !important;
           }
           .no-print {
             display: none !important;
@@ -225,7 +262,7 @@ export default function InvoiceModal({ merchant, onClose, adminLang }: InvoiceMo
         }
       `}</style>
 
-      <div className="bg-[#121212] border border-white/10 w-full max-w-5xl rounded-3xl overflow-hidden shadow-2xl my-auto text-white">
+      <div id="invoice-modal-dialog" className="bg-[#121212] border border-white/10 w-full max-w-5xl rounded-3xl overflow-hidden shadow-2xl my-auto text-white print:bg-white print:border-none print:shadow-none print:rounded-none">
         {/* Modal Header */}
         <div className="p-4 sm:p-6 border-b border-white/10 flex flex-wrap items-center justify-between gap-4 no-print bg-[#181818]">
           <div className="flex items-center gap-3">
