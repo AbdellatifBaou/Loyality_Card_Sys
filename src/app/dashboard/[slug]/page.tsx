@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { Users, Pizza, Gift, Activity, Bell, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock, BarChart2, Megaphone, Send, ExternalLink, Eye, EyeOff, CheckCircle, Save, Star } from 'lucide-react';
+import { Users, Pizza, Gift, Activity, Bell, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock, BarChart2, BarChart3, Printer, Megaphone, Send, ExternalLink, Eye, EyeOff, CheckCircle, Save, Star } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { PRICING } from '@/lib/pricing';
 import { MERCHANT_DICT } from '@/locales/merchant';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import ReportModal from '@/components/ReportModal';
 
 export default function MerchantDashboardPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug: rawSlug } = use(params);
@@ -80,6 +81,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   // Stripe Billing State
   const [billingLoading, setBillingLoading] = useState(false);
   const [billingError, setBillingError] = useState('');
+  const [showReportModal, setShowReportModal] = useState(false);
 
   // Security State
   const [oldPin, setOldPin] = useState('');
@@ -838,6 +840,14 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             </div>
           </div>
           <div className="flex gap-3">
+            <button 
+              onClick={() => setShowReportModal(true)} 
+              className="px-3.5 py-3 rounded-xl border border-white/10 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white transition-all flex items-center gap-2" 
+              title={lang === 'fr' ? "Rapport de performance" : "Leistungsbericht / Rapport öffnen"}
+            >
+              <BarChart3 size={20} className="text-[#8097ff]" />
+              <span className="hidden sm:inline text-xs font-bold text-white">{lang === 'fr' ? 'Rapport' : 'Bericht'}</span>
+            </button>
             <button onClick={exportCSV} className="p-3 rounded-xl border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 transition-all" title="CSV Export">
               <Download size={20} />
             </button>
@@ -1180,8 +1190,33 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
 
         {/* ANALYTICS TAB */}
         {activeTab === 'analytics' && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+          <div className="space-y-8">
+            <div className="p-6 rounded-3xl flex flex-wrap items-center justify-between gap-4" style={{ background: 'linear-gradient(135deg, rgba(128,151,255,0.08) 0%, rgba(255,255,255,0.02) 100%)', border: '1px solid rgba(128,151,255,0.2)' }}>
+              <div className="flex items-center gap-4">
+                <div className="p-3.5 rounded-2xl bg-[#8097ff]/20 text-[#8097ff] border border-[#8097ff]/30">
+                  <BarChart3 size={24} />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white flex items-center gap-2">
+                    {lang === 'fr' ? 'Rapport de Performance Mensuel & Annuel' : 'Offizieller Leistungsbericht (Rapport)'}
+                    <span className="text-[10px] uppercase font-bold tracking-widest px-2 py-0.5 rounded-full bg-[#8097ff]/20 text-[#8097ff]">PDF / Print</span>
+                  </h3>
+                  <p className="text-xs text-white/60 mt-0.5">
+                    {lang === 'fr' ? 'Consultez, imprimez ou partagez votre bilan certifié avec statistiques et graphiques' : 'Drucke, exportiere oder teile deinen offiziellen Monatsbericht mit allen Kennzahlen & Diagrammen'}
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setShowReportModal(true)}
+                className="px-5 py-3 rounded-xl bg-[#8097ff] hover:bg-[#8097ff]/90 text-black font-extrabold text-xs flex items-center gap-2 hover:scale-[1.02] active:scale-95 transition-all shadow-lg shadow-[#8097ff]/20"
+              >
+                <Printer size={16} />
+                {lang === 'fr' ? 'Ouvrir le Rapport' : 'Leistungsbericht öffnen'}
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
               <div className="flex items-center gap-3 mb-6">
                 <BarChart2 size={20} style={{ color: primaryColor }} />
                 <h2 className="text-lg font-bold text-white">{t.stampsByWeekday}</h2>
@@ -1300,6 +1335,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                 </table>
                 {topCustomers.length === 0 && <p className="text-center text-white/40 text-sm py-8">{t.noDataAvailable}</p>}
               </div>
+            </div>
             </div>
           </div>
         )}
@@ -2098,6 +2134,16 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             <span className="text-sm font-medium">{toastMessage.text}</span>
           </div>
         </div>
+      )}
+
+      {/* Performance Report Modal */}
+      {showReportModal && merchant && (
+        <ReportModal
+          merchant={merchant}
+          onClose={() => setShowReportModal(false)}
+          adminLang={lang}
+          isMerchantView={true}
+        />
       )}
     </main>
   );

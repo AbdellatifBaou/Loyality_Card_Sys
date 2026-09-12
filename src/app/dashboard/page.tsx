@@ -1,10 +1,11 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Unlock, Lock, LogOut, BarChart2, Store, DollarSign, Download, FileText, X, Edit3, Search, Filter, RotateCcw, MessageCircle } from 'lucide-react';
+import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Unlock, Lock, LogOut, BarChart2, BarChart3, Store, DollarSign, Download, FileText, X, Edit3, Search, Filter, RotateCcw, MessageCircle } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { ADMIN_DICT } from '@/locales/admin';
 import InvoiceModal from '@/components/InvoiceModal';
+import ReportModal from '@/components/ReportModal';
 
 export default function DashboardPage() {
   const [adminLang, setAdminLang] = useState('de');
@@ -60,6 +61,7 @@ export default function DashboardPage() {
   const [failedFinancesData, setFailedFinancesData] = useState<any[]>([]);
   const [financesLoading, setFinancesLoading] = useState(false);
   const [invoiceMerchant, setInvoiceMerchant] = useState<any>(null);
+  const [reportMerchant, setReportMerchant] = useState<any>(null);
   const [manualInvoiceMerchantId, setManualInvoiceMerchantId] = useState<string>('');
 
   // Table Filters & Search
@@ -923,6 +925,13 @@ export default function DashboardPage() {
                                   <MessageCircle size={14} />
                                 </a>
                               )}
+                              <button 
+                                onClick={() => setReportMerchant(m)}
+                                title={adminLang === 'fr' ? "Rapport de performance" : "Leistungsbericht / Rapport erstellen"}
+                                className="p-2 bg-[#8097ff]/10 text-[#8097ff] hover:bg-[#8097ff]/20 rounded-lg transition-colors border border-[#8097ff]/20 shrink-0"
+                              >
+                                <BarChart3 size={14} />
+                              </button>
                               <button 
                                 onClick={() => setInvoiceMerchant(m)}
                                 title={t.createInvoiceTooltip || "Rechnung erstellen"}
@@ -2124,6 +2133,15 @@ export default function DashboardPage() {
         <InvoiceModal
           merchant={invoiceMerchant}
           onClose={() => setInvoiceMerchant(null)}
+          adminLang={adminLang}
+        />
+      )}
+
+      {/* Performance Report Modal */}
+      {reportMerchant && (
+        <ReportModal
+          merchant={reportMerchant}
+          onClose={() => setReportMerchant(null)}
           adminLang={adminLang}
         />
       )}
