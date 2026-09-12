@@ -186,7 +186,7 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
         @media print {
           @page {
             size: A4 portrait;
-            margin: 5mm 8mm;
+            margin: 8mm 10mm;
           }
           *, *::before, *::after {
             box-shadow: none !important;
@@ -434,43 +434,43 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
           </div>
         )}
 
-        {/* ── PRINTABLE & VIEWABLE REPORT CONTENT (EXACT 1-PAGE A4) ──────────── */}
-        <div id="printable-report-container" className="p-6 sm:p-8 bg-gradient-to-b from-[#161616] to-[#0f0f0f] text-white print:bg-white print:text-black print:p-0">
+        {/* ── PRINTABLE & VIEWABLE REPORT CONTENT (BEAUTIFULLY BALANCED FULL A4) ──────────── */}
+        <div id="printable-report-container" className="p-6 sm:p-10 bg-gradient-to-b from-[#161616] to-[#0f0f0f] text-white print:bg-white print:text-black print:p-0">
           
           {loading && !reportData ? (
-            <div className="py-24 text-center">
-              <RefreshCw size={36} className="animate-spin text-[#8097ff] mx-auto mb-4" />
+            <div className="py-28 text-center">
+              <RefreshCw size={40} className="animate-spin text-[#8097ff] mx-auto mb-4" />
               <p className="text-white/60 text-sm">
                 {lang === 'fr' ? 'Génération du rapport en cours...' : 'Erstelle Leistungsbericht...'}
               </p>
             </div>
           ) : reportData ? (
-            <div className="space-y-5 print:space-y-3.5">
+            <div className="space-y-6 print:space-y-4">
               
               {/* HEADER SECTION */}
-              <div className="flex items-start justify-between gap-4 pb-3.5 border-b border-white/10 print:border-gray-200">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between gap-4 pb-4 border-b border-white/10 print:border-gray-200">
+                <div className="flex items-center gap-3.5">
                   {merchant?.logo_url ? (
                     <img 
                       src={merchant.logo_url} 
                       alt={merchant.name} 
-                      className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl object-cover border border-white/10 print:border-gray-300 shadow-sm shrink-0" 
+                      className="w-14 h-14 sm:w-16 sm:h-16 print:w-14 print:h-14 rounded-2xl object-cover border border-white/10 print:border-gray-300 shadow-sm shrink-0" 
                     />
                   ) : (
-                    <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-[#8097ff]/20 text-[#8097ff] flex items-center justify-center font-bold text-xl border border-[#8097ff]/30 shrink-0">
+                    <div className="w-14 h-14 sm:w-16 sm:h-16 print:w-14 print:h-14 rounded-2xl bg-[#8097ff]/20 text-[#8097ff] flex items-center justify-center font-black text-2xl border border-[#8097ff]/30 shrink-0">
                       {merchant?.name?.charAt(0) || 'M'}
                     </div>
                   )}
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-[#8097ff]/20 text-[#8097ff] border border-[#8097ff]/30 print:bg-blue-50 print:text-blue-700 print:border-blue-200">
+                      <span className="text-[10px] print:text-[10px] font-extrabold uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-[#8097ff]/20 text-[#8097ff] border border-[#8097ff]/30 print:bg-blue-50 print:text-blue-700 print:border-blue-200">
                         {lang === 'fr' ? 'Rapport Officiel de Fidélité' : 'Offizieller Leistungsbericht'}
                       </span>
                     </div>
-                    <h1 className="text-xl sm:text-2xl font-black tracking-tight text-white print:text-black mt-0.5">
+                    <h1 className="text-2xl sm:text-3xl print:text-2xl font-black tracking-tight text-white print:text-black mt-1">
                       {merchant?.name}
                     </h1>
-                    <p className="text-[11px] text-white/50 print:text-gray-500">
+                    <p className="text-xs print:text-[11px] text-white/50 print:text-gray-500 mt-0.5">
                       {merchant?.address || (lang === 'fr' ? 'Partenaire Marketif Treue' : 'Marketif Treue Partner')}
                       {merchant?.contact_name && ` · ${merchant.contact_name}`}
                     </p>
@@ -482,10 +482,10 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
                   <div className="text-[10px] font-bold text-white/40 print:text-gray-400 uppercase tracking-wider">
                     {lang === 'fr' ? "Période d'analyse" : 'Berichtszeitraum'}
                   </div>
-                  <div className="text-lg sm:text-xl font-extrabold text-[#8097ff] print:text-blue-600">
+                  <div className="text-xl sm:text-2xl print:text-xl font-black text-[#8097ff] print:text-blue-600 mt-0.5">
                     {reportData.periodTitle}
                   </div>
-                  <div className="text-[10px] text-white/40 print:text-gray-400">
+                  <div className="text-[10px] text-white/40 print:text-gray-400 mt-0.5">
                     {lang === 'fr' ? 'Émis le :' : 'Erstellt am:'} {new Date().toLocaleDateString(lang === 'fr' ? 'fr-FR' : 'de-DE')}
                   </div>
                 </div>
@@ -493,27 +493,29 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
 
               {/* TOP 4 EXECUTIVE KPI CARDS */}
               <div>
-                <h3 className="text-[11px] font-bold uppercase tracking-wider text-white/40 print:text-gray-500 mb-2 flex items-center gap-1.5">
-                  <Sparkles size={13} className="text-[#8097ff]" />
+                <h3 className="text-xs print:text-[11px] font-bold uppercase tracking-wider text-white/40 print:text-gray-500 mb-2.5 flex items-center gap-1.5">
+                  <Sparkles size={14} className="text-[#8097ff]" />
                   {lang === 'fr' ? 'Indicateurs Clés de Performance (KPIs)' : 'Kern-Leistungsdaten (Executive Summary)'}
                 </h3>
 
-                <div className="grid grid-cols-2 lg:grid-cols-4 print:grid-cols-4 gap-2.5 print:gap-2">
+                <div className="grid grid-cols-2 lg:grid-cols-4 print:grid-cols-4 gap-3 print:gap-2.5">
                   
                   {/* KPI 1: Vergebene Stempel */}
-                  <div className="p-3 print:p-2 rounded-xl bg-white/[0.03] border border-white/10 print:bg-gray-50 print:border-gray-200">
-                    <div className="flex items-center justify-between text-white/50 print:text-gray-500 mb-0.5">
-                      <span className="text-[11px] print:text-[10px] font-medium">{lang === 'fr' ? 'Tampons Distribués' : 'Vergebene Stempel'}</span>
-                      <Award size={13} className="text-[#8097ff]" />
+                  <div className="p-3.5 print:p-3 rounded-2xl bg-white/[0.03] border border-white/10 print:bg-gray-50 print:border-gray-200 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between text-white/60 print:text-gray-500 mb-1">
+                        <span className="text-xs print:text-[11px] font-semibold">{lang === 'fr' ? 'Tampons Distribués' : 'Vergebene Stempel'}</span>
+                        <Award size={16} className="text-[#8097ff]" />
+                      </div>
+                      <div className="text-2xl sm:text-3xl print:text-2xl font-black text-white print:text-black tracking-tight">
+                        {reportData.summary.stampsGiven}
+                      </div>
                     </div>
-                    <div className="text-xl sm:text-2xl print:text-xl font-black text-white print:text-black">
-                      {reportData.summary.stampsGiven}
-                    </div>
-                    <div className="mt-0.5 text-[10px] print:text-[9px] flex items-center gap-1">
+                    <div className="mt-2 text-[11px] print:text-[10px] flex items-center gap-1">
                       {reportData.summary.stampsGrowthPercent !== null ? (
                         reportData.summary.stampsGrowthPercent >= 0 ? (
                           <span className="text-emerald-400 print:text-emerald-600 font-bold flex items-center">
-                            <TrendingUp size={11} className="mr-0.5" /> +{reportData.summary.stampsGrowthPercent}%
+                            <TrendingUp size={12} className="mr-0.5" /> +{reportData.summary.stampsGrowthPercent}%
                           </span>
                         ) : (
                           <span className="text-rose-400 print:text-rose-600 font-bold flex items-center">
@@ -532,43 +534,49 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
                   </div>
 
                   {/* KPI 2: Neue Kunden */}
-                  <div className="p-3 print:p-2 rounded-xl bg-white/[0.03] border border-white/10 print:bg-gray-50 print:border-gray-200">
-                    <div className="flex items-center justify-between text-white/50 print:text-gray-500 mb-0.5">
-                      <span className="text-[11px] print:text-[10px] font-medium">{lang === 'fr' ? 'Nouveaux Clients' : 'Neue Stammkunden'}</span>
-                      <Users size={13} className="text-emerald-400" />
+                  <div className="p-3.5 print:p-3 rounded-2xl bg-white/[0.03] border border-white/10 print:bg-gray-50 print:border-gray-200 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between text-white/60 print:text-gray-500 mb-1">
+                        <span className="text-xs print:text-[11px] font-semibold">{lang === 'fr' ? 'Nouveaux Clients' : 'Neue Stammkunden'}</span>
+                        <Users size={16} className="text-emerald-400" />
+                      </div>
+                      <div className="text-2xl sm:text-3xl print:text-2xl font-black text-emerald-400 print:text-emerald-600 tracking-tight">
+                        +{reportData.summary.newCustomersInPeriod}
+                      </div>
                     </div>
-                    <div className="text-xl sm:text-2xl print:text-xl font-black text-emerald-400 print:text-emerald-600">
-                      +{reportData.summary.newCustomersInPeriod}
-                    </div>
-                    <div className="mt-0.5 text-[10px] print:text-[9px] text-white/50 print:text-gray-500">
+                    <div className="mt-2 text-[11px] print:text-[10px] text-white/60 print:text-gray-600">
                       {lang === 'fr' ? 'Total :' : 'Gesamt:'} <span className="font-bold text-white print:text-black">{reportData.summary.totalCustomersToDate}</span> {lang === 'fr' ? 'porteurs' : 'Karten'}
                     </div>
                   </div>
 
                   {/* KPI 3: Prämien eingelöst */}
-                  <div className="p-3 print:p-2 rounded-xl bg-white/[0.03] border border-white/10 print:bg-gray-50 print:border-gray-200">
-                    <div className="flex items-center justify-between text-white/50 print:text-gray-500 mb-0.5">
-                      <span className="text-[11px] print:text-[10px] font-medium">{lang === 'fr' ? 'Cadeaux Récupérés' : 'Prämien Eingelöst'}</span>
-                      <Gift size={13} className="text-amber-400" />
+                  <div className="p-3.5 print:p-3 rounded-2xl bg-white/[0.03] border border-white/10 print:bg-gray-50 print:border-gray-200 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between text-white/60 print:text-gray-500 mb-1">
+                        <span className="text-xs print:text-[11px] font-semibold">{lang === 'fr' ? 'Cadeaux Récupérés' : 'Prämien Eingelöst'}</span>
+                        <Gift size={16} className="text-amber-400" />
+                      </div>
+                      <div className="text-2xl sm:text-3xl print:text-2xl font-black text-amber-400 print:text-amber-600 tracking-tight">
+                        {reportData.summary.rewardsRedeemed}
+                      </div>
                     </div>
-                    <div className="text-xl sm:text-2xl print:text-xl font-black text-amber-400 print:text-amber-600">
-                      {reportData.summary.rewardsRedeemed}
-                    </div>
-                    <div className="mt-0.5 text-[10px] print:text-[9px] text-white/50 print:text-gray-500">
+                    <div className="mt-2 text-[11px] print:text-[10px] text-white/60 print:text-gray-600">
                       {lang === 'fr' ? 'Objectif :' : 'Ziel:'} {merchant?.stamp_goal || 10} {lang === 'fr' ? 'tampons' : 'Stempel'}
                     </div>
                   </div>
 
                   {/* KPI 4: Kundenkontakte / ROI */}
-                  <div className="p-3 print:p-2 rounded-xl bg-white/[0.03] border border-white/10 print:bg-gray-50 print:border-gray-200">
-                    <div className="flex items-center justify-between text-white/50 print:text-gray-500 mb-0.5">
-                      <span className="text-[11px] print:text-[10px] font-medium">{lang === 'fr' ? 'Visites Générées' : 'Ladenbesuche (ROI)'}</span>
-                      <Store size={13} className="text-purple-400" />
+                  <div className="p-3.5 print:p-3 rounded-2xl bg-white/[0.03] border border-white/10 print:bg-gray-50 print:border-gray-200 flex flex-col justify-between">
+                    <div>
+                      <div className="flex items-center justify-between text-white/60 print:text-gray-500 mb-1">
+                        <span className="text-xs print:text-[11px] font-semibold">{lang === 'fr' ? 'Visites Générées' : 'Ladenbesuche (ROI)'}</span>
+                        <Store size={16} className="text-purple-400" />
+                      </div>
+                      <div className="text-2xl sm:text-3xl print:text-2xl font-black text-purple-400 print:text-purple-600 tracking-tight">
+                        ~{reportData.summary.estimatedStoreVisits}
+                      </div>
                     </div>
-                    <div className="text-xl sm:text-2xl print:text-xl font-black text-purple-400 print:text-purple-600">
-                      ~{reportData.summary.estimatedStoreVisits}
-                    </div>
-                    <div className="mt-0.5 text-[10px] print:text-[9px] text-white/50 print:text-gray-500">
+                    <div className="mt-2 text-[11px] print:text-[10px] text-white/60 print:text-gray-600">
                       {lang === 'fr' ? 'Visites réelles' : 'Nachweisbare Besuche'}
                     </div>
                   </div>
@@ -577,25 +585,25 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
               </div>
 
               {/* DETAILED VISUAL BREAKDOWN */}
-              <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-3 print:gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 print:grid-cols-2 gap-4 print:gap-3">
                 
                 {/* Wochentage Verteilung */}
-                <div className="p-3 print:p-2 rounded-xl bg-white/[0.02] border border-white/10 print:bg-gray-50 print:border-gray-200">
-                  <h4 className="text-[11px] print:text-[10px] font-bold uppercase tracking-wider text-white/50 print:text-gray-600 mb-1.5 flex items-center gap-1.5">
-                    <Calendar size={12} className="text-[#8097ff]" />
+                <div className="p-4 print:p-3.5 rounded-2xl bg-white/[0.02] border border-white/10 print:bg-gray-50 print:border-gray-200">
+                  <h4 className="text-xs print:text-[11px] font-bold uppercase tracking-wider text-white/60 print:text-gray-700 mb-2 flex items-center gap-1.5">
+                    <Calendar size={13} className="text-[#8097ff]" />
                     {lang === 'fr' ? 'Activité par Jour de la Semaine' : 'Aktivität nach Wochentag'}
                   </h4>
 
-                  <div className="space-y-0.5">
+                  <div className="space-y-1">
                     {reportData.weekdayDistribution.map((item: any, idx: number) => {
                       const pct = maxWeekdayCount > 0 ? (item.count / maxWeekdayCount) * 100 : 0;
                       return (
-                        <div key={idx} className="flex items-center gap-2 text-[10px] print:text-[9px]">
+                        <div key={idx} className="flex items-center gap-2.5 text-xs print:text-[10px]">
                           <span className="w-6 font-bold text-white/70 print:text-gray-700">{item.day}</span>
-                          <div className="flex-1 h-1.5 bg-white/5 print:bg-gray-200 rounded-full overflow-hidden">
+                          <div className="flex-1 h-2 bg-white/5 print:bg-gray-200 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-gradient-to-r from-[#8097ff] to-blue-500 print:bg-blue-600 rounded-full" 
-                              style={{ width: `${Math.max(pct, item.count > 0 ? 6 : 0)}%` }}
+                              style={{ width: `${Math.max(pct, item.count > 0 ? 8 : 0)}%` }}
                             />
                           </div>
                           <span className="w-6 text-right font-extrabold text-white print:text-black">
@@ -608,25 +616,25 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
                 </div>
 
                 {/* Tageszeiten (Peak Hours) */}
-                <div className="p-3 print:p-2 rounded-xl bg-white/[0.02] border border-white/10 print:bg-gray-50 print:border-gray-200">
-                  <h4 className="text-[11px] print:text-[10px] font-bold uppercase tracking-wider text-white/50 print:text-gray-600 mb-1.5 flex items-center gap-1.5">
-                    <Clock size={12} className="text-amber-400" />
+                <div className="p-4 print:p-3.5 rounded-2xl bg-white/[0.02] border border-white/10 print:bg-gray-50 print:border-gray-200 flex flex-col justify-between">
+                  <h4 className="text-xs print:text-[11px] font-bold uppercase tracking-wider text-white/60 print:text-gray-700 mb-2 flex items-center gap-1.5">
+                    <Clock size={13} className="text-amber-400" />
                     {lang === 'fr' ? 'Moments Forts (Peak Hours)' : 'Beliebteste Tageszeiten (Peak Hours)'}
                   </h4>
 
-                  <div className="space-y-1">
+                  <div className="space-y-1.5 flex-1 flex flex-col justify-around">
                     {reportData.hourlyDistribution.map((item: any, idx: number) => {
                       const pct = maxHourlyCount > 0 ? (item.count / maxHourlyCount) * 100 : 0;
                       return (
                         <div key={idx} className="space-y-0.5">
-                          <div className="flex items-center justify-between text-[10px] print:text-[9px]">
+                          <div className="flex items-center justify-between text-xs print:text-[10px]">
                             <span className="text-white/70 print:text-gray-700 font-medium">{item.label}</span>
                             <span className="font-extrabold text-white print:text-black">{item.count} {lang === 'fr' ? 'tampons' : 'Stempel'}</span>
                           </div>
-                          <div className="h-1.5 bg-white/5 print:bg-gray-200 rounded-full overflow-hidden">
+                          <div className="h-2 bg-white/5 print:bg-gray-200 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-gradient-to-r from-amber-400 to-orange-500 print:bg-amber-500 rounded-full"
-                              style={{ width: `${Math.max(pct, item.count > 0 ? 6 : 0)}%` }}
+                              style={{ width: `${Math.max(pct, item.count > 0 ? 8 : 0)}%` }}
                             />
                           </div>
                         </div>
@@ -637,30 +645,30 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
 
               </div>
 
-              {/* STAFF LEADERBOARD */}
-              {reportData.staffPerformance && reportData.staffPerformance.length > 0 && (
-                <div className="p-3 print:p-2 rounded-xl bg-white/[0.02] border border-white/10 print:bg-gray-50 print:border-gray-200">
-                  <h4 className="text-[11px] print:text-[10px] font-bold uppercase tracking-wider text-white/50 print:text-gray-600 mb-1.5 flex items-center gap-1.5">
-                    <Users size={12} className="text-emerald-400" />
+              {/* STAFF LEADERBOARD OR PROGRAM HEALTH HIGHLIGHTS */}
+              {reportData.staffPerformance && reportData.staffPerformance.length > 0 ? (
+                <div className="p-4 print:p-3.5 rounded-2xl bg-white/[0.02] border border-white/10 print:bg-gray-50 print:border-gray-200">
+                  <h4 className="text-xs print:text-[11px] font-bold uppercase tracking-wider text-white/60 print:text-gray-700 mb-2 flex items-center gap-1.5">
+                    <Users size={13} className="text-emerald-400" />
                     {lang === 'fr' ? "Performance de l'Équipe" : 'Team- & Mitarbeiter-Leistung'}
                   </h4>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-3 print:grid-cols-3 gap-2 print:gap-1.5">
+                  <div className="grid grid-cols-2 sm:grid-cols-3 print:grid-cols-3 gap-2.5 print:gap-2">
                     {reportData.staffPerformance.slice(0, 6).map((staff: any, idx: number) => (
-                      <div key={idx} className="p-1.5 rounded-lg bg-white/[0.03] print:bg-white border border-white/5 print:border-gray-200 flex items-center justify-between">
-                        <div className="flex items-center gap-1.5">
-                          <div className="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[9px]">
+                      <div key={idx} className="p-2.5 print:p-2 rounded-xl bg-white/[0.03] print:bg-white border border-white/5 print:border-gray-200 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[10px]">
                             {staff.name.charAt(0)}
                           </div>
                           <div>
-                            <div className="text-[10px] print:text-[9px] font-bold text-white print:text-black truncate max-w-[70px]">{staff.name}</div>
-                            <div className="text-[8px] text-white/40 print:text-gray-500">
+                            <div className="text-[11px] print:text-[10px] font-bold text-white print:text-black truncate max-w-[80px]">{staff.name}</div>
+                            <div className="text-[9px] text-white/40 print:text-gray-500">
                               {staff.redeems} {lang === 'fr' ? 'cadeaux' : 'Prämien'}
                             </div>
                           </div>
                         </div>
                         <div className="text-right">
-                          <div className="text-xs font-extrabold text-[#8097ff] print:text-blue-600">
+                          <div className="text-sm print:text-xs font-black text-[#8097ff] print:text-blue-600">
                             {staff.stamps}
                           </div>
                           <div className="text-[8px] text-white/40 print:text-gray-400">
@@ -671,30 +679,70 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
                     ))}
                   </div>
                 </div>
+              ) : (
+                /* FALLBACK: PROGRAM HIGHLIGHTS (When staff data is empty, fills page with actionable metrics) */
+                <div className="p-4 print:p-3.5 rounded-2xl bg-white/[0.02] border border-white/10 print:bg-gray-50 print:border-gray-200">
+                  <h4 className="text-xs print:text-[11px] font-bold uppercase tracking-wider text-white/60 print:text-gray-700 mb-2 flex items-center gap-1.5">
+                    <Sparkles size={13} className="text-emerald-400" />
+                    {lang === 'fr' ? 'Configuration & Fonctionnalités Actives' : 'Treueprogramm-Status & Bindungspotenzial'}
+                  </h4>
+
+                  <div className="grid grid-cols-3 gap-2.5 print:gap-2 text-left">
+                    <div className="p-2.5 print:p-2 rounded-xl bg-white/[0.03] print:bg-white border border-white/5 print:border-gray-200">
+                      <div className="flex items-center gap-1.5 text-[11px] print:text-[10px] font-bold text-white print:text-black">
+                        <Smartphone size={13} className="text-[#8097ff]" />
+                        <span>{lang === 'fr' ? 'Wallet Digital' : 'Digital Wallet'}</span>
+                      </div>
+                      <p className="text-[9px] text-white/50 print:text-gray-500 mt-1">
+                        {lang === 'fr' ? 'Pass Apple & Google Wallet actifs 24/7' : 'Apple & Google Wallet Karten aktiv'}
+                      </p>
+                    </div>
+
+                    <div className="p-2.5 print:p-2 rounded-xl bg-white/[0.03] print:bg-white border border-white/5 print:border-gray-200">
+                      <div className="flex items-center gap-1.5 text-[11px] print:text-[10px] font-bold text-white print:text-black">
+                        <Gift size={13} className="text-amber-400" />
+                        <span>{merchant?.stamp_goal || 10} {lang === 'fr' ? 'Tampons' : 'Stempel-Ziel'}</span>
+                      </div>
+                      <p className="text-[9px] text-white/50 print:text-gray-500 mt-1">
+                        {lang === 'fr' ? 'Prämie bei Erreichen freigeschaltet' : 'Prämie bei Erreichen der Karte'}
+                      </p>
+                    </div>
+
+                    <div className="p-2.5 print:p-2 rounded-xl bg-white/[0.03] print:bg-white border border-white/5 print:border-gray-200">
+                      <div className="flex items-center gap-1.5 text-[11px] print:text-[10px] font-bold text-white print:text-black">
+                        <Users size={13} className="text-emerald-400" />
+                        <span>{lang === 'fr' ? 'Scanner Caisse' : 'Mitarbeiter-Scan'}</span>
+                      </div>
+                      <p className="text-[9px] text-white/50 print:text-gray-500 mt-1">
+                        {lang === 'fr' ? 'Scan en 1 seconde sans installation' : 'Schneller Scan per Kamera / PIN'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
               )}
 
               {/* INSIGHTS & MARKETING RECOMMENDATION */}
-              <div className="p-3 rounded-xl bg-gradient-to-r from-[#8097ff]/10 via-purple-500/10 to-transparent border border-[#8097ff]/20 print:bg-blue-50/70 print:border-blue-200">
-                <div className="flex items-start gap-2">
-                  <div className="p-1 rounded-lg bg-[#8097ff]/20 text-[#8097ff] shrink-0 mt-0.5">
-                    <Sparkles size={14} />
+              <div className="p-4 print:p-3.5 rounded-2xl bg-gradient-to-r from-[#8097ff]/10 via-purple-500/10 to-transparent border border-[#8097ff]/20 print:bg-blue-50/70 print:border-blue-200">
+                <div className="flex items-start gap-3">
+                  <div className="p-1.5 rounded-xl bg-[#8097ff]/20 text-[#8097ff] shrink-0 mt-0.5">
+                    <Sparkles size={16} />
                   </div>
                   <div>
-                    <h4 className="text-[11px] font-bold text-white print:text-black">
+                    <h4 className="text-xs print:text-[11px] font-bold text-white print:text-black">
                       {lang === 'fr' ? 'Bilan & Conseils Marketif' : 'Marketif Treue Erfolgs-Fazit & Praxistipp'}
                     </h4>
-                    <p className="text-[10px] text-white/70 print:text-gray-700 mt-0.5 leading-relaxed">
+                    <p className="text-xs print:text-[10px] text-white/70 print:text-gray-700 mt-1 leading-relaxed">
                       {lang === 'fr' ? (
                         <>
                           Votre programme compte <strong>{reportData.summary.totalCustomersToDate} clients enregistrés</strong>. 
                           Avec <strong>{reportData.summary.stampsGiven} tampons</strong> et <strong>{reportData.summary.rewardsRedeemed} récompenses</strong> ce mois-ci, 
-                          la fidélité de vos clients est en constante progression. <em>Astuce : Envoyez une notification push ciblée sur les créneaux plus calmes pour booster votre fréquentation !</em>
+                          la fidélité de vos clients est en progression constante. <em>Astuce : Envoyez une notification push ciblée sur les créneaux plus calmes pour booster immédiatement votre fréquentation !</em>
                         </>
                       ) : (
                         <>
                           Dein Treuesystem zählt bereits <strong>{reportData.summary.totalCustomersToDate} registrierte Stammkunden</strong>. 
                           Mit <strong>{reportData.summary.stampsGiven} vergebenen Stempeln</strong> und <strong>{reportData.summary.rewardsRedeemed} eingelösten Prämien</strong> hast du 
-                          deine Kundenbindung spürbar gestärkt. <em>Tipp: Nutze Push-Nachrichten an schwächeren Wochentagen, um zusätzliche Spontanbesuche zu generieren!</em>
+                          deine Kundenbindung spürbar gestärkt. <em>Tipp: Nutze Push-Nachrichten an schwächeren Wochentagen, um zusätzliche Spontanbesuche und Wiederkäufe zu generieren!</em>
                         </>
                       )}
                     </p>
@@ -703,7 +751,7 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
               </div>
 
               {/* FOOTER & SEAL */}
-              <div className="pt-2.5 border-t border-white/10 print:border-gray-200 flex items-center justify-between gap-4 text-[9px] text-white/40 print:text-gray-500">
+              <div className="pt-3 border-t border-white/10 print:border-gray-200 flex items-center justify-between gap-4 text-[10px] print:text-[9px] text-white/40 print:text-gray-500">
                 <div>
                   <div className="font-bold text-white/70 print:text-gray-800">Marketif Treue System</div>
                   <div>{lang === 'fr' ? 'Plateforme digitale de fidélisation client' : 'Digitale Kundenkarten & Kundenbindung'} · marketif.de</div>
