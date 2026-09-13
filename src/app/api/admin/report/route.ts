@@ -260,13 +260,24 @@ export async function POST(req: Request) {
 
     // 11. Optional: Send Email Report if action === 'send_email'
     if (action === 'send_email') {
-      const targetEmail = merchant.contact_email;
+      const targetEmail = body.recipientEmail || merchant.contact_email || merchant.push_settings?.contact_email;
       if (!targetEmail) {
-        return NextResponse.json({ error: 'Keine E-Mail-Adresse für diesen Händler hinterlegt.' }, { status: 400 });
+        return NextResponse.json({ 
+          error: lang === 'fr' ? 'Aucune adresse e-mail renseignée pour ce commerçant.' : 'Keine E-Mail-Adresse für diesen Händler hinterlegt.' 
+        }, { status: 400 });
       }
 
-      const greeting = merchant.contact_name 
-        ? (lang === 'fr' ? `Bonjour ${merchant.contact_name}` : `Hallo ${merchant.contact_name}`)
+      // If a custom email was provided, automatically persist it into push_settings
+      if (body.recipientEmail && body.recipientEmail !== merchant.push_settings?.contact_email) {
+        const currentPush = merchant.push_settings || {};
+        await adminDb.from('merchants_loyality').update({
+          push_settings: { ...currentPush, contact_email: body.recipientEmail }
+        }).eq('id', merchant.id);
+      }
+
+      const contactPerson = merchant.contact_name || merchant.push_settings?.contact_name;
+      const greeting = contactPerson 
+        ? (lang === 'fr' ? `Bonjour ${contactPerson}` : `Hallo ${contactPerson}`)
         : (lang === 'fr' ? `Bonjour ${merchant.name}` : `Hallo ${merchant.name}`);
 
       const subject = lang === 'fr'

@@ -32,11 +32,18 @@ export default function ReportModal({ merchant, onClose, adminLang, isMerchantVi
 
   const [sendingEmail, setSendingEmail] = useState<boolean>(false);
   const [emailSuccess, setEmailSuccess] = useState<boolean>(false);
+  const [showEmailDialog, setShowEmailDialog] = useState<boolean>(false);
+  const [recipientEmail, setRecipientEmail] = useState<string>(
+    merchant?.contact_email || merchant?.push_settings?.contact_email || ''
+  );
+  const [emailInput, setEmailInput] = useState<string>(
+    merchant?.contact_email || merchant?.push_settings?.contact_email || ''
+  );
 
   const monthNamesDe = ['Januar', 'Februar', 'März', 'April', 'Mai', 'Juni', 'Juli', 'August', 'September', 'Oktober', 'November', 'Dezember'];
   const monthNamesFr = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
-  const fetchReport = async (action?: 'send_email') => {
+  const fetchReport = async (action?: 'send_email', emailTarget?: string) => {
     if (!merchant?.id) return;
     if (action === 'send_email') {
       setSendingEmail(true);
@@ -51,6 +58,8 @@ export default function ReportModal({ merchant, onClose, adminLang, isMerchantVi
         ? localStorage.getItem(`auth_${merchant.slug}`) 
         : localStorage.getItem('admin_auth');
 
+      const emailToSend = emailTarget || recipientEmail || emailInput || merchant.contact_email || merchant.push_settings?.contact_email;
+
       const res = await fetch('/api/admin/report', {
         method: 'POST',
         headers: {
@@ -64,6 +73,7 @@ export default function ReportModal({ merchant, onClose, adminLang, isMerchantVi
           month: selectedMonth,
           lang,
           action,
+          recipientEmail: emailToSend,
         })
       });
 
@@ -71,6 +81,10 @@ export default function ReportModal({ merchant, onClose, adminLang, isMerchantVi
       if (res.ok && json.success) {
         setReportData(json.data);
         if (action === 'send_email') {
+          if (emailToSend) {
+            setRecipientEmail(emailToSend);
+          }
+          setShowEmailDialog(false);
           setEmailSuccess(true);
           setTimeout(() => setEmailSuccess(false), 5000);
         }
@@ -82,6 +96,15 @@ export default function ReportModal({ merchant, onClose, adminLang, isMerchantVi
     } finally {
       setLoading(false);
       setSendingEmail(false);
+    }
+  };
+
+  const handleEmailClick = () => {
+    const effectiveEmail = recipientEmail || merchant.contact_email || merchant.push_settings?.contact_email;
+    if (!effectiveEmail) {
+      setShowEmailDialog(true);
+    } else {
+      fetchReport('send_email', effectiveEmail);
     }
   };
 
@@ -118,7 +141,7 @@ export default function ReportModal({ merchant, onClose, adminLang, isMerchantVi
 
   const handleSendWhatsApp = () => {
     if (!reportData) return;
-    let phone = (merchant?.contact_phone || '').replace(/[^0-9+]/g, '');
+    let phone = (merchant?.contact_phone || merchant?.push_settings?.contact_phone || '').replace(/[^0-9+]/g, '');
     if (phone.startsWith('+')) {
       phone = phone.substring(1);
     } else if (phone.startsWith('00')) {
@@ -128,8 +151,9 @@ export default function ReportModal({ merchant, onClose, adminLang, isMerchantVi
       phone = defaultPrefix + phone.substring(1);
     }
 
-    const greeting = merchant?.contact_name
-      ? (lang === 'fr' ? `Bonjour ${merchant.contact_name}` : `Hallo ${merchant.contact_name}`)
+    const contactPerson = merchant?.contact_name || merchant?.push_settings?.contact_name;
+    const greeting = contactPerson
+      ? (lang === 'fr' ? `Bonjour ${contactPerson}` : `Hallo ${contactPerson}`)
       : (lang === 'fr' ? `Bonjour ${merchant.name}` : `Hallo ${merchant.name}`);
 
     const summary = reportData.summary;
@@ -151,7 +175,10 @@ Voici votre *Rapport de Performance Marketif Treue* pour la période :
 
 💡 *Impact :* Votre programme de fidélité renforce chaque jour la fidélité de vos clients dans votre magasin !
 
-_Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`
+🔗 *Votre Espace Commerçant :*
+https://treue.marketif.de/dashboard/${merchant.slug}
+
+_Marketif Support_`
       : `${greeting},
 
 hier ist dein offizieller *Marketif Treue Leistungsbericht* für den Zeitraum:
@@ -165,7 +192,10 @@ hier ist dein offizieller *Marketif Treue Leistungsbericht* für den Zeitraum:
 
 💡 *Fazit :* Dein digitales Treuesystem sorgt für stetig wiederkehrende Kunden in deinem Geschäft!
 
-_Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
+🔗 *Dein Händler-Dashboard :*
+https://treue.marketif.de/dashboard/${merchant.slug}
+
+_Marketif Support_`;
 
     if (!phone) {
       alert(lang === 'fr' ? 'Aucun numéro de téléphone enregistré pour ce commerçant.' : 'Keine Telefonnummer für diesen Händler hinterlegt.');
@@ -338,7 +368,7 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
             {/* Email */}
             <button
               type="button"
-              onClick={() => fetchReport('send_email')}
+              onClick={handleEmailClick}
               disabled={loading || sendingEmail}
               className="flex items-center gap-1.5 px-3 py-2 bg-[#8097ff]/20 hover:bg-[#8097ff]/30 text-[#8097ff] border border-[#8097ff]/30 rounded-xl text-xs font-bold transition-all disabled:opacity-50"
               title="Per E-Mail an Händler senden"
@@ -357,6 +387,54 @@ _Marketif Support · https://treue.marketif.de/dashboard/${merchant.slug}_`;
             </button>
           </div>
         </div>
+
+        {/* EMAIL INPUT DIALOG (NO PRINT) */}
+        {showEmailDialog && (
+          <div className="p-4 bg-[#1e1e2d] border-b border-[#8097ff]/30 flex flex-wrap items-center justify-between gap-3 no-print animate-in fade-in">
+            <div className="flex items-center gap-2">
+              <Mail size={18} className="text-[#8097ff]" />
+              <div>
+                <p className="text-xs font-bold text-white">
+                  {lang === 'fr' ? 'Envoyer le rapport par E-Mail' : 'Bericht per E-Mail versenden'}
+                </p>
+                <p className="text-[11px] text-white/60">
+                  {lang === 'fr' ? 'Entrez l’adresse e-mail du commerçant :' : 'Empfänger-E-Mail des Händlers eingeben:'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 flex-1 sm:flex-initial sm:min-w-[340px]">
+              <input
+                type="email"
+                value={emailInput}
+                onChange={(e) => setEmailInput(e.target.value)}
+                placeholder="haendler@beispiel.de"
+                className="flex-1 bg-black/60 border border-white/20 rounded-xl px-3 py-1.5 text-xs text-white placeholder:text-white/40 focus:outline-none focus:border-[#8097ff]"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  if (!emailInput || !emailInput.includes('@')) {
+                    alert(lang === 'fr' ? 'Veuillez saisir une adresse e-mail valide.' : 'Bitte eine gültige E-Mail-Adresse eingeben.');
+                    return;
+                  }
+                  fetchReport('send_email', emailInput);
+                }}
+                disabled={sendingEmail}
+                className="px-3 py-1.5 bg-[#8097ff] hover:bg-[#6c85ff] text-black font-bold text-xs rounded-xl transition-all disabled:opacity-50 flex items-center gap-1.5 whitespace-nowrap"
+              >
+                {sendingEmail ? <RefreshCw size={14} className="animate-spin" /> : <Mail size={14} />}
+                <span>{lang === 'fr' ? 'Envoyer' : 'Senden'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowEmailDialog(false)}
+                className="p-1.5 text-white/50 hover:text-white rounded-lg hover:bg-white/10"
+              >
+                <X size={16} />
+              </button>
+            </div>
+          </div>
+        )}
 
         {/* TIMEFRAME SELECTOR TOOLBAR (NO PRINT) */}
         <div className="p-4 bg-[#151515] border-b border-white/5 flex flex-wrap items-center justify-between gap-3 no-print">
