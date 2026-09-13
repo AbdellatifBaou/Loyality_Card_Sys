@@ -1854,7 +1854,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                   style={{ backgroundColor: primaryColor }}
                 >
                   <Printer size={15} />
-                  <span>{lang === 'fr' ? 'Aufsteller drucken' : 'Tischaufsteller drucken'}</span>
+                  <span>{lang === 'fr' ? 'Imprimer les présentoirs' : 'Tischaufsteller drucken'}</span>
                 </button>
               </div>
             </div>
