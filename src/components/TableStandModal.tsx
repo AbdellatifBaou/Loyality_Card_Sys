@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { 
-  X, Printer, Download, Sparkles, Smartphone, Award, 
+  X, Printer, Download, Smartphone, Award, 
   Store, CheckCircle2, ChevronRight, MessageCircle, Layers, Palette, Hash
 } from 'lucide-react';
 
@@ -17,7 +17,7 @@ export default function TableStandModal({ merchant, onClose, lang: defaultLang =
   
   // Customization state
   const [format, setFormat] = useState<'a6' | 'a5' | 'tent'>('tent'); // tent = A4 folded into 2-sided table tent
-  const [theme, setTheme] = useState<'white' | 'dark' | 'brand'>('white');
+  const [theme, setTheme] = useState<'white' | 'dark'>('white');
   const [showTableNumber, setShowTableNumber] = useState<boolean>(false);
   const [tableNumber, setTableNumber] = useState<string>('1');
   const [customHeadline, setCustomHeadline] = useState<string>('');
@@ -58,31 +58,19 @@ export default function TableStandModal({ merchant, onClose, lang: defaultLang =
   // Card Content Component to render on one or both sides (for tent fold)
   const TableStandCard = ({ isBackSide = false }: { isBackSide?: boolean }) => {
     const isDark = theme === 'dark';
-    const isBrand = theme === 'brand';
 
-    const bgClass = isBrand
-      ? 'bg-gradient-to-br from-[#1a1a1a] via-[#111111] to-[#0a0a0a] text-white border-white/20'
-      : isDark
+    const bgClass = isDark
       ? 'bg-[#111111] text-white border-white/10'
-      : 'bg-white text-gray-900 border-gray-200 shadow-sm';
+      : 'bg-white text-gray-900 border-gray-300 shadow-sm';
 
-    const innerCardBg = isBrand
-      ? 'bg-white/5 border-white/10'
-      : isDark
+    const innerCardBg = isDark
       ? 'bg-white/5 border-white/10'
       : 'bg-gray-50 border-gray-200';
 
     return (
       <div 
-        className={`w-full h-full flex flex-col justify-between p-6 sm:p-8 rounded-3xl border ${bgClass} relative overflow-hidden transition-all`}
-        style={isBrand ? { borderColor: `${primaryColor}66` } : {}}
+        className={`w-full h-full flex flex-col justify-between p-6 sm:p-8 rounded-none border ${bgClass} relative overflow-hidden transition-all`}
       >
-        {/* Subtle accent corner glow */}
-        <div 
-          className="absolute -top-16 -right-16 w-36 h-36 rounded-full blur-2xl opacity-20 pointer-events-none"
-          style={{ backgroundColor: primaryColor }}
-        />
-
         {/* Top Header: Merchant Logo / Name & Optional Table Number */}
         <div>
           <div className="flex items-center justify-between gap-3 mb-4">
@@ -91,11 +79,11 @@ export default function TableStandModal({ merchant, onClose, lang: defaultLang =
                 <img 
                   src={merchant.logo_url} 
                   alt={merchant.name} 
-                  className="w-12 h-12 object-contain rounded-xl bg-white/10 p-1 border border-black/10"
+                  className="w-12 h-12 object-contain bg-white/10 p-1 border border-black/10"
                 />
               ) : (
                 <div 
-                  className="w-11 h-11 rounded-xl flex items-center justify-center font-black text-lg text-black shadow-md"
+                  className="w-11 h-11 flex items-center justify-center font-black text-lg text-black shadow-md"
                   style={{ backgroundColor: primaryColor }}
                 >
                   <Store size={22} />
@@ -113,11 +101,11 @@ export default function TableStandModal({ merchant, onClose, lang: defaultLang =
 
             {showTableNumber && tableNumber && (
               <div 
-                className="px-3 py-1 rounded-xl border text-xs font-black tracking-wider flex items-center gap-1 shadow-sm"
+                className="px-3 py-1 border text-xs font-black tracking-wider flex items-center gap-1 shadow-sm"
                 style={{ 
-                  backgroundColor: isDark || isBrand ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
+                  backgroundColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.05)',
                   borderColor: primaryColor,
-                  color: isDark || isBrand ? primaryColor : '#111827'
+                  color: isDark ? primaryColor : '#111827'
                 }}
               >
                 <Hash size={12} style={{ color: primaryColor }} />
@@ -130,7 +118,7 @@ export default function TableStandModal({ merchant, onClose, lang: defaultLang =
           <div className="text-center my-3">
             <h2 
               className="text-xl sm:text-2xl font-black leading-tight tracking-tight mb-1.5"
-              style={{ color: isDark || isBrand ? '#ffffff' : '#111827' }}
+              style={{ color: isDark ? '#ffffff' : '#111827' }}
             >
               {headline}
             </h2>
@@ -140,20 +128,14 @@ export default function TableStandModal({ merchant, onClose, lang: defaultLang =
           </div>
         </div>
 
-        {/* Center: High-Res QR Code */}
+        {/* Center: High-Res Clean QR Code (NO center icon overlay) */}
         <div className="flex flex-col items-center justify-center my-3">
-          <div className="p-3.5 bg-white rounded-3xl shadow-xl border border-black/5 relative group">
+          <div className="p-3 bg-white shadow-md border border-gray-300">
             <img 
               src={qrUrl} 
               alt="Treuekarte QR Code" 
-              className="w-40 h-40 sm:w-48 sm:h-48 object-contain rounded-xl"
+              className="w-40 h-40 sm:w-48 sm:h-48 object-contain"
             />
-            {/* Center Logo/Icon on QR code */}
-            <div 
-              className="absolute inset-0 m-auto w-10 h-10 rounded-xl bg-white shadow-md border border-black/10 flex items-center justify-center pointer-events-none"
-            >
-              <Sparkles size={18} style={{ color: primaryColor }} />
-            </div>
           </div>
           <p className="text-[11px] font-bold mt-2.5 tracking-wide flex items-center gap-1.5 opacity-80">
             <Smartphone size={13} style={{ color: primaryColor }} />
@@ -165,14 +147,13 @@ export default function TableStandModal({ merchant, onClose, lang: defaultLang =
         <div className="space-y-2 mb-2">
           {welcomeBonus > 0 && (
             <div 
-              className="px-3.5 py-2 rounded-2xl flex items-center justify-center gap-2 text-xs font-bold shadow-sm"
+              className="px-3.5 py-2 flex items-center justify-center gap-2 text-xs font-bold shadow-sm"
               style={{ 
                 backgroundColor: `${primaryColor}22`, 
-                color: isDark || isBrand ? primaryColor : '#000000',
+                color: isDark ? primaryColor : '#000000',
                 border: `1px solid ${primaryColor}44`
               }}
             >
-              <Sparkles size={14} />
               <span>
                 {lang === 'fr' 
                   ? `Cadeau de bienvenue : +${welcomeBonus} tampon(s) offert(s) dès l'inscription !` 
@@ -181,10 +162,10 @@ export default function TableStandModal({ merchant, onClose, lang: defaultLang =
             </div>
           )}
 
-          <div className={`p-3 rounded-2xl border ${innerCardBg} flex items-center justify-between gap-3 text-xs`}>
+          <div className={`p-3 border ${innerCardBg} flex items-center justify-between gap-3 text-xs`}>
             <div className="flex items-center gap-2.5">
               <div 
-                className="w-8 h-8 rounded-xl flex items-center justify-center font-black text-black shrink-0 shadow-sm"
+                className="w-8 h-8 flex items-center justify-center font-black text-black shrink-0 shadow-sm"
                 style={{ backgroundColor: primaryColor }}
               >
                 <Award size={16} />
@@ -199,7 +180,7 @@ export default function TableStandModal({ merchant, onClose, lang: defaultLang =
               </div>
             </div>
             <div className="text-right shrink-0">
-              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-mono">
+              <span className="text-[10px] uppercase font-bold px-2 py-0.5 bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-mono">
                 {lang === 'fr' ? '100% Gratuit' : '100% Gratis'}
               </span>
             </div>
@@ -207,7 +188,7 @@ export default function TableStandModal({ merchant, onClose, lang: defaultLang =
         </div>
 
         {/* 3-Step Guide & Wallet Compatibility Badge */}
-        <div className="pt-2 border-t border-black/5 dark:border-white/10">
+        <div className="pt-2 border-t border-black/10 dark:border-white/10">
           <div className="grid grid-cols-3 gap-2 text-center text-[10px] font-semibold opacity-80 mb-2.5">
             <div className="flex flex-col items-center">
               <span className="font-black text-xs" style={{ color: primaryColor }}>1.</span>
@@ -329,7 +310,7 @@ export default function TableStandModal({ merchant, onClose, lang: defaultLang =
         <div className="p-4 sm:p-6 border-b border-white/10 flex flex-wrap items-center justify-between gap-4 no-print bg-[#181818]">
           <div className="flex items-center gap-3">
             <div 
-              className="p-3 rounded-2xl border shadow-md font-bold text-black"
+              className="p-3 rounded-2xl border shadow-md font-bold"
               style={{ backgroundColor: `${primaryColor}22`, borderColor: `${primaryColor}44`, color: primaryColor }}
             >
               <Store size={24} />
@@ -435,7 +416,7 @@ export default function TableStandModal({ merchant, onClose, lang: defaultLang =
             </button>
           </div>
 
-          {/* Theme selector */}
+          {/* Theme selector (Clean Weiß & Dark Luxury) */}
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-white/50 font-medium flex items-center gap-1">
               <Palette size={14} /> {lang === 'fr' ? 'Style :' : 'Design :'}
@@ -453,14 +434,6 @@ export default function TableStandModal({ merchant, onClose, lang: defaultLang =
               className={`px-3 py-1.5 rounded-xl font-bold border transition-all ${theme === 'dark' ? 'bg-white/20 text-white border-white/40' : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10'}`}
             >
               {lang === 'fr' ? 'Noir Luxe' : 'Dark Luxury'}
-            </button>
-            <button
-              type="button"
-              onClick={() => setTheme('brand')}
-              className={`px-3 py-1.5 rounded-xl font-bold border transition-all ${theme === 'brand' ? 'bg-white/20 text-white border-white/40' : 'bg-white/5 text-white/60 border-white/10 hover:bg-white/10'}`}
-              style={theme === 'brand' ? { color: primaryColor, borderColor: primaryColor } : {}}
-            >
-              {lang === 'fr' ? 'Couleur Magasin' : 'Branding'}
             </button>
           </div>
 

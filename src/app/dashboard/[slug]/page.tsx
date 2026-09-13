@@ -6,7 +6,6 @@ import { supabase } from '@/lib/supabase';
 import { PRICING } from '@/lib/pricing';
 import { MERCHANT_DICT } from '@/locales/merchant';
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
-import ReportModal from '@/components/ReportModal';
 import TableStandModal from '@/components/TableStandModal';
 
 export default function MerchantDashboardPage({ params }: { params: Promise<{ slug: string }> }) {
@@ -82,7 +81,6 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   // Stripe Billing State
   const [billingLoading, setBillingLoading] = useState(false);
   const [billingError, setBillingError] = useState('');
-  const [showReportModal, setShowReportModal] = useState(false);
   const [showTableStandModal, setShowTableStandModal] = useState(false);
 
   // Security State
@@ -849,14 +847,6 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
             >
               <Printer size={20} style={{ color: primaryColor }} />
               <span className="hidden sm:inline text-xs font-bold text-white">{lang === 'fr' ? 'Présentoir' : 'Tischaufsteller'}</span>
-            </button>
-            <button 
-              onClick={() => setShowReportModal(true)} 
-              className="px-3.5 py-3 rounded-xl border border-white/10 bg-white/5 text-white/80 hover:bg-white/10 hover:text-white transition-all flex items-center gap-2" 
-              title={lang === 'fr' ? "Rapport de performance" : "Leistungsbericht / Rapport öffnen"}
-            >
-              <BarChart3 size={20} className="text-[#8097ff]" />
-              <span className="hidden sm:inline text-xs font-bold text-white">{lang === 'fr' ? 'Rapport' : 'Bericht'}</span>
             </button>
             <button onClick={exportCSV} className="p-3 rounded-xl border border-white/10 bg-white/5 text-white/60 hover:bg-white/10 transition-all" title="CSV Export">
               <Download size={20} />
@@ -1859,51 +1849,38 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         {/* QR CODES TAB */}
         {activeTab === 'qrcodes' && (
           <div className="space-y-6">
-            {/* Table Stand Feature Card */}
+            {/* Table Stand Feature Card (Compact & Sleek) */}
             <div 
-              className="p-6 sm:p-8 rounded-3xl relative overflow-hidden border transition-all"
-              style={{ 
-                background: 'linear-gradient(135deg, rgba(255,255,255,0.04) 0%, rgba(255,255,255,0.01) 100%)',
-                borderColor: `${primaryColor}44`
-              }}
+              className="p-5 sm:p-6 rounded-3xl relative overflow-hidden border transition-all bg-white/[0.02]"
+              style={{ borderColor: 'rgba(255,255,255,0.08)' }}
             >
-              <div 
-                className="absolute -top-20 -right-20 w-48 h-48 rounded-full blur-3xl opacity-20 pointer-events-none"
-                style={{ backgroundColor: primaryColor }}
-              />
-              <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative z-10">
-                <div className="flex items-start gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 relative z-10">
+                <div className="flex items-center gap-3.5">
                   <div 
-                    className="p-4 rounded-2xl border shadow-lg font-bold shrink-0"
-                    style={{ backgroundColor: `${primaryColor}22`, borderColor: `${primaryColor}44`, color: primaryColor }}
+                    className="p-2.5 rounded-xl border shadow font-bold shrink-0"
+                    style={{ backgroundColor: `${primaryColor}1A`, borderColor: `${primaryColor}33`, color: primaryColor }}
                   >
-                    <Printer size={32} />
+                    <Printer size={20} />
                   </div>
                   <div>
-                    <span 
-                      className="inline-block px-3 py-1 rounded-full text-[11px] font-black uppercase tracking-wider mb-2"
-                      style={{ backgroundColor: `${primaryColor}22`, color: primaryColor }}
-                    >
-                      {lang === 'fr' ? 'Recommandé pour votre magasin' : 'Für Gastro, Friseur & Einzelhandel'}
-                    </span>
-                    <h3 className="text-xl sm:text-2xl font-black text-white tracking-tight">
-                      {lang === 'fr' ? 'Chevalets de Table & Présentoirs Comptoir' : 'Druckfertige Tischaufsteller & Theken-Displays'}
+                    <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
+                      {lang === 'fr' ? 'Chevalets de Table & Présentoirs' : 'Druckfertige Tischaufsteller & Theken-Displays'}
                     </h3>
-                    <p className="text-sm text-white/60 mt-1 max-w-xl leading-relaxed">
+                    <p className="text-xs text-white/50 mt-0.5 max-w-lg leading-normal">
                       {lang === 'fr' 
-                        ? 'Générez en 1 clic des chevalets pliables (A4) ou fiches A6/A5 avec votre logo, numéro de table et QR code pour inciter vos clients à rejoindre le programme.'
-                        : 'Erstelle mit 1 Klick druckfertige Tischaufsteller (A6, A5 oder faltbare A4 Tischzelte) mit deinem Logo, Tischnummer und Treue-QR-Code.'}
+                        ? 'Générez en 1 clic des chevalets pliables ou fiches A6/A5 avec votre logo, numéro de table et QR code.'
+                        : 'Erstelle mit 1 Klick druckfertige Tischaufsteller (A6, A5 oder faltbare A4 Tischzelte) mit deinem Logo & Treue-QR-Code.'}
                     </p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setShowTableStandModal(true)}
-                  className="w-full md:w-auto px-6 py-4 rounded-2xl font-black text-black transition-all hover:scale-105 active:scale-95 shadow-xl flex items-center justify-center gap-2 whitespace-nowrap shrink-0"
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl font-bold text-black transition-all hover:scale-105 active:scale-95 shadow-md flex items-center justify-center gap-2 text-xs whitespace-nowrap shrink-0"
                   style={{ backgroundColor: primaryColor }}
                 >
-                  <Printer size={18} />
-                  <span>{lang === 'fr' ? 'Configurer & Imprimer' : 'Tischaufsteller drucken'}</span>
+                  <Printer size={15} />
+                  <span>{lang === 'fr' ? 'Aufsteller drucken' : 'Tischaufsteller drucken'}</span>
                 </button>
               </div>
             </div>
