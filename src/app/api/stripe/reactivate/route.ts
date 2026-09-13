@@ -92,7 +92,7 @@ export async function POST(req: Request) {
       },
     ];
 
-    const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {
+    const subscriptionData: any = {
       metadata: {
         merchant_id: merchant.id,
         plan: plan,

@@ -33,7 +33,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Kunde nicht gefunden' }, { status: 404 });
     }
 
-    const merchant = customer.merchants_loyality;
+    const merchant = (customer.merchants_loyality as any);
     if (merchant.is_active === false) {
       return NextResponse.json({ error: 'Dieser Händler ist derzeit deaktiviert' }, { status: 403 });
     }

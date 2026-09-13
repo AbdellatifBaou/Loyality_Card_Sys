@@ -541,7 +541,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       const resData = await response.json();
       
       if (!response.ok || !resData.success) {
-        showToast((t.errorGeneric || 'Fehler: ') + ' ' + (resData.error || ''), 'error');
+        showToast(((t as any).errorGeneric || 'Fehler: ') + ' ' + (resData.error || ''), 'error');
       } else if (resData.data) {
         setStaff(prev => [...prev, resData.data[0]]);
         setNewStaffName('');
@@ -1562,13 +1562,13 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       <Star className="w-4 h-4 text-yellow-400" />
                     </div>
                     <div>
-                      <h3 className="text-white font-medium">{t.welcomeBonusTitle || 'Willkommens-Bonus'}</h3>
-                      <p className="text-xs text-white/50">{t.welcomeBonusDesc || 'Start-Stempel für neue Kunden'}</p>
+                      <h3 className="text-white font-medium">{(t as any).welcomeBonusTitle || 'Willkommens-Bonus'}</h3>
+                      <p className="text-xs text-white/50">{(t as any).welcomeBonusDesc || 'Start-Stempel für neue Kunden'}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-white/60 mb-1">{t.bonusStampsLabel || 'Anzahl der Gratis-Stempel'}</label>
+                      <label className="block text-xs font-medium text-white/60 mb-1">{(t as any).bonusStampsLabel || 'Anzahl der Gratis-Stempel'}</label>
                       <input 
                         type="number" 
                         min="0"
@@ -1588,13 +1588,13 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       <Star className="w-4 h-4 text-purple-400" />
                     </div>
                     <div>
-                      <h3 className="text-white font-medium">{t.heroImageTitle || 'Kundenkarten-Design (Hintergrundbild)'}</h3>
-                      <p className="text-xs text-white/50">{t.heroImageDesc || 'Lade ein Titelbild für Apple/Google Wallet hoch'}</p>
+                      <h3 className="text-white font-medium">{(t as any).heroImageTitle || 'Kundenkarten-Design (Hintergrundbild)'}</h3>
+                      <p className="text-xs text-white/50">{(t as any).heroImageDesc || 'Lade ein Titelbild für Apple/Google Wallet hoch'}</p>
                     </div>
                   </div>
                   <div className="grid grid-cols-1 gap-4">
                     <div>
-                      <label className="block text-xs font-medium text-white/60 mb-2">{t.heroImageUpload || 'Bild hochladen'}</label>
+                      <label className="block text-xs font-medium text-white/60 mb-2">{(t as any).heroImageUpload || 'Bild hochladen'}</label>
                       <input 
                         type="file"
                         accept="image/*"
