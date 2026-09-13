@@ -749,20 +749,41 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                 <p className="font-semibold leading-relaxed">{authError}</p>
                 {(authError.toLowerCase().includes('gesperrt') || authError.toLowerCase().includes('verrouill')) && (
                   <div className="pt-2 flex flex-col gap-2">
-                    <a 
-                      href={`https://wa.me/212666979312?text=${encodeURIComponent(`Hallo Marketif Support, unser Händler-Account (${slug}) wurde nach 5 Fehlversuchen gesperrt. Bitte schicken Sie uns das Passwort / die PIN zum Entsperren.`)}`}
-                      target="_blank" 
-                      rel="noreferrer"
-                      className="w-full py-2.5 px-4 bg-[#25D366] hover:bg-[#20bd5a] text-black font-bold rounded-xl flex items-center justify-center gap-2 transition-all text-xs"
-                    >
-                      <MessageCircle size={15} /> WhatsApp Support (+212 666-979312)
-                    </a>
-                    <a 
-                      href="mailto:contact@marketif.net?subject=Händler-Account%20gesperrt" 
-                      className="text-white/60 hover:text-white underline text-[11px]"
-                    >
-                      contact@marketif.net
-                    </a>
+                    {lang === 'fr' ? (
+                      <>
+                        <a 
+                          href={`https://wa.me/212666979312?text=${encodeURIComponent(`Bonjour le support Marketif, notre compte commerçant (${slug}) a été verrouillé après 5 tentatives infructueuses. Veuillez nous envoyer le mot de passe / code PIN pour débloquer l'accès.`)}`}
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="w-full py-2.5 px-4 bg-[#25D366] hover:bg-[#20bd5a] text-black font-bold rounded-xl flex items-center justify-center gap-2 transition-all text-xs"
+                        >
+                          <MessageCircle size={15} /> WhatsApp Support (+212 666-979312)
+                        </a>
+                        <a 
+                          href={`mailto:contact@marketif.net?subject=${encodeURIComponent(`Compte commerçant verrouillé (${slug})`)}`}
+                          className="text-white/60 hover:text-white underline text-[11px]"
+                        >
+                          contact@marketif.net
+                        </a>
+                      </>
+                    ) : (
+                      <>
+                        <a 
+                          href={`https://wa.me/4912345789?text=${encodeURIComponent(`Hallo Marketif Support, unser Händler-Account (${slug}) wurde nach 5 Fehlversuchen gesperrt. Bitte schicken Sie uns das Passwort / die PIN zum Entsperren.`)}`}
+                          target="_blank" 
+                          rel="noreferrer"
+                          className="w-full py-2.5 px-4 bg-[#25D366] hover:bg-[#20bd5a] text-black font-bold rounded-xl flex items-center justify-center gap-2 transition-all text-xs"
+                        >
+                          <MessageCircle size={15} /> WhatsApp Support (012345789)
+                        </a>
+                        <a 
+                          href={`mailto:kontakt@marketif.de?subject=${encodeURIComponent(`Händler-Account gesperrt (${slug})`)}`}
+                          className="text-white/60 hover:text-white underline text-[11px]"
+                        >
+                          kontakt@marketif.de
+                        </a>
+                      </>
+                    )}
                   </div>
                 )}
               </div>

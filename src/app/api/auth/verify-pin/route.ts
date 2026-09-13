@@ -60,7 +60,7 @@ export async function POST(req: Request) {
         const isFr = merchantData?.language === 'fr';
         const msg = isFr
           ? 'Ce compte commerçant a été verrouillé après 5 tentatives infructueuses. Veuillez contacter Marketif (contact@marketif.net / WhatsApp: +212666979312) pour débloquer votre accès.'
-          : 'Dieser Händler-Account wurde nach 5 Fehlversuchen gesperrt. Bitte kontaktiere den Marketif Support (contact@marketif.net / WhatsApp: +212666979312), um den Zugang freizuschalten.';
+          : 'Dieser Händler-Account wurde nach 5 Fehlversuchen gesperrt. Bitte kontaktiere den Marketif Support (kontakt@marketif.de / WhatsApp / Tel: 012345789), um den Zugang freizuschalten.';
         return NextResponse.json({ error: msg, isLocked: true }, { status: 423 });
       }
     }
@@ -97,7 +97,7 @@ export async function POST(req: Request) {
 
             const lockMsg = isFr
               ? 'Ce compte commerçant a été verrouillé après 5 tentatives infructueuses. Veuillez contacter Marketif (contact@marketif.net / WhatsApp: +212666979312) pour débloquer votre accès.'
-              : 'Dieser Händler-Account wurde nach 5 Fehlversuchen gesperrt. Bitte kontaktiere den Marketif Support (contact@marketif.net / WhatsApp: +212666979312), um den Zugang freizuschalten.';
+              : 'Dieser Händler-Account wurde nach 5 Fehlversuchen gesperrt. Bitte kontaktiere den Marketif Support (kontakt@marketif.de / WhatsApp / Tel: 012345789), um den Zugang freizuschalten.';
             return NextResponse.json({ error: lockMsg, isLocked: true }, { status: 423 });
           } else {
             await adminSupabase.from('merchants_loyality').update({
