@@ -14,6 +14,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   const [password, setPassword] = useState('');
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [authError, setAuthError] = useState('');
+  const [isAccountLocked, setIsAccountLocked] = useState(false);
   
   const [loading, setLoading] = useState(true);
   const [merchant, setMerchant] = useState<any>(null);
@@ -26,6 +27,12 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       const { data } = await supabase.from('merchants_loyality').select('*').eq('slug', slug).single();
       if (data) {
         setPreMerchant(data);
+        if (data.failed_login_attempts >= 5 || (data.lockout_until && new Date(data.lockout_until) > new Date())) {
+          setIsAccountLocked(true);
+          setAuthError(data.language === 'fr' 
+            ? 'Ce compte commerçant a été verrouillé après 5 tentatives infructueuses. Veuillez contacter Marketif (contact@marketif.net / WhatsApp: +212666979312) pour débloquer votre accès.'
+            : 'Dieser Händler-Account wurde nach 5 Fehlversuchen gesperrt. Bitte kontaktiere den Marketif Support (kontakt@marketif.de / WhatsApp / Tel: 012345789), um den Zugang freizuschalten.');
+        }
       } else {
         setNotFound(true);
       }
@@ -112,6 +119,11 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
       });
       
       const data = await response.json();
+      if (response.status === 423 || data.isLocked) {
+        setIsAccountLocked(true);
+        setAuthError(data.error);
+        return;
+      }
       if (response.ok && data.success) {
         // Check if the staff member has "Admin" in their name
         const staffName = data.staffName || data.merchant?.name || ''; // Fallback
@@ -731,23 +743,26 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
               <input
                 type={showLoginPassword ? "text" : "password"}
                 value={password}
+                disabled={isAccountLocked}
                 onChange={(e) => setPassword(e.target.value)}
-                className="w-full bg-black/50 border border-white/20 rounded-2xl px-6 py-4 text-center text-white outline-none focus:border-white/50 transition-all"
-                placeholder={t.passwordPlaceholder}
-                autoFocus
+                className={`w-full border rounded-2xl px-6 py-4 text-center text-white outline-none transition-all ${isAccountLocked ? 'opacity-40 border-red-500/30 cursor-not-allowed bg-black/80' : 'bg-black/50 border-white/20 focus:border-white/50'}`}
+                placeholder={isAccountLocked ? (lang === 'fr' ? '🔒 Accès verrouillé (5 échecs)' : '🔒 Zugang gesperrt (5 Fehlversuche)') : t.passwordPlaceholder}
+                autoFocus={!isAccountLocked}
               />
-              <button 
-                type="button"
-                onClick={() => setShowLoginPassword(!showLoginPassword)}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 transition-colors"
-              >
-                {showLoginPassword ? <EyeOff size={20} /> : <Eye size={20} />}
-              </button>
+              {!isAccountLocked && (
+                <button 
+                  type="button"
+                  onClick={() => setShowLoginPassword(!showLoginPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-white/40 hover:text-white/80 transition-colors"
+                >
+                  {showLoginPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                </button>
+              )}
             </div>
             {authError && (
               <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs text-center space-y-2.5">
                 <p className="font-semibold leading-relaxed">{authError}</p>
-                {(authError.toLowerCase().includes('gesperrt') || authError.toLowerCase().includes('verrouill')) && (
+                {(isAccountLocked || authError.toLowerCase().includes('gesperrt') || authError.toLowerCase().includes('verrouill')) && (
                   <div className="pt-2 flex flex-col gap-2">
                     {lang === 'fr' ? (
                       <>
@@ -755,7 +770,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                           href={`https://wa.me/212666979312?text=${encodeURIComponent(`Bonjour le support Marketif, notre compte commerçant (${slug}) a été verrouillé après 5 tentatives infructueuses. Veuillez nous envoyer le mot de passe / code PIN pour débloquer l'accès.`)}`}
                           target="_blank" 
                           rel="noreferrer"
-                          className="w-full py-2.5 px-4 bg-[#25D366] hover:bg-[#20bd5a] text-black font-bold rounded-xl flex items-center justify-center gap-2 transition-all text-xs"
+                          className="w-full py-2.5 px-4 bg-[#25D366] hover:bg-[#20bd5a] text-black font-bold rounded-xl flex items-center justify-center gap-2 transition-all text-xs shadow-md"
                         >
                           <MessageCircle size={15} /> WhatsApp Support (+212 666-979312)
                         </a>
@@ -772,7 +787,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                           href={`https://wa.me/4912345789?text=${encodeURIComponent(`Hallo Marketif Support, unser Händler-Account (${slug}) wurde nach 5 Fehlversuchen gesperrt. Bitte schicken Sie uns das Passwort / die PIN zum Entsperren.`)}`}
                           target="_blank" 
                           rel="noreferrer"
-                          className="w-full py-2.5 px-4 bg-[#25D366] hover:bg-[#20bd5a] text-black font-bold rounded-xl flex items-center justify-center gap-2 transition-all text-xs"
+                          className="w-full py-2.5 px-4 bg-[#25D366] hover:bg-[#20bd5a] text-black font-bold rounded-xl flex items-center justify-center gap-2 transition-all text-xs shadow-md"
                         >
                           <MessageCircle size={15} /> WhatsApp Support (012345789)
                         </a>
@@ -788,8 +803,13 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                 )}
               </div>
             )}
-            <button type="submit" className="w-full py-4 rounded-2xl font-bold uppercase tracking-widest text-black transition-all active:scale-95" style={{ backgroundColor: primaryColor }}>
-              {t.loginBtn || 'Anmelden'}
+            <button 
+              type="submit" 
+              disabled={isAccountLocked}
+              className={`w-full py-4 rounded-2xl font-bold uppercase tracking-widest text-black transition-all ${isAccountLocked ? 'opacity-30 cursor-not-allowed bg-gray-500' : 'active:scale-95'}`} 
+              style={{ backgroundColor: isAccountLocked ? '#444' : primaryColor }}
+            >
+              {isAccountLocked ? (lang === 'fr' ? '🔒 Compte verrouillé' : '🔒 Account gesperrt') : (t.loginBtn || 'Anmelden')}
             </button>
           </form>
         </div>

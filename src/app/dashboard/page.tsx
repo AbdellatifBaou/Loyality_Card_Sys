@@ -584,6 +584,90 @@ export default function DashboardPage() {
           </div>
         </header>
 
+        {/* Security Notification Banner for Locked Merchants */}
+        {(() => {
+          const lockedMerchants = allMerchants.filter((m: any) => 
+            (m.failed_login_attempts >= 5) || 
+            (m.lockout_until && new Date(m.lockout_until) > new Date())
+          );
+
+          if (lockedMerchants.length === 0) return null;
+
+          return (
+            <div className="p-5 md:p-6 rounded-3xl bg-red-500/10 border-2 border-red-500/30 shadow-xl space-y-4">
+              <div className="flex items-center justify-between flex-wrap gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="p-3 bg-red-500 text-white rounded-2xl font-black shrink-0 animate-pulse">
+                    <AlertTriangle size={24} />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h2 className="text-white font-black text-base md:text-lg">
+                        {adminLang === 'fr' ? '🚨 Alerte Sécurité : Compte(s) Händler Bloqué(s)' : '🚨 Sicherheits-Alarm: Händler-Account(s) gesperrt'}
+                      </h2>
+                      <span className="px-2.5 py-0.5 rounded-full text-xs font-black bg-red-500 text-white">
+                        {lockedMerchants.length} {adminLang === 'fr' ? 'bloqué(s)' : 'gesperrt'}
+                      </span>
+                    </div>
+                    <p className="text-red-200/80 text-xs mt-0.5">
+                      {adminLang === 'fr'
+                        ? 'Ce(s) commerçant(s) ont échoué 5 tentatives de mot de passe et ont besoin de votre assistance.'
+                        : 'Folgende Händler haben 5-mal ein falsches Passwort eingegeben. Bitte kontaktiere sie oder schalte sie frei:'}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                {lockedMerchants.map((m: any) => (
+                  <div key={m.id} className="p-4 rounded-2xl bg-black/70 border border-red-500/30 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-xl bg-red-500/20 text-red-400 font-bold flex items-center justify-center shrink-0 border border-red-500/30 text-base">
+                        {m.language === 'fr' ? '🇲🇦' : '🇩🇪'}
+                      </div>
+                      <div className="min-w-0">
+                        <div className="text-white font-bold text-sm truncate">{m.name}</div>
+                        <div className="text-white/50 text-xs font-mono">
+                          Slug: <span className="text-[#D4AF37]">{m.slug}</span> · PIN: <strong className="text-white bg-white/10 px-1.5 py-0.5 rounded">{m.admin_pin}</strong>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      {m.contact_phone && (
+                        <a
+                          href={`https://wa.me/${(() => {
+                            let p = m.contact_phone.replace(/[^0-9+]/g, '');
+                            if (p.startsWith('+')) return p.substring(1);
+                            if (p.startsWith('00')) return p.substring(2);
+                            if (p.startsWith('0')) return (m.language === 'fr' ? '212' : '49') + p.substring(1);
+                            return p;
+                          })()}?text=${encodeURIComponent(m.language === 'fr' 
+                            ? `Bonjour ${m.contact_name || m.name}, nous avons vu que votre compte Marketif (${m.slug}) a été verrouillé. Votre code PIN est : ${m.admin_pin}. Nous venons de débloquer votre accès.` 
+                            : `Hallo ${m.contact_name || m.name}, wir haben gesehen, dass dein Marketif Account (${m.slug}) gesperrt wurde. Deine PIN lautet: ${m.admin_pin}. Wir haben deinen Zugang soeben wieder freigeschaltet.`)}`}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="px-3 py-2 bg-[#25D366] hover:bg-[#20bd5a] text-black font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-sm"
+                          title="Per WhatsApp kontaktieren & PIN senden"
+                        >
+                          <MessageCircle size={14} /> WhatsApp
+                        </a>
+                      )}
+                      <button
+                        onClick={() => handleUnlockMerchant(m.id)}
+                        className="px-3 py-2 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-xl text-xs flex items-center gap-1.5 transition-all shadow-sm"
+                        title="Account jetzt entsperren"
+                      >
+                        <Unlock size={14} /> {adminLang === 'fr' ? 'Débloquer' : 'Entsperren'}
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
         {/* Navigation Tabs */}
         <div className="flex gap-4 border-b border-white/5 pb-1">
           <button 
