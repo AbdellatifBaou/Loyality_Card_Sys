@@ -186,8 +186,8 @@ export default function InvoiceModal({ merchant, onClose, adminLang }: InvoiceMo
     const formattedDueDate = new Date(dueDate).toLocaleDateString(invoiceLang === 'fr' ? 'fr-FR' : 'de-DE');
 
     const text = invoiceLang === 'fr' 
-      ? `${greeting},\n\nVoici le récapitulatif de votre facture pour ${period} de la part de Marketif :\n\n📄 *N° Facture :* ${invoiceNumber}\n💰 *Montant Total :* ${total.toFixed(2)} ${curr}\n📅 *Date :* ${formattedDate}\n⏳ *Échéance :* ${formattedDueDate}\n💳 *Mode de paiement :* ${paymentMethodLabel}\n\nMerci pour votre confiance !\n_Marketif Support_`
-      : `${greeting},\n\nhier ist die Abrechnung für ${period} von Marketif:\n\n📄 *Rechnungs-Nr.:* ${invoiceNumber}\n💰 *Gesamtbetrag:* ${total.toFixed(2)} ${curr}\n📅 *Rechnungsdatum:* ${formattedDate}\n⏳ *Fälligkeit:* ${formattedDueDate}\n💳 *Zahlungsart:* ${paymentMethodLabel}\n\nVielen Dank für die partnerschaftliche Zusammenarbeit!\n_Marketif Support_`;
+      ? `${greeting},\n\nVoici le récapitulatif de votre facture pour ${period} de la part de Marketif :\n\n📄 *N° Facture :* ${invoiceNumber}\n💰 *Montant Total :* ${total.toFixed(2)} ${curr}\n📅 *Date :* ${formattedDate}\n💳 *Mode de paiement :* ${paymentMethodLabel}\n\nMerci pour votre confiance !\n_Marketif Support_`
+      : `${greeting},\n\nhier ist die Abrechnung für ${period} von Marketif:\n\n📄 *Rechnungs-Nr.:* ${invoiceNumber}\n💰 *Gesamtbetrag:* ${total.toFixed(2)} ${curr}\n📅 *Rechnungsdatum:* ${formattedDate}\n💳 *Zahlungsart:* ${paymentMethodLabel}\n\nVielen Dank für die partnerschaftliche Zusammenarbeit!\n_Marketif Support_`;
 
     if (!phone) {
       alert(invoiceLang === 'fr' ? 'Veuillez saisir un numéro de téléphone' : 'Bitte gib eine Telefonnummer ein');
@@ -378,25 +378,14 @@ export default function InvoiceModal({ merchant, onClose, adminLang }: InvoiceMo
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="block text-white/50 mb-1">{invoiceLang === 'fr' ? 'Date de facture' : 'Rechnungsdatum'}</label>
-                  <input
-                    type="date"
-                    value={invoiceDate}
-                    onChange={(e) => setInvoiceDate(e.target.value)}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-[#D4AF37]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-white/50 mb-1">{invoiceLang === 'fr' ? "Date d'échéance" : 'Fälligkeitsdatum'}</label>
-                  <input
-                    type="date"
-                    value={dueDate}
-                    onChange={(e) => setDueDate(e.target.value)}
-                    className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-[#D4AF37]"
-                  />
-                </div>
+              <div>
+                <label className="block text-white/50 mb-1">{invoiceLang === 'fr' ? 'Date de facture' : 'Rechnungsdatum'}</label>
+                <input
+                  type="date"
+                  value={invoiceDate}
+                  onChange={(e) => setInvoiceDate(e.target.value)}
+                  className="w-full bg-black/40 border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-[#D4AF37]"
+                />
               </div>
 
               <div>
@@ -647,9 +636,6 @@ export default function InvoiceModal({ merchant, onClose, adminLang }: InvoiceMo
                       </p>
                       <p>
                         <span className="font-bold text-gray-900">{invoiceLang === 'fr' ? 'Date:' : 'Datum:'}</span> {new Date(invoiceDate).toLocaleDateString(invoiceLang === 'fr' ? 'fr-FR' : 'de-DE')}
-                      </p>
-                      <p>
-                        <span className="font-bold text-gray-900">{invoiceLang === 'fr' ? 'Échéance:' : 'Fälligkeit:'}</span> {new Date(dueDate).toLocaleDateString(invoiceLang === 'fr' ? 'fr-FR' : 'de-DE')}
                       </p>
                       {period && (
                         <p>
