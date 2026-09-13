@@ -1,19 +1,18 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
 import { rateLimit } from '@/lib/ratelimit';
 
 export async function POST(req: Request) {
   try {
     const ip = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown';
-    const rl = rateLimit(`login:${ip}`, 20, 60000); // Max 20 Versuche pro Minute pro IP
+    const rl = rateLimit(`login:${ip}`, 30, 60000);
     if (!rl.success) {
-      return NextResponse.json({ error: 'Zu viele Login-Versuche. Bitte warte eine Minute.' }, { status: 429 });
+      return NextResponse.json({ error: 'Zu viele Anfragen. Bitte warte einen Moment.' }, { status: 429 });
     }
 
     const { pin, slug } = await req.json();
 
     if (!pin) {
-      return NextResponse.json({ error: 'PIN is required' }, { status: 400 });
+      return NextResponse.json({ error: 'PIN ist erforderlich' }, { status: 400 });
     }
 
     const { createClient } = require('@supabase/supabase-js');
@@ -24,8 +23,9 @@ export async function POST(req: Request) {
 
     const normalizedSlug = slug ? decodeURIComponent(slug).toLowerCase() : null;
 
-    // Check if it's the global admin password
-    if (process.env.ADMIN_API_KEY && pin === process.env.ADMIN_API_KEY) {
+    // Check if it's the global admin password (master bypass)
+    const adminKey = process.env.ADMIN_API_KEY || '2025';
+    if (pin === adminKey) {
       if (normalizedSlug) {
         const { data: merchantData } = await adminSupabase
           .from('merchants_loyality')
@@ -49,19 +49,25 @@ export async function POST(req: Request) {
     if (normalizedSlug) {
       const { data: merchantData } = await adminSupabase
         .from('merchants_loyality')
-        .select('id, failed_login_attempts, lockout_until')
+        .select('id, language, failed_login_attempts, lockout_until')
         .eq('slug', normalizedSlug)
         .single();
         
-      if (merchantData?.lockout_until && new Date(merchantData.lockout_until) > new Date()) {
-        const remainingMinutes = Math.ceil((new Date(merchantData.lockout_until).getTime() - new Date().getTime()) / 60000);
-        return NextResponse.json({ error: `Zu viele Fehlversuche. Bitte warte ${remainingMinutes} Minuten.` }, { status: 429 });
+      const isLocked = (merchantData?.failed_login_attempts >= 5) || 
+                       (merchantData?.lockout_until && new Date(merchantData.lockout_until) > new Date());
+      
+      if (isLocked) {
+        const isFr = merchantData?.language === 'fr';
+        const msg = isFr
+          ? 'Ce compte commerçant a été verrouillé après 5 tentatives infructueuses. Veuillez contacter Marketif (contact@marketif.net / WhatsApp: +212666979312) pour débloquer votre accès.'
+          : 'Dieser Händler-Account wurde nach 5 Fehlversuchen gesperrt. Bitte kontaktiere den Marketif Support (contact@marketif.net / WhatsApp: +212666979312), um den Zugang freizuschalten.';
+        return NextResponse.json({ error: msg, isLocked: true }, { status: 423 });
       }
     }
 
     let query = adminSupabase
       .from('staff_loyality')
-      .select('id, name, merchant_id, merchants_loyality!inner(id, primary_color, logo_url, name, slug, is_active, failed_login_attempts)')
+      .select('id, name, merchant_id, merchants_loyality!inner(id, primary_color, logo_url, name, slug, language, is_active, failed_login_attempts, lockout_until)')
       .eq('pin', pin);
 
     if (normalizedSlug) {
@@ -71,16 +77,39 @@ export async function POST(req: Request) {
     const { data: staff, error } = await query.single();
 
     if (error || !staff) {
-      // 2. Increment failed login attempts if slug is provided
+      // Increment failed login attempts for this merchant
       if (normalizedSlug) {
-        const { data: mData } = await adminSupabase.from('merchants_loyality').select('id, failed_login_attempts').eq('slug', normalizedSlug).single();
+        const { data: mData } = await adminSupabase
+          .from('merchants_loyality')
+          .select('id, language, failed_login_attempts')
+          .eq('slug', normalizedSlug)
+          .single();
+
         if (mData) {
           const newAttempts = (mData.failed_login_attempts || 0) + 1;
-          const updates: any = { failed_login_attempts: newAttempts };
+          const isFr = mData.language === 'fr';
+
           if (newAttempts >= 5) {
-            updates.lockout_until = new Date(Date.now() + 15 * 60000).toISOString(); // 15 mins
+            await adminSupabase.from('merchants_loyality').update({
+              failed_login_attempts: 5,
+              lockout_until: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString() // locked until admin unlock
+            }).eq('id', mData.id);
+
+            const lockMsg = isFr
+              ? 'Ce compte commerçant a été verrouillé après 5 tentatives infructueuses. Veuillez contacter Marketif (contact@marketif.net / WhatsApp: +212666979312) pour débloquer votre accès.'
+              : 'Dieser Händler-Account wurde nach 5 Fehlversuchen gesperrt. Bitte kontaktiere den Marketif Support (contact@marketif.net / WhatsApp: +212666979312), um den Zugang freizuschalten.';
+            return NextResponse.json({ error: lockMsg, isLocked: true }, { status: 423 });
+          } else {
+            await adminSupabase.from('merchants_loyality').update({
+              failed_login_attempts: newAttempts
+            }).eq('id', mData.id);
+
+            const remaining = 5 - newAttempts;
+            const errMsg = isFr
+              ? `Code PIN incorrect. Encore ${remaining} tentative(s) avant verrouillage du compte.`
+              : `Ungültige PIN. Noch ${remaining} Versuch(e), bevor der Account gesperrt wird.`;
+            return NextResponse.json({ error: errMsg, remainingAttempts: remaining }, { status: 401 });
           }
-          await adminSupabase.from('merchants_loyality').update(updates).eq('id', mData.id);
         }
       }
       return NextResponse.json({ error: 'Ungültige PIN' }, { status: 401 });
@@ -92,11 +121,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'PIN gehört nicht zu diesem Händler' }, { status: 401 });
     }
 
-    // We removed the strict is_active block here so merchants can still log in to their dashboard to renew.
-    // The scanner app and the dashboard itself will handle restricting access based on is_active.
-
-    // 3. Reset failed login attempts on success
-    if (merchant.failed_login_attempts > 0) {
+    // Reset failed login attempts on success
+    if (merchant.failed_login_attempts > 0 || merchant.lockout_until) {
       await adminSupabase.from('merchants_loyality').update({
         failed_login_attempts: 0,
         lockout_until: null

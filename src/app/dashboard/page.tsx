@@ -216,10 +216,51 @@ export default function DashboardPage() {
     }
   }, [activeTab, financesYear, isAuthorized]);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const [loginLoading, setLoginLoading] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsAuthorized(true);
-    localStorage.setItem('admin_auth', password);
+    if (!password) return;
+    setLoginLoading(true);
+    setAuthError('');
+    try {
+      const res = await fetch('/api/auth/admin-login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password })
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        localStorage.setItem('admin_auth', data.token);
+        setIsAuthorized(true);
+        setAuthError('');
+      } else {
+        setAuthError(data.error || (adminLang === 'fr' ? 'Mot de passe incorrect' : 'Passwort falsch'));
+      }
+    } catch (err: any) {
+      setAuthError(adminLang === 'fr' ? 'Erreur de connexion' : 'Netzwerkfehler beim Anmelden');
+    } finally {
+      setLoginLoading(false);
+    }
+  };
+
+  const handleUnlockMerchant = async (merchantId: string) => {
+    try {
+      const response = await fetch('/api/admin/unlock-merchant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem('admin_auth')}` },
+        body: JSON.stringify({ merchantId })
+      });
+      const data = await response.json();
+      if (data.success) {
+        showToast(adminLang === 'fr' ? 'Commerçant déverrouillé avec succès' : 'Händler erfolgreich entsperrt', 'success');
+        setAllMerchants(prev => prev.map(m => m.id === merchantId ? { ...m, failed_login_attempts: 0, lockout_until: null } : m));
+      } else {
+        showToast(data.error || 'Fehler beim Entsperren', 'error');
+      }
+    } catch (e: any) {
+      showToast('Systemfehler beim Entsperren', 'error');
+    }
   };
 
   useEffect(() => {
@@ -495,9 +536,14 @@ export default function DashboardPage() {
               placeholder="Passwort"
               autoFocus
             />
-            {authError && <p className="text-red-500 text-xs text-center">{authError}</p>}
-            <button type="submit" className="w-full py-4 rounded-2xl font-bold uppercase tracking-widest text-black transition-all active:scale-95" style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}>
-              Anmelden
+            {authError && <p className="text-red-500 text-xs text-center font-medium bg-red-500/10 border border-red-500/20 p-3 rounded-xl">{authError}</p>}
+            <button 
+              type="submit" 
+              disabled={loginLoading}
+              className="w-full py-4 rounded-2xl font-bold uppercase tracking-widest text-black transition-all active:scale-95 disabled:opacity-50 flex items-center justify-center gap-2" 
+              style={{ background: 'linear-gradient(135deg, #B8943B, #E8C968)' }}
+            >
+              {loginLoading ? <RefreshCw size={18} className="animate-spin" /> : (t.loginBtn || 'Anmelden')}
             </button>
           </form>
         </div>
@@ -882,15 +928,31 @@ export default function DashboardPage() {
                             <span className="text-white/40 text-xs"> {t.customers}</span>
                           </td>
                           <td className="p-4">
-                            {m.is_active === false ? (
-                              <button onClick={() => toggleMerchant(m.id, false)} className="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 transition-all cursor-pointer">
-                                Deaktiviert
-                              </button>
-                            ) : (
-                              <button onClick={() => toggleMerchant(m.id, true)} className="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-green-500/10 text-green-500 border border-green-500/20 hover:bg-green-500/20 transition-all cursor-pointer">
-                                Aktiv
-                              </button>
-                            )}
+                            <div className="flex flex-col gap-1.5 items-start">
+                              {m.is_active === false ? (
+                                <button onClick={() => toggleMerchant(m.id, false)} className="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 transition-all cursor-pointer">
+                                  {adminLang === 'fr' ? 'Désactivé' : 'Deaktiviert'}
+                                </button>
+                              ) : (
+                                <button onClick={() => toggleMerchant(m.id, true)} className="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-green-500/10 text-green-500 border border-green-500/20 hover:bg-green-500/20 transition-all cursor-pointer">
+                                  {adminLang === 'fr' ? 'Actif' : 'Aktiv'}
+                                </button>
+                              )}
+                              {((m.failed_login_attempts >= 5) || (m.lockout_until && new Date(m.lockout_until) > new Date())) && (
+                                <div className="flex items-center gap-1.5">
+                                  <span className="px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wide bg-red-500 text-white animate-pulse">
+                                    🔒 {adminLang === 'fr' ? 'VERROUILLÉ (5x)' : 'GESPERRT (5x)'}
+                                  </span>
+                                  <button
+                                    onClick={() => handleUnlockMerchant(m.id)}
+                                    className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border border-yellow-500/30 transition-all"
+                                    title={adminLang === 'fr' ? 'Déverrouiller le compte' : 'Account entsperren'}
+                                  >
+                                    {adminLang === 'fr' ? 'Débloquer' : 'Entsperren'}
+                                  </button>
+                                </div>
+                              )}
+                            </div>
                           </td>
                           <td className="p-4">
                             <div className="flex flex-col gap-1">

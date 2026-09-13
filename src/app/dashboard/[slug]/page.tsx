@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { Users, Pizza, Gift, Activity, Bell, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock, BarChart2, BarChart3, Printer, Megaphone, Send, ExternalLink, Eye, EyeOff, CheckCircle, Save, Star } from 'lucide-react';
+import { Users, Pizza, Gift, Activity, Bell, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock, BarChart2, BarChart3, Printer, Megaphone, Send, ExternalLink, Eye, EyeOff, CheckCircle, Save, Star, MessageCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { PRICING } from '@/lib/pricing';
 import { MERCHANT_DICT } from '@/locales/merchant';
@@ -744,7 +744,29 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                 {showLoginPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
-            {authError && <p className="text-red-500 text-xs text-center">{authError}</p>}
+            {authError && (
+              <div className="p-4 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-400 text-xs text-center space-y-2.5">
+                <p className="font-semibold leading-relaxed">{authError}</p>
+                {(authError.toLowerCase().includes('gesperrt') || authError.toLowerCase().includes('verrouill')) && (
+                  <div className="pt-2 flex flex-col gap-2">
+                    <a 
+                      href={`https://wa.me/212666979312?text=${encodeURIComponent(`Hallo Marketif Support, unser Händler-Account (${slug}) wurde nach 5 Fehlversuchen gesperrt. Bitte schicken Sie uns das Passwort / die PIN zum Entsperren.`)}`}
+                      target="_blank" 
+                      rel="noreferrer"
+                      className="w-full py-2.5 px-4 bg-[#25D366] hover:bg-[#20bd5a] text-black font-bold rounded-xl flex items-center justify-center gap-2 transition-all text-xs"
+                    >
+                      <MessageCircle size={15} /> WhatsApp Support (+212 666-979312)
+                    </a>
+                    <a 
+                      href="mailto:contact@marketif.net?subject=Händler-Account%20gesperrt" 
+                      className="text-white/60 hover:text-white underline text-[11px]"
+                    >
+                      contact@marketif.net
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
             <button type="submit" className="w-full py-4 rounded-2xl font-bold uppercase tracking-widest text-black transition-all active:scale-95" style={{ backgroundColor: primaryColor }}>
               {t.loginBtn || 'Anmelden'}
             </button>
