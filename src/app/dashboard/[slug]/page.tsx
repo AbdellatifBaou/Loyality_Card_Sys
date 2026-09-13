@@ -786,8 +786,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           </div>
           <h2 className="text-3xl font-bold text-white mb-4">{t.dashboardLocked}</h2>
           <p className="text-white/60 mb-8 max-w-2xl mx-auto leading-relaxed">
-            {t.silverNoAnalyticsText.split("Schalte jetzt")[0]}
-            Schalte jetzt" + t.silverNoAnalyticsText.split("Schalte jetzt")[1]
+            {t.silverNoAnalyticsText || 'Als Nutzer des Silber-Pakets hast du keinen Zugriff auf das Analytics-Dashboard.'}
           </p>
 
           <div className="mb-8 rounded-2xl overflow-hidden border-2 border-white/20 shadow-none mx-auto max-w-2xl relative">
@@ -1122,7 +1121,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                           <div 
                             key={a.id} 
                             onClick={() => {
-                              const customer = cust.find((x:any) => x.wallet_object_id === a.customer_id || x.id === a.customer_id);
+                              const customer = customers.find((x:any) => x.wallet_object_id === a.customer_id || x.id === a.customer_id);
                               if (customer) openCustomer(customer);
                             }}
                             className="flex items-start justify-between gap-3 p-3 bg-black/40 rounded-xl border border-red-500/10 cursor-pointer hover:border-red-500/30 transition-all group"
