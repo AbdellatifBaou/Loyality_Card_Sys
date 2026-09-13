@@ -103,7 +103,11 @@ export async function POST(req: Request) {
           ...currentMerchant,
           ...updatePayload,
         };
-        await updateLoyaltyClass(`marketif_loyalty_${currentMerchant.slug}`, fullMerchantData);
+        const lang = fullMerchantData.language || 'de';
+        await updateLoyaltyClass(`marketif_loyalty_${currentMerchant.slug}_${lang}`, fullMerchantData);
+        try {
+          await updateLoyaltyClass(`marketif_loyalty_${currentMerchant.slug}`, fullMerchantData);
+        } catch (_) {}
       } catch (walletErr) {
         console.error('Failed to sync to Google Wallet class:', walletErr);
       }

@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     );
 
     // 1. Get Merchant from Supabase
-    const slug = classId.replace('marketif_loyalty_', '');
+    const slug = classId.replace('marketif_loyalty_', '').replace(/_(de|fr|en)$/, '');
     const { data: merchant, error: merchantError } = await adminSupabase
       .from('merchants_loyality')
       .select('*')
@@ -29,8 +29,12 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
     }
 
+    const lang = merchant.language || 'de';
+    // Language-scoped classId ensures Google Wallet creates a fresh class with correct French translations
+    const targetClassId = `marketif_loyalty_${merchant.slug}_${lang}`;
+
     // 2. Ensure LoyaltyClass exists and is up to date in Google Wallet
-    await createLoyaltyClass(classId, merchant);
+    await createLoyaltyClass(targetClassId, merchant);
 
     // 3. Generate new Customer ID
     const customerId = uuidv4();
@@ -57,7 +61,7 @@ export async function POST(req: Request) {
     }
 
     // 5. Generate Google Wallet Add URL
-    const saveUrl = await generateLoyaltyObjectJwt(classId, customerId, welcomeBonus, merchant);
+    const saveUrl = await generateLoyaltyObjectJwt(targetClassId, customerId, welcomeBonus, merchant);
 
     return NextResponse.json({ url: saveUrl, customerId });
   } catch (error: any) {
