@@ -87,7 +87,6 @@ function normalizePrivateKey(key: string): string {
   let cleaned = key.trim().replace(/^["']|["']$/g, '');
 
   // Step 2: Extract the raw base64 data by removing headers, footers and any newline characters
-  // This handles keys that were flattened into a single line or mangled by env var managers
   let base64 = cleaned
     .replace(/-----BEGIN (RSA )?PRIVATE KEY-----/g, '')
     .replace(/-----END (RSA )?PRIVATE KEY-----/g, '')
@@ -95,7 +94,6 @@ function normalizePrivateKey(key: string): string {
     .replace(/\s+/g, '');
 
   // Step 3: Reconstruct the PEM format properly with 64-character line breaks
-  // This is the most compatible format for Node.js/OpenSSL
   const matches = base64.match(/.{1,64}/g);
   const formattedBase64 = matches ? matches.join('\n') : base64;
 
@@ -104,7 +102,6 @@ function normalizePrivateKey(key: string): string {
 
 function parseCredentials(raw: string) {
   try {
-    // Handle double-stringified JSON (happens on some platforms)
     let parsed = JSON.parse(raw);
     if (typeof parsed === 'string') {
       parsed = JSON.parse(parsed);
@@ -115,12 +112,10 @@ function parseCredentials(raw: string) {
     }
     return parsed;
   } catch (e) {
-    // If JSON.parse fails, the env var might have unescaped newlines in the private key
-    // or it might be wrapped in quotes that JSON.parse doesn't like as a root
     try {
       const cleaned = raw.trim().replace(/^["']|["']$/g, '');
       const fixed = cleaned.replace(
-        /"private_key"\s*:\s*"([\s\S]+?)(?=",\s*"client_email|",\s*"client_id)"/,
+        /"private_key"\s*:\s*"([\s\S]+?)(?="\s*,\s*"client_email|",\s*"client_id)"/,
         (_match, key) => `"private_key": "${key.replace(/\n/g, '\\n')}"`
       );
       const parsed = JSON.parse(fixed);
@@ -159,8 +154,6 @@ function getCredentials() {
     }
   }
 
-  // Crucial: Always ensure the private key is normalized for JWT signing,
-  // regardless of where it was loaded from.
   if (credentials && credentials.private_key) {
     credentials.private_key = normalizePrivateKey(credentials.private_key);
   }
@@ -178,7 +171,6 @@ const getAuth = () => {
     });
   } catch (e) {
     console.error('Google Auth initialization failed:', e);
-    // Return a dummy auth that will fail gracefully on use if we can't initialize
     return new google.auth.GoogleAuth({
       scopes: ['https://www.googleapis.com/auth/wallet_object.issuer'],
     });
@@ -188,11 +180,69 @@ const getAuth = () => {
 const auth = getAuth();
 const issuerId = process.env.GOOGLE_ISSUER_ID || '';
 
-
 export const walletClient = google.walletobjects({
   version: 'v1',
   auth: auth,
 });
+
+/**
+ * Updates an existing LoyaltyClass on Google Wallet
+ */
+export async function updateLoyaltyClass(classId: string, merchant: any) {
+  const lang = merchant?.language || 'de';
+  const t = DICT[lang as keyof typeof DICT] || DICT.de;
+
+  const sharedFields: any = {
+    issuerName: merchant.name,
+    programName: `${merchant.name}${t.programNameSuffix}`,
+    hexBackgroundColor: merchant.primary_color || '#1A3828',
+  };
+
+  if (merchant.logo_url) {
+    sharedFields.programLogo = {
+      sourceUri: {
+        uri: `${appUrl}/api/images/logo?slug=${merchant.slug}`
+      }
+    };
+  }
+
+  if (appUrl && !appUrl.includes('localhost')) {
+    sharedFields.heroImage = {
+      sourceUri: {
+        uri: `${appUrl}/api/images/card/0?v=${IMAGE_VERSION}&rev=${merchant?.push_settings?.hero_image?.length || 0}&merchant=${merchant.slug}`
+      }
+    };
+  }
+
+  if (merchant.latitude && merchant.longitude) {
+    sharedFields.locations = [{ latitude: merchant.latitude, longitude: merchant.longitude }];
+  }
+
+  try {
+    const patchResponse = await walletClient.loyaltyclass.patch({
+      resourceId: `${issuerId}.${classId}`,
+      requestBody: sharedFields,
+    });
+    return patchResponse.data;
+  } catch (error: any) {
+    console.error('[GoogleWallet] Class patch error:', error.response?.data || error.message);
+    try {
+      // Fallback: minimal update with programName, issuerName, and hexBackgroundColor
+      const fallbackResponse = await walletClient.loyaltyclass.patch({
+        resourceId: `${issuerId}.${classId}`,
+        requestBody: {
+          issuerName: merchant.name,
+          programName: `${merchant.name}${t.programNameSuffix}`,
+          hexBackgroundColor: merchant.primary_color || '#1A3828',
+        },
+      });
+      return fallbackResponse.data;
+    } catch (fallbackError: any) {
+      console.error('[GoogleWallet] Fallback patch error:', fallbackError.response?.data || fallbackError.message);
+      return { id: `${issuerId}.${classId}` };
+    }
+  }
+}
 
 /**
  * Creates a generic LoyaltyClass for the Marketif Loyalty system
@@ -201,7 +251,7 @@ export async function createLoyaltyClass(classId: string, merchant: any) {
   const lang = merchant.language || 'de';
   const t = DICT[lang as keyof typeof DICT] || DICT.de;
 
-  const sharedFields = {
+  const sharedFields: any = {
     issuerName: merchant.name,
     programName: `${merchant.name}${t.programNameSuffix}`,
     programLogo: {
@@ -220,7 +270,6 @@ export async function createLoyaltyClass(classId: string, merchant: any) {
       : [{ latitude: 48.3715, longitude: 10.8985 }],
   };
 
-  // reviewStatus only for initial insert — cannot be patched on existing classes
   const insertData = { id: `${issuerId}.${classId}`, ...sharedFields, reviewStatus: 'UNDER_REVIEW' };
 
   try {
@@ -229,20 +278,8 @@ export async function createLoyaltyClass(classId: string, merchant: any) {
     });
     return response.data;
   } catch (error: any) {
-    if (error.response?.status === 409) {
-      // Klasse existiert bereits – mit neuen Einstellungen patchen
-      try {
-        const patchResponse = await walletClient.loyaltyclass.patch({
-          resourceId: `${issuerId}.${classId}`,
-          requestBody: sharedFields,
-        });
-        return patchResponse.data;
-      } catch (patchError: any) {
-        console.log('Class patch skipped:', patchError.message);
-        return { id: `${issuerId}.${classId}` };
-      }
-    }
-    throw error;
+    // If class already exists, always update/patch it to latest merchant settings
+    return await updateLoyaltyClass(classId, merchant);
   }
 }
 
@@ -341,8 +378,6 @@ export async function invalidateLoyaltyObject(objectId: string) {
     return response.data;
   } catch (error: any) {
     console.error('API Error invalidating object:', error.response?.data || error.message);
-    // Even if it fails (e.g. not found in Wallet), we don't want to throw an error 
-    // that stops the database deletion process.
     return null;
   }
 }
@@ -461,7 +496,6 @@ export async function sendClassMessage(classId: string, header: string, body: st
   try {
     const issuerId = process.env.GOOGLE_ISSUER_ID;
     
-    // We add a new message to the class. Google Wallet handles distributing it to all associated objects.
     const message = {
       header: header,
       body: body,

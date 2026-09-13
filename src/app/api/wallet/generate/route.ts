@@ -12,9 +12,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing merchantName or classId' }, { status: 400 });
     }
 
+    const adminSupabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
     // 1. Get Merchant from Supabase
     const slug = classId.replace('marketif_loyalty_', '');
-    const { data: merchant, error: merchantError } = await supabase
+    const { data: merchant, error: merchantError } = await adminSupabase
       .from('merchants_loyality')
       .select('*')
       .eq('slug', slug)
@@ -24,16 +29,11 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });
     }
 
-    // 2. Ensure LoyaltyClass exists in Google Wallet
+    // 2. Ensure LoyaltyClass exists and is up to date in Google Wallet
     await createLoyaltyClass(classId, merchant);
 
     // 3. Generate new Customer ID
     const customerId = uuidv4();
-
-    const adminSupabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
-    );
 
     // 4. Save customer in Supabase with Welcome Bonus
     const pushSettings = merchant.push_settings || {};

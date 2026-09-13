@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { validateAuth } from '@/lib/auth';
+import { updateLoyaltyClass } from '@/lib/google-wallet';
 
 function getAdminSupabase() {
   return createClient(
@@ -42,7 +43,7 @@ export async function POST(req: Request) {
     // Fetch existing merchant data including current push_settings
     const { data: currentMerchant } = await adminSupabase
       .from('merchants_loyality')
-      .select('push_settings')
+      .select('*')
       .eq('id', merchantId)
       .maybeSingle();
 
@@ -93,6 +94,19 @@ export async function POST(req: Request) {
     if (error) {
       console.error('Update merchant error:', error);
       return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    }
+
+    // Sync updated settings to Google Wallet class if slug exists
+    if (currentMerchant?.slug) {
+      try {
+        const fullMerchantData = {
+          ...currentMerchant,
+          ...updatePayload,
+        };
+        await updateLoyaltyClass(`marketif_loyalty_${currentMerchant.slug}`, fullMerchantData);
+      } catch (walletErr) {
+        console.error('Failed to sync to Google Wallet class:', walletErr);
+      }
     }
 
     return NextResponse.json({ success: true });
