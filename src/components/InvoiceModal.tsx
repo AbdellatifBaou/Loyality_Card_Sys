@@ -60,7 +60,13 @@ export default function InvoiceModal({ merchant, onClose, adminLang }: InvoiceMo
   };
 
   const getPackageTitle = (lang: 'de' | 'fr') => {
-    const pkgName = merchant?.package_type ? merchant.package_type.toUpperCase() : 'SILBER';
+    const pkgType = merchant?.package_type?.toLowerCase();
+    if (!pkgType || pkgType === 'custom') {
+      return lang === 'fr' 
+        ? 'Marketif Loyalty - Abonnement Mensuel' 
+        : 'Marketif Loyalty - Monatliche Softwarelizenz';
+    }
+    const pkgName = merchant.package_type.toUpperCase();
     if (lang === 'fr') {
       return `Marketif Loyalty - Abonnement Mensuel (Forfait ${pkgName})`;
     }
