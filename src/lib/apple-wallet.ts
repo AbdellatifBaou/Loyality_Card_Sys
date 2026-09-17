@@ -1,8 +1,9 @@
-﻿import archiver from 'archiver';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import forge from 'node-forge';
+
+const archiver = require('archiver');
 
 interface MerchantData {
   id: string;
