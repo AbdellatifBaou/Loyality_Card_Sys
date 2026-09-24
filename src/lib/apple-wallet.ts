@@ -189,24 +189,44 @@ function cleanEnv(val?: string): string {
   return cleaned;
 }
 
+function parsePem(pemStr?: string): string {
+  if (!pemStr) return '';
+  let cleaned = cleanEnv(pemStr);
+  if (cleaned.includes('\\n')) {
+    cleaned = cleaned.replace(/\\n/g, '\n');
+  }
+  return cleaned;
+}
+
 let cachedSigner: { signerCert: string; signerKey: string; wwdr: string } | null = null;
 
 function getSignerCredentials() {
   if (cachedSigner) return cachedSigner;
 
+  const directCertPem = parsePem(process.env.APPLE_PASS_SIGNER_CERT_PEM);
+  const directKeyPem = parsePem(process.env.APPLE_PASS_SIGNER_KEY_PEM);
+  const wwdrPem = parsePem(process.env.APPLE_WWDR_CERT_PEM);
+
+  // 1. If direct PEM credentials are provided, use them directly (zero password/decoding issues)
+  if (directCertPem && directKeyPem) {
+    cachedSigner = {
+      signerCert: directCertPem,
+      signerKey: directKeyPem,
+      wwdr: wwdrPem
+    };
+    return cachedSigner;
+  }
+
+  // 2. Fallback to P12 Base64
   const p12Base64 = cleanEnv(process.env.APPLE_PASS_CERT_P12_BASE64);
   const p12Password = cleanEnv(process.env.APPLE_PASS_CERT_PASSWORD);
-  let wwdrPem = cleanEnv(process.env.APPLE_WWDR_CERT_PEM);
-
-  if (wwdrPem.includes('\\n')) {
-    wwdrPem = wwdrPem.replace(/\\n/g, '\n');
-  }
 
   if (!p12Base64) {
-    throw new Error('APPLE_PASS_CERT_P12_BASE64 is not configured in environment variables');
+    throw new Error('Apple Wallet credentials missing. Please set APPLE_PASS_SIGNER_CERT_PEM and APPLE_PASS_SIGNER_KEY_PEM (or APPLE_PASS_CERT_P12_BASE64).');
   }
 
-  const p12Der = forge.util.decode64(p12Base64);
+  const sanitizedBase64 = p12Base64.replace(/\s+/g, '');
+  const p12Der = Buffer.from(sanitizedBase64, 'base64').toString('binary');
   const p12Asn1 = forge.asn1.fromDer(p12Der);
   const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, p12Password);
 
