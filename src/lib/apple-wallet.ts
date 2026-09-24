@@ -180,14 +180,23 @@ export function buildPassJson(merchant: MerchantData, customer: CustomerData) {
   };
 }
 
+function cleanEnv(val?: string): string {
+  if (!val) return '';
+  let cleaned = val.trim();
+  if ((cleaned.startsWith('"') && cleaned.endsWith('"')) || (cleaned.startsWith("'") && cleaned.endsWith("'"))) {
+    cleaned = cleaned.slice(1, -1).trim();
+  }
+  return cleaned;
+}
+
 let cachedSigner: { signerCert: string; signerKey: string; wwdr: string } | null = null;
 
 function getSignerCredentials() {
   if (cachedSigner) return cachedSigner;
 
-  const p12Base64 = process.env.APPLE_PASS_CERT_P12_BASE64;
-  const p12Password = process.env.APPLE_PASS_CERT_PASSWORD || '';
-  let wwdrPem = process.env.APPLE_WWDR_CERT_PEM || '';
+  const p12Base64 = cleanEnv(process.env.APPLE_PASS_CERT_P12_BASE64);
+  const p12Password = cleanEnv(process.env.APPLE_PASS_CERT_PASSWORD);
+  let wwdrPem = cleanEnv(process.env.APPLE_WWDR_CERT_PEM);
 
   if (wwdrPem.includes('\\n')) {
     wwdrPem = wwdrPem.replace(/\\n/g, '\n');
