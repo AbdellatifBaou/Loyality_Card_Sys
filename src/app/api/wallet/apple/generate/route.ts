@@ -1,27 +1,31 @@
-﻿import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { NextResponse } from 'next/server';
+import { getAdminSupabase } from '@/lib/supabase';
 import { generatePkPass } from '@/lib/apple-wallet';
+import { v4 as uuidv4 } from 'uuid';
 
 async function handlePassGeneration(slug: string, customerId?: string) {
   if (!slug) {
     return NextResponse.json({ error: 'Merchant slug is required' }, { status: 400 });
   }
 
+  const adminSupabase = getAdminSupabase();
+
   // 1. Fetch merchant
-  const { data: merchant, error: mError } = await supabase
+  const { data: merchant, error: mError } = await adminSupabase
     .from('merchants_loyality')
     .select('*')
     .eq('slug', slug.toLowerCase())
     .single();
 
   if (mError || !merchant) {
+    console.error('Apple Wallet Merchant Error:', mError);
     return NextResponse.json({ error: 'Händler nicht gefunden' }, { status: 404 });
   }
 
   // 2. Fetch or create customer record
   let customer: any = null;
   if (customerId) {
-    const { data: existingCustomer } = await supabase
+    const { data: existingCustomer } = await adminSupabase
       .from('customers_loyality')
       .select('*')
       .eq('wallet_object_id', customerId)
@@ -31,20 +35,32 @@ async function handlePassGeneration(slug: string, customerId?: string) {
   }
 
   if (!customer) {
-    const newObjectId = `cust_${merchant.slug}_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
-    const { data: createdCustomer, error: cError } = await supabase
+    const newId = uuidv4();
+    const pushSettings = merchant.push_settings || {};
+    const welcomeBonus = parseInt(pushSettings.welcome_bonus) || 0;
+
+    const { data: createdCustomer, error: cError } = await adminSupabase
       .from('customers_loyality')
       .insert({
+        id: newId,
         merchant_id: merchant.id,
-        wallet_object_id: newObjectId,
-        points: 0
+        wallet_object_id: newId,
+        points: welcomeBonus
       })
       .select()
       .single();
 
-    if (cError) {
-      throw new Error('Fehler beim Anlegen des Kunden');
+    if (cError || !createdCustomer) {
+      console.error('Apple Wallet Customer Insert Error:', cError);
+      throw new Error(`Fehler beim Anlegen des Kunden: ${cError?.message || 'Unbekannt'}`);
     }
+
+    if (welcomeBonus > 0) {
+      await adminSupabase.from('stamps_loyality').insert([
+        { customer_id: newId, amount: welcomeBonus, type: 'welcome' }
+      ]);
+    }
+
     customer = createdCustomer;
   }
 

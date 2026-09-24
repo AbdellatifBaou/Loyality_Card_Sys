@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { getAdminSupabase } from '@/lib/supabase';
 import { generatePkPass } from '@/lib/apple-wallet';
 
 export async function GET(
@@ -15,8 +15,10 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const adminSupabase = getAdminSupabase();
+
     // 2. Fetch customer by serialNumber (wallet_object_id)
-    const { data: customer, error: cError } = await supabase
+    const { data: customer, error: cError } = await adminSupabase
       .from('customers_loyality')
       .select('*, merchants_loyality(*)')
       .eq('wallet_object_id', serialNumber)
