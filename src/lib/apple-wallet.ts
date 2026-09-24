@@ -3,7 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import forge from 'node-forge';
 
-const archiver = require('archiver');
+import { ZipArchive } from 'archiver';
 
 interface MerchantData {
   id: string;
@@ -206,7 +206,13 @@ export function signManifest(manifestBuffer: Buffer): Buffer | null {
     for (const safeContent of p12.safeContents) {
       for (const safeBag of safeContent.safeBags) {
         if (safeBag.type === forge.pki.oids.certBag) {
-          cert = safeBag.cert;
+          const c = safeBag.cert;
+          const cnAttr = c?.subject?.attributes?.find((a: any) => a.name === 'commonName' || a.shortName === 'CN');
+          if (cnAttr && (cnAttr.value.includes('pass.') || cnAttr.value.includes('Pass Type ID'))) {
+            cert = c;
+          } else if (!cert) {
+            cert = c;
+          }
         } else if (safeBag.type === forge.pki.oids.pkcs8ShroudedKeyBag || safeBag.type === forge.pki.oids.keyBag) {
           key = safeBag.key;
         }
@@ -223,7 +229,8 @@ export function signManifest(manifestBuffer: Buffer): Buffer | null {
     p7.addCertificate(cert);
 
     if (wwdrPem) {
-      const wwdrCert = forge.pki.certificateFromPem(wwdrPem);
+      const cleanPem = wwdrPem.includes('\\n') ? wwdrPem.replace(/\\n/g, '\n') : wwdrPem;
+      const wwdrCert = forge.pki.certificateFromPem(cleanPem);
       p7.addCertificate(wwdrCert);
     }
 
@@ -301,7 +308,7 @@ export async function generatePkPass(merchant: MerchantData, customer: CustomerD
       }
 
       // 3. Zip into .pkpass archive
-      const archive = archiver('zip', { zlib: { level: 9 } });
+      const archive = new ZipArchive({ zlib: { level: 9 } });
       const buffers: Buffer[] = [];
 
       archive.on('data', data => buffers.push(data));

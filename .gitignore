@@ -40,13 +40,22 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-# credentials
+# credentials & certificates
 marketif-loyalty-*.json
 marketif-loyality-*.json
 *.json
 !package.json
 !package-lock.json
 !tsconfig.json
+certs/
+*.cer
+*.crt
+*.pem
+*.key
+*.p12
+*.pfx
+*.csr
+*.pkpass
 
 # scripts and backups
 scripts/
