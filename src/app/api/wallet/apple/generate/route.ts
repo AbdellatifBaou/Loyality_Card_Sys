@@ -73,6 +73,7 @@ async function handlePassGeneration(slug: string, customerId?: string) {
     headers: {
       'Content-Type': 'application/vnd.apple.pkpass',
       'Content-Disposition': `attachment; filename="${merchant.slug}-loyalty.pkpass"`,
+      'Content-Length': pkpassBuffer.length.toString(),
       'Cache-Control': 'no-cache, no-store, must-revalidate',
       'Pragma': 'no-cache',
       'Expires': '0'

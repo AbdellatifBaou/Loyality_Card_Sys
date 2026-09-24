@@ -243,18 +243,17 @@ export default function DynamicJoinPage({ params }: { params: Promise<{ slug: st
         {/* Primary Action Button (Device-aware) */}
         {deviceType === 'ios' ? (
           <>
-            <button
-              onClick={handleJoinApple}
-              disabled={joining}
-              className="w-full font-black py-5 rounded-[22px] flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50 overflow-hidden relative bg-black text-white border border-white/20 shadow-xl text-sm uppercase tracking-wider"
+            <a
+              href={`/api/wallet/apple/generate?slug=${encodeURIComponent(merchant.slug)}`}
+              className="w-full font-black py-5 rounded-[22px] flex items-center justify-center gap-3 transition-all active:scale-95 overflow-hidden relative bg-black text-white border border-white/20 shadow-xl text-sm uppercase tracking-wider"
             >
               <span className="text-xl"></span> {t.addToAppleWallet}
               <ArrowRight size={18} strokeWidth={2.5} />
-            </button>
+            </a>
             <button
               onClick={handleJoinGoogle}
               disabled={joining}
-              className="w-full text-center text-xs font-bold text-white/50 hover:text-white pt-2 transition-colors"
+              className="w-full text-center text-xs font-bold text-white/50 hover:text-white pt-2 transition-colors cursor-pointer"
             >
               {t.addToGoogleWallet}
             </button>
@@ -264,7 +263,7 @@ export default function DynamicJoinPage({ params }: { params: Promise<{ slug: st
             <button
               onClick={handleJoinGoogle}
               disabled={joining}
-              className="w-full font-black py-5 rounded-[22px] flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50 overflow-hidden relative text-black text-sm uppercase tracking-wider shadow-xl"
+              className="w-full font-black py-5 rounded-[22px] flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50 overflow-hidden relative text-black text-sm uppercase tracking-wider shadow-xl cursor-pointer"
               style={{
                 background: `linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor}dd 100%)`,
                 boxShadow: `0 15px 30px ${primaryColor}30`,
@@ -276,23 +275,21 @@ export default function DynamicJoinPage({ params }: { params: Promise<{ slug: st
               {t.addToGoogleWallet}
               <ArrowRight size={18} strokeWidth={2.5} />
             </button>
-            <button
-              onClick={handleJoinApple}
-              disabled={joining}
-              className="w-full text-center text-xs font-bold text-white/50 hover:text-white pt-2 transition-colors"
+            <a
+              href={`/api/wallet/apple/generate?slug=${encodeURIComponent(merchant.slug)}`}
+              className="w-full text-center text-xs font-bold text-white/50 hover:text-white pt-2 transition-colors block"
             >
                {t.addToAppleWallet} (.pkpass)
-            </button>
+            </a>
           </>
         ) : (
           <div className="space-y-3">
-            <button
-              onClick={handleJoinApple}
-              disabled={joining}
-              className="w-full font-bold py-4 rounded-[20px] flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50 bg-black text-white border border-white/20 text-sm shadow-md"
+            <a
+              href={`/api/wallet/apple/generate?slug=${encodeURIComponent(merchant.slug)}`}
+              className="w-full font-bold py-4 rounded-[20px] flex items-center justify-center gap-3 transition-all active:scale-95 bg-black text-white border border-white/20 text-sm shadow-md"
             >
               <span className="text-lg"></span> {t.addToAppleWallet}
-            </button>
+            </a>
             <button
               onClick={handleJoinGoogle}
               disabled={joining}

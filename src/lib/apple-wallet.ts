@@ -2,8 +2,8 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import forge from 'node-forge';
-
 import { ZipArchive } from 'archiver';
+import sharp from 'sharp';
 
 interface MerchantData {
   id: string;
@@ -16,6 +16,7 @@ interface MerchantData {
   contact_phone?: string;
   contact_email?: string;
   language?: string;
+  logo_url?: string;
   push_settings?: any;
 }
 
@@ -89,17 +90,21 @@ export function buildPassJson(merchant: MerchantData, customer: CustomerData) {
     statusText = t.almostDone;
   }
 
-  const passTypeId = process.env.APPLE_PASS_TYPE_IDENTIFIER || 'pass.net.marketif.loyalty';
-  const teamId = process.env.APPLE_TEAM_ID || 'TEAMID1234';
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://marketif.net';
+  const passTypeId = process.env.APPLE_PASS_TYPE_IDENTIFIER || 'pass.de.marketif.loyalty';
+  const teamId = process.env.APPLE_TEAM_ID || 'HA5ATW8338';
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://treue.marketif.de';
+
+  const isHttps = appUrl && appUrl.startsWith('https://');
 
   return {
     formatVersion: 1,
     passTypeIdentifier: passTypeId,
     serialNumber: customer.wallet_object_id || customer.id,
     teamIdentifier: teamId,
-    webServiceURL: `${appUrl}/api/v1`,
-    authenticationToken: customer.auth_token || crypto.createHash('sha256').update(customer.wallet_object_id).digest('hex'),
+    ...(isHttps ? {
+      webServiceURL: `${appUrl}/api/v1`,
+      authenticationToken: customer.auth_token || crypto.createHash('sha256').update(customer.wallet_object_id || customer.id).digest('hex'),
+    } : {}),
     organizationName: merchant.name || 'Marketif Loyalty',
     description: `${merchant.name} ${lang === 'fr' ? 'Carte de Fidélité' : 'Treuekarte'}`,
     logoText: merchant.name,
@@ -109,15 +114,9 @@ export function buildPassJson(merchant: MerchantData, customer: CustomerData) {
     barcodes: [
       {
         format: 'PKBarcodeFormatQR',
-        message: customer.wallet_object_id,
+        message: customer.wallet_object_id || customer.id,
         messageEncoding: 'iso-8859-1',
-        altText: customer.wallet_object_id,
-      },
-      {
-        format: 'PKBarcodeFormatPDF417',
-        message: customer.wallet_object_id,
-        messageEncoding: 'iso-8859-1',
-        altText: customer.wallet_object_id,
+        altText: customer.wallet_object_id || customer.id,
       }
     ],
     storeCard: {
@@ -147,7 +146,7 @@ export function buildPassJson(merchant: MerchantData, customer: CustomerData) {
         {
           key: 'customer_id',
           label: t.customerIdLabel,
-          value: customer.wallet_object_id
+          value: customer.wallet_object_id || customer.id
         }
       ],
       backFields: [
@@ -190,7 +189,6 @@ export function signManifest(manifestBuffer: Buffer): Buffer | null {
   const wwdrPem = process.env.APPLE_WWDR_CERT_PEM;
 
   if (!p12Base64) {
-    // If not configured yet, return null (waiting for keys)
     console.warn('Apple Pass signing skipped: APPLE_PASS_CERT_P12_BASE64 is not set in environment.');
     return null;
   }
@@ -225,7 +223,7 @@ export function signManifest(manifestBuffer: Buffer): Buffer | null {
 
     // Create PKCS#7 signed data
     const p7 = forge.pkcs7.createSignedData();
-    p7.content = forge.util.createBuffer(manifestBuffer.toString('binary'));
+    p7.content = forge.util.createBuffer(manifestBuffer.toString('utf8'), 'utf8');
     p7.addCertificate(cert);
 
     if (wwdrPem) {
@@ -263,7 +261,7 @@ export function signManifest(manifestBuffer: Buffer): Buffer | null {
 }
 
 /**
- * Creates the in-memory .pkpass ZIP archive
+ * Creates the in-memory .pkpass ZIP archive with properly scaled Apple PassKit assets
  */
 export async function generatePkPass(merchant: MerchantData, customer: CustomerData): Promise<Buffer> {
   return new Promise(async (resolve, reject) => {
@@ -275,21 +273,34 @@ export async function generatePkPass(merchant: MerchantData, customer: CustomerD
         { filename: 'pass.json', buffer: passJsonBuffer }
       ];
 
-      // Add default icons & images if available
+      // Prepare icons & logo images
       const publicDir = path.join(process.cwd(), 'public');
       const iconPath = path.join(publicDir, 'icon-192x192.png');
-      const logoPath = path.join(publicDir, 'Marketif_LOGO_Symbol.png');
+      const defaultLogoPath = path.join(publicDir, 'Marketif_LOGO_Symbol.png');
 
-      if (fs.existsSync(iconPath)) {
-        const iconBuf = fs.readFileSync(iconPath);
-        files.push({ filename: 'icon.png', buffer: iconBuf });
-        files.push({ filename: 'icon@2x.png', buffer: iconBuf });
+      const iconSource = fs.existsSync(iconPath) ? fs.readFileSync(iconPath) : null;
+      const logoSource = fs.existsSync(defaultLogoPath) ? fs.readFileSync(defaultLogoPath) : null;
+
+      if (iconSource) {
+        const [icon1x, icon2x, icon3x] = await Promise.all([
+          sharp(iconSource).resize(29, 29).png().toBuffer(),
+          sharp(iconSource).resize(58, 58).png().toBuffer(),
+          sharp(iconSource).resize(87, 87).png().toBuffer()
+        ]);
+        files.push({ filename: 'icon.png', buffer: icon1x });
+        files.push({ filename: 'icon@2x.png', buffer: icon2x });
+        files.push({ filename: 'icon@3x.png', buffer: icon3x });
       }
 
-      if (fs.existsSync(logoPath)) {
-        const logoBuf = fs.readFileSync(logoPath);
-        files.push({ filename: 'logo.png', buffer: logoBuf });
-        files.push({ filename: 'logo@2x.png', buffer: logoBuf });
+      if (logoSource) {
+        const [logo1x, logo2x, logo3x] = await Promise.all([
+          sharp(logoSource).resize({ width: 160, height: 50, fit: 'inside' }).png().toBuffer(),
+          sharp(logoSource).resize({ width: 320, height: 100, fit: 'inside' }).png().toBuffer(),
+          sharp(logoSource).resize({ width: 480, height: 150, fit: 'inside' }).png().toBuffer()
+        ]);
+        files.push({ filename: 'logo.png', buffer: logo1x });
+        files.push({ filename: 'logo@2x.png', buffer: logo2x });
+        files.push({ filename: 'logo@3x.png', buffer: logo3x });
       }
 
       // 1. Build manifest.json with SHA1 hash for each file
