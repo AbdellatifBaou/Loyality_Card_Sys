@@ -2,7 +2,7 @@ import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import forge from 'node-forge';
-import { ZipArchive } from 'archiver';
+import { PKPass } from 'passkit-generator';
 import sharp from 'sharp';
 
 interface MerchantData {
@@ -180,159 +180,101 @@ export function buildPassJson(merchant: MerchantData, customer: CustomerData) {
   };
 }
 
-/**
- * Generate PKCS#7 detached signature for manifest.json
- */
-export function signManifest(manifestBuffer: Buffer): Buffer | null {
+let cachedSigner: { signerCert: string; signerKey: string; wwdr: string } | null = null;
+
+function getSignerCredentials() {
+  if (cachedSigner) return cachedSigner;
+
   const p12Base64 = process.env.APPLE_PASS_CERT_P12_BASE64;
   const p12Password = process.env.APPLE_PASS_CERT_PASSWORD || '';
-  const wwdrPem = process.env.APPLE_WWDR_CERT_PEM;
+  let wwdrPem = process.env.APPLE_WWDR_CERT_PEM || '';
+
+  if (wwdrPem.includes('\\n')) {
+    wwdrPem = wwdrPem.replace(/\\n/g, '\n');
+  }
 
   if (!p12Base64) {
-    console.warn('Apple Pass signing skipped: APPLE_PASS_CERT_P12_BASE64 is not set in environment.');
-    return null;
+    throw new Error('APPLE_PASS_CERT_P12_BASE64 is not configured in environment variables');
   }
 
-  try {
-    const p12Der = forge.util.decode64(p12Base64);
-    const p12Asn1 = forge.asn1.fromDer(p12Der);
-    const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, p12Password);
+  const p12Der = forge.util.decode64(p12Base64);
+  const p12Asn1 = forge.asn1.fromDer(p12Der);
+  const p12 = forge.pkcs12.pkcs12FromAsn1(p12Asn1, p12Password);
 
-    let cert: any = null;
-    let key: any = null;
+  let signerCertPem: string | null = null;
+  let signerKeyPem: string | null = null;
 
-    for (const safeContent of p12.safeContents) {
-      for (const safeBag of safeContent.safeBags) {
-        if (safeBag.type === forge.pki.oids.certBag) {
-          const c = safeBag.cert;
-          const cnAttr = c?.subject?.attributes?.find((a: any) => a.name === 'commonName' || a.shortName === 'CN');
-          if (cnAttr && (cnAttr.value.includes('pass.') || cnAttr.value.includes('Pass Type ID'))) {
-            cert = c;
-          } else if (!cert) {
-            cert = c;
-          }
-        } else if (safeBag.type === forge.pki.oids.pkcs8ShroudedKeyBag || safeBag.type === forge.pki.oids.keyBag) {
-          key = safeBag.key;
+  for (const safeContent of p12.safeContents) {
+    for (const safeBag of safeContent.safeBags) {
+      if (safeBag.type === forge.pki.oids.certBag) {
+        const c = safeBag.cert;
+        const cnAttr = c?.subject?.attributes?.find((a: any) => a.name === 'commonName' || a.shortName === 'CN');
+        if (cnAttr && (cnAttr.value.includes('pass.') || cnAttr.value.includes('Pass Type ID'))) {
+          signerCertPem = forge.pki.certificateToPem(c);
+        } else if (!signerCertPem) {
+          signerCertPem = forge.pki.certificateToPem(c);
         }
+      } else if (safeBag.type === forge.pki.oids.pkcs8ShroudedKeyBag || safeBag.type === forge.pki.oids.keyBag) {
+        signerKeyPem = forge.pki.privateKeyToPem(safeBag.key);
       }
     }
-
-    if (!cert || !key) {
-      throw new Error('Could not find certificate or private key in P12 bundle');
-    }
-
-    // Create PKCS#7 signed data
-    const p7 = forge.pkcs7.createSignedData();
-    p7.content = forge.util.createBuffer(manifestBuffer.toString('utf8'), 'utf8');
-    p7.addCertificate(cert);
-
-    if (wwdrPem) {
-      const cleanPem = wwdrPem.includes('\\n') ? wwdrPem.replace(/\\n/g, '\n') : wwdrPem;
-      const wwdrCert = forge.pki.certificateFromPem(cleanPem);
-      p7.addCertificate(wwdrCert);
-    }
-
-    p7.addSigner({
-      key: key,
-      certificate: cert,
-      digestAlgorithm: forge.pki.oids.sha1,
-      authenticatedAttributes: [
-        {
-          type: forge.pki.oids.contentType,
-          value: forge.pki.oids.data
-        },
-        {
-          type: forge.pki.oids.messageDigest
-        },
-        {
-          type: forge.pki.oids.signingTime,
-          value: new Date()
-        }
-      ]
-    });
-
-    p7.sign({ detached: true });
-    const p7Der = forge.asn1.toDer(p7.toAsn1()).getBytes();
-    return Buffer.from(p7Der, 'binary');
-  } catch (error) {
-    console.error('Error signing Apple Pass manifest:', error);
-    return null;
   }
+
+  if (!signerCertPem || !signerKeyPem) {
+    throw new Error('Failed to extract Apple Wallet signer certificate or private key from P12 bundle');
+  }
+
+  cachedSigner = {
+    signerCert: signerCertPem,
+    signerKey: signerKeyPem,
+    wwdr: wwdrPem
+  };
+
+  return cachedSigner;
 }
 
 /**
- * Creates the in-memory .pkpass ZIP archive with properly scaled Apple PassKit assets
+ * Creates the in-memory .pkpass ZIP archive with passkit-generator
  */
 export async function generatePkPass(merchant: MerchantData, customer: CustomerData): Promise<Buffer> {
-  return new Promise(async (resolve, reject) => {
-    try {
-      const passJson = buildPassJson(merchant, customer);
-      const passJsonBuffer = Buffer.from(JSON.stringify(passJson, null, 2), 'utf8');
+  const credentials = getSignerCredentials();
+  const passJson = buildPassJson(merchant, customer);
+  const passJsonBuffer = Buffer.from(JSON.stringify(passJson, null, 2), 'utf8');
 
-      const files: { filename: string; buffer: Buffer }[] = [
-        { filename: 'pass.json', buffer: passJsonBuffer }
-      ];
+  // Prepare images with Sharp
+  const publicDir = path.join(process.cwd(), 'public');
+  const iconPath = path.join(publicDir, 'icon-192x192.png');
+  const defaultLogoPath = path.join(publicDir, 'Marketif_LOGO_Symbol.png');
 
-      // Prepare icons & logo images
-      const publicDir = path.join(process.cwd(), 'public');
-      const iconPath = path.join(publicDir, 'icon-192x192.png');
-      const defaultLogoPath = path.join(publicDir, 'Marketif_LOGO_Symbol.png');
+  const iconSource = fs.existsSync(iconPath) ? fs.readFileSync(iconPath) : null;
+  const logoSource = fs.existsSync(defaultLogoPath) ? fs.readFileSync(defaultLogoPath) : null;
 
-      const iconSource = fs.existsSync(iconPath) ? fs.readFileSync(iconPath) : null;
-      const logoSource = fs.existsSync(defaultLogoPath) ? fs.readFileSync(defaultLogoPath) : null;
+  const buffersMap: Record<string, Buffer> = {
+    'pass.json': passJsonBuffer
+  };
 
-      if (iconSource) {
-        const [icon1x, icon2x, icon3x] = await Promise.all([
-          sharp(iconSource).resize(29, 29).png().toBuffer(),
-          sharp(iconSource).resize(58, 58).png().toBuffer(),
-          sharp(iconSource).resize(87, 87).png().toBuffer()
-        ]);
-        files.push({ filename: 'icon.png', buffer: icon1x });
-        files.push({ filename: 'icon@2x.png', buffer: icon2x });
-        files.push({ filename: 'icon@3x.png', buffer: icon3x });
-      }
+  if (iconSource) {
+    const [icon1x, icon2x, icon3x] = await Promise.all([
+      sharp(iconSource).resize(29, 29).png().toBuffer(),
+      sharp(iconSource).resize(58, 58).png().toBuffer(),
+      sharp(iconSource).resize(87, 87).png().toBuffer()
+    ]);
+    buffersMap['icon.png'] = icon1x;
+    buffersMap['icon@2x.png'] = icon2x;
+    buffersMap['icon@3x.png'] = icon3x;
+  }
 
-      if (logoSource) {
-        const [logo1x, logo2x, logo3x] = await Promise.all([
-          sharp(logoSource).resize({ width: 160, height: 50, fit: 'inside' }).png().toBuffer(),
-          sharp(logoSource).resize({ width: 320, height: 100, fit: 'inside' }).png().toBuffer(),
-          sharp(logoSource).resize({ width: 480, height: 150, fit: 'inside' }).png().toBuffer()
-        ]);
-        files.push({ filename: 'logo.png', buffer: logo1x });
-        files.push({ filename: 'logo@2x.png', buffer: logo2x });
-        files.push({ filename: 'logo@3x.png', buffer: logo3x });
-      }
+  if (logoSource) {
+    const [logo1x, logo2x, logo3x] = await Promise.all([
+      sharp(logoSource).resize({ width: 160, height: 50, fit: 'inside' }).png().toBuffer(),
+      sharp(logoSource).resize({ width: 320, height: 100, fit: 'inside' }).png().toBuffer(),
+      sharp(logoSource).resize({ width: 480, height: 150, fit: 'inside' }).png().toBuffer()
+    ]);
+    buffersMap['logo.png'] = logo1x;
+    buffersMap['logo@2x.png'] = logo2x;
+    buffersMap['logo@3x.png'] = logo3x;
+  }
 
-      // 1. Build manifest.json with SHA1 hash for each file
-      const manifest: Record<string, string> = {};
-      for (const file of files) {
-        manifest[file.filename] = crypto.createHash('sha1').update(file.buffer).digest('hex');
-      }
-
-      const manifestBuffer = Buffer.from(JSON.stringify(manifest, null, 2), 'utf8');
-      files.push({ filename: 'manifest.json', buffer: manifestBuffer });
-
-      // 2. Sign manifest.json
-      const signatureBuffer = signManifest(manifestBuffer);
-      if (signatureBuffer) {
-        files.push({ filename: 'signature', buffer: signatureBuffer });
-      }
-
-      // 3. Zip into .pkpass archive
-      const archive = new ZipArchive({ zlib: { level: 9 } });
-      const buffers: Buffer[] = [];
-
-      archive.on('data', data => buffers.push(data));
-      archive.on('end', () => resolve(Buffer.concat(buffers)));
-      archive.on('error', err => reject(err));
-
-      for (const file of files) {
-        archive.append(file.buffer, { name: file.filename });
-      }
-
-      archive.finalize();
-    } catch (err) {
-      reject(err);
-    }
-  });
+  const pass = new PKPass(buffersMap, credentials);
+  return pass.getAsBuffer();
 }
