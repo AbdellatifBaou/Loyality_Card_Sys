@@ -74,8 +74,12 @@ export async function POST(req: Request) {
       { customer_id: customer.id, staff_id: staff.id, amount, type }
     ]);
 
-    // 5. Update Google Wallet
-    await updateLoyaltyObjectPoints(customer.wallet_object_id, newPoints, type === 'redeem', merchant);
+    // 5. Update Google Wallet (if customer pass exists in Google Wallet)
+    try {
+      await updateLoyaltyObjectPoints(customer.wallet_object_id, newPoints, type === 'redeem', merchant);
+    } catch (gErr: any) {
+      console.warn('[Stamp API] Google Wallet update skipped or not found (pass may be on Apple Wallet):', gErr?.message || gErr);
+    }
 
     return NextResponse.json({ success: true, newPoints, type });
   } catch (error: any) {

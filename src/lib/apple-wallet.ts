@@ -109,8 +109,8 @@ export function buildPassJson(merchant: MerchantData, customer: CustomerData) {
     description: `${merchant.name} ${lang === 'fr' ? 'Carte de Fidélité' : 'Treuekarte'}`,
     logoText: merchant.name,
     foregroundColor: 'rgb(255, 255, 255)',
-    backgroundColor: hexToRgb(merchant.primary_color || '#D4AF37'),
-    labelColor: 'rgb(240, 240, 240)',
+    backgroundColor: 'rgb(16, 14, 12)',
+    labelColor: hexToRgb(merchant.primary_color || '#D4AF37'),
     barcodes: [
       {
         format: 'PKBarcodeFormatQR',
@@ -262,6 +262,97 @@ function getSignerCredentials() {
   return cachedSigner;
 }
 
+function generateStripSvg(points: number, stampGoal: number, primaryColor?: string, stampSymbol?: string, language?: string) {
+  const width = 1125;
+  const height = 369;
+  const gold = primaryColor || '#D4AF37';
+  const symbol = stampSymbol || '★';
+  const isFrench = language === 'fr';
+
+  const isFull = points >= stampGoal;
+
+  if (isFull) {
+    const title = isFrench ? 'RÉCOMPENSE PRÊTE !' : 'BELOHNUNG BEREIT !';
+    const sub = isFrench ? 'Présentez votre carte en caisse' : 'Zeige deine Karte an der Kasse vor';
+    return `
+      <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <linearGradient id="bgFull" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#241B08" />
+            <stop offset="50%" stop-color="#0E0B03" />
+            <stop offset="100%" stop-color="#241B08" />
+          </linearGradient>
+          <linearGradient id="goldText" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stop-color="#FFF0A0" />
+            <stop offset="50%" stop-color="${gold}" />
+            <stop offset="100%" stop-color="#FFA000" />
+          </linearGradient>
+        </defs>
+        <rect width="${width}" height="${height}" fill="url(#bgFull)" />
+        <line x1="0" y1="0" x2="${width}" y2="0" stroke="${gold}" stroke-width="6" opacity="0.8" />
+        <line x1="0" y1="${height}" x2="${width}" y2="${height}" stroke="${gold}" stroke-width="6" opacity="0.8" />
+        <rect x="40" y="30" width="1045" height="309" rx="24" fill="rgba(212,175,55,0.08)" stroke="${gold}" stroke-width="2" stroke-dasharray="8,6" />
+        <text x="${width / 2}" y="155" font-size="54" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" text-anchor="middle" fill="url(#goldText)" letter-spacing="3">🎉 ${title} 🎉</text>
+        <text x="${width / 2}" y="230" font-size="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="500" text-anchor="middle" fill="#FFFFFF" opacity="0.95">${sub}</text>
+      </svg>
+    `;
+  }
+
+  const colsPerRow = stampGoal > 10 ? 6 : (stampGoal > 5 ? 5 : stampGoal);
+  const rows = Math.ceil(stampGoal / colsPerRow);
+  const size = rows > 2 ? 74 : 94;
+  const gap = 22;
+
+  let circlesSvg = '';
+  
+  for (let i = 0; i < stampGoal; i++) {
+    const row = Math.floor(i / colsPerRow);
+    const col = i % colsPerRow;
+    const totalInRow = (row === rows - 1) ? (stampGoal - row * colsPerRow) : colsPerRow;
+    const startX = (width - (totalInRow * size + (totalInRow - 1) * gap)) / 2;
+    const startY = (height - (rows * size + (rows - 1) * gap)) / 2;
+    
+    const cx = startX + col * (size + gap) + size / 2;
+    const cy = startY + row * (size + gap) + size / 2;
+    const r = size / 2;
+    const isStamped = i < points;
+
+    if (isStamped) {
+      circlesSvg += `
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#goldGrad)" stroke="${gold}" stroke-width="3" />
+        <circle cx="${cx}" cy="${cy}" r="${r - 5}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" />
+        <text x="${cx}" y="${cy + r * 0.35}" font-size="${r * 1.05}" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-weight="bold" text-anchor="middle" fill="#111111">${symbol}</text>
+      `;
+    } else {
+      circlesSvg += `
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.25)" stroke-width="2" stroke-dasharray="6,6" />
+        <text x="${cx}" y="${cy + r * 0.35}" font-size="${r * 0.75}" font-family="-apple-system, BlinkMacSystemFont, sans-serif" text-anchor="middle" fill="rgba(255,255,255,0.25)">${symbol}</text>
+      `;
+    }
+  }
+
+  return `
+    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#1A1713" />
+          <stop offset="50%" stop-color="#0E0C09" />
+          <stop offset="100%" stop-color="#1A1713" />
+        </linearGradient>
+        <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stop-color="#FFF2B2" />
+          <stop offset="45%" stop-color="${gold}" />
+          <stop offset="100%" stop-color="#8C6200" />
+        </linearGradient>
+      </defs>
+      <rect width="${width}" height="${height}" fill="url(#bgGrad)" />
+      <line x1="0" y1="0" x2="${width}" y2="0" stroke="${gold}" stroke-width="3" opacity="0.7" />
+      <line x1="0" y1="${height}" x2="${width}" y2="${height}" stroke="${gold}" stroke-width="3" opacity="0.7" />
+      ${circlesSvg}
+    </svg>
+  `;
+}
+
 /**
  * Creates the in-memory .pkpass ZIP archive with passkit-generator
  */
@@ -303,6 +394,23 @@ export async function generatePkPass(merchant: MerchantData, customer: CustomerD
     buffersMap['logo@2x.png'] = logo2x;
     buffersMap['logo@3x.png'] = logo3x;
   }
+
+  // Generate dynamic strip banner with stamp circles (matching Google Wallet design)
+  const stampGoal = merchant.stamp_goal || 9;
+  const currentPoints = customer.points || 0;
+  const stampSymbol = (merchant as any).stamp_symbol || '★';
+  const stripSvg = generateStripSvg(currentPoints, stampGoal, merchant.primary_color, stampSymbol, merchant.language);
+  const stripSvgBuffer = Buffer.from(stripSvg, 'utf8');
+
+  const [strip1x, strip2x, strip3x] = await Promise.all([
+    sharp(stripSvgBuffer).resize(375, 123).png().toBuffer(),
+    sharp(stripSvgBuffer).resize(750, 246).png().toBuffer(),
+    sharp(stripSvgBuffer).resize(1125, 369).png().toBuffer(),
+  ]);
+
+  buffersMap['strip.png'] = strip1x;
+  buffersMap['strip@2x.png'] = strip2x;
+  buffersMap['strip@3x.png'] = strip3x;
 
   const pass = new PKPass(buffersMap, credentials);
   return pass.getAsBuffer();
