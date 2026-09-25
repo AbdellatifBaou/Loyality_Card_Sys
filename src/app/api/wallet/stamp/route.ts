@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { updateLoyaltyObjectPoints } from '@/lib/google-wallet';
+import { notifyApplePassUpdate } from '@/lib/apple-pass-registry';
 import { rateLimit } from '@/lib/ratelimit';
 
 export async function POST(req: Request) {
@@ -69,7 +70,7 @@ export async function POST(req: Request) {
     }
 
     // 4. Update Database (Customer & Stamps Log)
-    await adminSupabase.from('customers_loyality').update({ points: newPoints }).eq('id', customer.id);
+    await adminSupabase.from('customers_loyality').update({ points: newPoints, updated_at: new Date().toISOString() }).eq('id', customer.id);
     await adminSupabase.from('stamps_loyality').insert([
       { customer_id: customer.id, staff_id: staff.id, amount, type }
     ]);
@@ -79,6 +80,13 @@ export async function POST(req: Request) {
       await updateLoyaltyObjectPoints(customer.wallet_object_id, newPoints, type === 'redeem', merchant);
     } catch (gErr: any) {
       console.warn('[Stamp API] Google Wallet update skipped or not found (pass may be on Apple Wallet):', gErr?.message || gErr);
+    }
+
+    // 6. Push live update to Apple Wallet devices
+    try {
+      await notifyApplePassUpdate(customer.wallet_object_id);
+    } catch (aErr: any) {
+      console.warn('[Stamp API] Apple Wallet push notification skipped:', aErr?.message || aErr);
     }
 
     return NextResponse.json({ success: true, newPoints, type });

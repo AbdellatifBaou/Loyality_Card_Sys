@@ -262,11 +262,20 @@ function getSignerCredentials() {
   return cachedSigner;
 }
 
+function getStarPolygon(cx: number, cy: number, r: number, fill: string, stroke?: string): string {
+  const points: string[] = [];
+  for (let i = 0; i < 10; i++) {
+    const angle = (i * Math.PI) / 5 - Math.PI / 2;
+    const radius = (i % 2 === 0) ? r : r * 0.44;
+    points.push(`${(cx + radius * Math.cos(angle)).toFixed(1)},${(cy + radius * Math.sin(angle)).toFixed(1)}`);
+  }
+  return `<polygon points="${points.join(' ')}" fill="${fill}" stroke="${stroke || 'none'}" stroke-width="1" />`;
+}
+
 function generateStripSvg(points: number, stampGoal: number, primaryColor?: string, stampSymbol?: string, language?: string) {
   const width = 1125;
   const height = 369;
   const gold = primaryColor || '#D4AF37';
-  const symbol = stampSymbol || '★';
   const isFrench = language === 'fr';
 
   const isFull = points >= stampGoal;
@@ -289,10 +298,10 @@ function generateStripSvg(points: number, stampGoal: number, primaryColor?: stri
           </linearGradient>
         </defs>
         <rect width="${width}" height="${height}" fill="url(#bgFull)" />
-        <line x1="0" y1="0" x2="${width}" y2="0" stroke="${gold}" stroke-width="6" opacity="0.8" />
-        <line x1="0" y1="${height}" x2="${width}" y2="${height}" stroke="${gold}" stroke-width="6" opacity="0.8" />
-        <rect x="40" y="30" width="1045" height="309" rx="24" fill="rgba(212,175,55,0.08)" stroke="${gold}" stroke-width="2" stroke-dasharray="8,6" />
-        <text x="${width / 2}" y="155" font-size="54" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" text-anchor="middle" fill="url(#goldText)" letter-spacing="3">🎉 ${title} 🎉</text>
+        <line x1="0" y1="0" x2="${width}" y2="0" stroke="${gold}" stroke-width="6" opacity="0.9" />
+        <line x1="0" y1="${height}" x2="${width}" y2="${height}" stroke="${gold}" stroke-width="6" opacity="0.9" />
+        <rect x="40" y="30" width="1045" height="309" rx="24" fill="rgba(212,175,55,0.08)" stroke="${gold}" stroke-width="2.5" stroke-dasharray="8,6" />
+        <text x="${width / 2}" y="155" font-size="54" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" text-anchor="middle" fill="url(#goldText)" letter-spacing="3">★ ${title} ★</text>
         <text x="${width / 2}" y="230" font-size="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="500" text-anchor="middle" fill="#FFFFFF" opacity="0.95">${sub}</text>
       </svg>
     `;
@@ -300,8 +309,8 @@ function generateStripSvg(points: number, stampGoal: number, primaryColor?: stri
 
   const colsPerRow = stampGoal > 10 ? 6 : (stampGoal > 5 ? 5 : stampGoal);
   const rows = Math.ceil(stampGoal / colsPerRow);
-  const size = rows > 2 ? 74 : 94;
-  const gap = 22;
+  const size = rows > 2 ? 80 : 102;
+  const gap = rows > 2 ? 18 : 24;
 
   let circlesSvg = '';
   
@@ -319,14 +328,14 @@ function generateStripSvg(points: number, stampGoal: number, primaryColor?: stri
 
     if (isStamped) {
       circlesSvg += `
-        <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#goldGrad)" stroke="${gold}" stroke-width="3" />
-        <circle cx="${cx}" cy="${cy}" r="${r - 5}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" />
-        <text x="${cx}" y="${cy + r * 0.35}" font-size="${r * 1.05}" font-family="-apple-system, BlinkMacSystemFont, sans-serif" font-weight="bold" text-anchor="middle" fill="#111111">${symbol}</text>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#goldGrad)" stroke="${gold}" stroke-width="3.5" />
+        <circle cx="${cx}" cy="${cy}" r="${r - 5}" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" />
+        ${getStarPolygon(cx, cy, r * 0.58, '#14120D', 'rgba(255,255,255,0.3)')}
       `;
     } else {
       circlesSvg += `
-        <circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(255,255,255,0.05)" stroke="rgba(255,255,255,0.25)" stroke-width="2" stroke-dasharray="6,6" />
-        <text x="${cx}" y="${cy + r * 0.35}" font-size="${r * 0.75}" font-family="-apple-system, BlinkMacSystemFont, sans-serif" text-anchor="middle" fill="rgba(255,255,255,0.25)">${symbol}</text>
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.28)" stroke-width="2.5" stroke-dasharray="6,6" />
+        ${getStarPolygon(cx, cy, r * 0.42, 'rgba(255,255,255,0.2)')}
       `;
     }
   }
@@ -335,9 +344,9 @@ function generateStripSvg(points: number, stampGoal: number, primaryColor?: stri
     <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#1A1713" />
-          <stop offset="50%" stop-color="#0E0C09" />
-          <stop offset="100%" stop-color="#1A1713" />
+          <stop offset="0%" stop-color="#1C1914" />
+          <stop offset="50%" stop-color="#0E0C0A" />
+          <stop offset="100%" stop-color="#1C1914" />
         </linearGradient>
         <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stop-color="#FFF2B2" />
@@ -346,8 +355,8 @@ function generateStripSvg(points: number, stampGoal: number, primaryColor?: stri
         </linearGradient>
       </defs>
       <rect width="${width}" height="${height}" fill="url(#bgGrad)" />
-      <line x1="0" y1="0" x2="${width}" y2="0" stroke="${gold}" stroke-width="3" opacity="0.7" />
-      <line x1="0" y1="${height}" x2="${width}" y2="${height}" stroke="${gold}" stroke-width="3" opacity="0.7" />
+      <line x1="0" y1="0" x2="${width}" y2="0" stroke="${gold}" stroke-width="4" opacity="0.8" />
+      <line x1="0" y1="${height}" x2="${width}" y2="${height}" stroke="${gold}" stroke-width="4" opacity="0.8" />
       ${circlesSvg}
     </svg>
   `;
