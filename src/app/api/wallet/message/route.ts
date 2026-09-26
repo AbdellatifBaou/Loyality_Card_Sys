@@ -39,6 +39,25 @@ export async function POST(req: Request) {
         header,
         body
       });
+
+      // Also trigger Apple Pass update for all customers of this merchant
+      try {
+        const { notifyApplePassUpdate } = require('@/lib/apple-pass-registry');
+        const { data: customers } = await adminSupabase
+          .from('customers_loyality')
+          .select('wallet_object_id')
+          .eq('merchant_id', merchantData.id);
+
+        if (customers) {
+          for (const c of customers) {
+            if (c.wallet_object_id) {
+              await notifyApplePassUpdate(c.wallet_object_id);
+            }
+          }
+        }
+      } catch (aErr: any) {
+        console.warn('[Broadcast Message] Apple Wallet notification skipped:', aErr?.message || aErr);
+      }
     }
 
     return NextResponse.json({ success: true });

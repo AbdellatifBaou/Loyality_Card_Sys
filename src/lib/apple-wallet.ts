@@ -92,9 +92,9 @@ export function buildPassJson(merchant: MerchantData, customer: CustomerData) {
 
   const passTypeId = process.env.APPLE_PASS_TYPE_IDENTIFIER || 'pass.de.marketif.loyalty';
   const teamId = process.env.APPLE_TEAM_ID || 'HA5ATW8338';
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://treue.marketif.de';
-
-  const isHttps = appUrl && appUrl.startsWith('https://');
+  const rawAppUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://treue.marketif.de';
+  const cleanAppUrl = rawAppUrl.replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '').replace(/\/$/, '');
+  const isHttps = cleanAppUrl && cleanAppUrl.startsWith('https://');
 
   return {
     formatVersion: 1,
@@ -102,7 +102,7 @@ export function buildPassJson(merchant: MerchantData, customer: CustomerData) {
     serialNumber: customer.wallet_object_id || customer.id,
     teamIdentifier: teamId,
     ...(isHttps ? {
-      webServiceURL: `${appUrl}/api/v1`,
+      webServiceURL: `${cleanAppUrl}/api`,
       authenticationToken: customer.auth_token || crypto.createHash('sha256').update(customer.wallet_object_id || customer.id).digest('hex'),
     } : {}),
     organizationName: merchant.name || 'Marketif Loyalty',

@@ -40,7 +40,7 @@ export async function POST(req: Request) {
     // 2. Update Database (Customer points)
     const { error: updateError } = await adminSupabase
       .from('customers_loyality')
-      .update({ points: newPoints })
+      .update({ points: newPoints, updated_at: new Date().toISOString() })
       .eq('id', customerId);
 
     if (updateError) {
@@ -63,7 +63,19 @@ export async function POST(req: Request) {
 
     // 3. Update Google Wallet
     if (customer.wallet_object_id) {
-      await updateLoyaltyObjectPoints(customer.wallet_object_id, newPoints, isRedeem, merchant);
+      try {
+        await updateLoyaltyObjectPoints(customer.wallet_object_id, newPoints, isRedeem, merchant);
+      } catch (gErr: any) {
+        console.warn('[Admin Update Points] Google Wallet update skipped:', gErr?.message || gErr);
+      }
+
+      // 4. Update Apple Wallet
+      try {
+        const { notifyApplePassUpdate } = require('@/lib/apple-pass-registry');
+        await notifyApplePassUpdate(customer.wallet_object_id);
+      } catch (aErr: any) {
+        console.warn('[Admin Update Points] Apple Wallet update skipped:', aErr?.message || aErr);
+      }
     }
 
     return NextResponse.json({ success: true, newPoints });
