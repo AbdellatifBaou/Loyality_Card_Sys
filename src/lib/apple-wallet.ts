@@ -144,6 +144,13 @@ export function buildPassJson(merchant: MerchantData, customer: CustomerData) {
           label: t.rewardLabel,
           value: rewardText,
           changeMessage: t.changeReward
+        },
+        {
+          key: 'progress',
+          label: lang === 'fr' ? 'PROGRESSION' : 'STATUS',
+          value: currentPoints >= stampGoal
+            ? (lang === 'fr' ? 'Prêt à échanger 🎉' : 'Prämie bereit 🎉')
+            : (lang === 'fr' ? `${currentPoints} sur ${stampGoal} tampons` : `${currentPoints} von ${stampGoal} Stempeln`)
         }
       ],
       auxiliaryFields: [
@@ -151,6 +158,11 @@ export function buildPassJson(merchant: MerchantData, customer: CustomerData) {
           key: 'customer_id',
           label: t.customerIdLabel,
           value: shortId
+        },
+        {
+          key: 'merchant_info',
+          label: lang === 'fr' ? 'COMMERCE' : 'HÄNDLER',
+          value: merchant.name || 'Treuekarte'
         }
       ],
       backFields: [
@@ -381,11 +393,16 @@ async function generateStripSvg(
     ? `<image href="data:image/png;base64,${heroImageBase64}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid slice" opacity="0.65" />`
     : '';
 
-  // 1. REWARD READY STATE (Pass is full)
+  // 1. REWARD READY STATE (Pass is full - 4/4, 5/5, 9/9, etc.)
   if (isFull) {
-    const title = isFrench ? 'FÉLICITATIONS !' : 'HERZLICHEN GLÜCKWUNSCH !';
-    const sub = isFrench ? 'Présentez cette carte lors de votre prochaine visite' : 'Zeige diese Karte beim nächsten Besuch vor';
-    const displayReward = rewardText || (isFrench ? 'Récompense prête' : 'Belohnung bereit');
+    const title = isFrench ? 'FELICITATIONS !' : 'HERZLICHEN GLUECKWUNSCH !';
+    const sub = isFrench ? 'Presentez cette carte lors de votre prochaine visite' : 'Zeige diese Karte beim naechsten Besuch vor';
+    const displayReward = rewardText || (isFrench ? 'Recompense prete' : 'Belohnung bereit');
+
+    const [partyTwemoji, giftTwemoji] = await Promise.all([
+      fetchTwemojiBase64('🎉'),
+      fetchTwemojiBase64('🎁')
+    ]);
 
     return `
       <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
@@ -401,7 +418,7 @@ async function generateStripSvg(
             <stop offset="100%" stop-color="#E5A800" />
           </linearGradient>
           <radialGradient id="glowEffect" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="rgba(${rgb}, 0.25)" />
+            <stop offset="0%" stop-color="rgba(${rgb}, 0.35)" />
             <stop offset="100%" stop-color="rgba(0,0,0,0)" />
           </radialGradient>
         </defs>
@@ -411,10 +428,20 @@ async function generateStripSvg(
         <rect width="${width}" height="${height}" fill="url(#glowEffect)" />
         <line x1="0" y1="0" x2="${width}" y2="0" stroke="${gold}" stroke-width="6" opacity="0.95" />
         <line x1="0" y1="${height}" x2="${width}" y2="${height}" stroke="${gold}" stroke-width="6" opacity="0.95" />
-        <rect x="40" y="24" width="1045" height="321" rx="24" fill="rgba(0,0,0,0.65)" stroke="${gold}" stroke-width="2.5" stroke-dasharray="8,6" />
-        <text x="${width / 2}" y="115" font-size="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" text-anchor="middle" fill="url(#goldText)" letter-spacing="3">★ ${title} ★</text>
-        <text x="${width / 2}" y="190" font-size="36" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="700" text-anchor="middle" fill="#FFFFFF">${displayReward}</text>
-        <text x="${width / 2}" y="260" font-size="22" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="500" text-anchor="middle" fill="#E0E0E0" opacity="0.9">${sub}</text>
+        <rect x="30" y="20" width="1065" height="329" rx="24" fill="rgba(0,0,0,0.65)" stroke="${gold}" stroke-width="3" stroke-dasharray="8,6" />
+        
+        <!-- Left celebratory emoji badge -->
+        <circle cx="140" cy="184" r="68" fill="url(#bgFull)" stroke="${gold}" stroke-width="3" />
+        ${partyTwemoji ? `<image href="${partyTwemoji}" x="95" y="139" width="90" height="90" />` : ''}
+
+        <!-- Center Text Section -->
+        <text x="562" y="112" font-size="44" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-weight="bold" text-anchor="middle" fill="url(#goldText)">${title}</text>
+        <text x="562" y="188" font-size="36" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-weight="bold" text-anchor="middle" fill="#FFFFFF">${displayReward}</text>
+        <text x="562" y="255" font-size="22" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-weight="normal" text-anchor="middle" fill="#E0E0E0" opacity="0.9">${sub}</text>
+
+        <!-- Right reward gift badge -->
+        <circle cx="985" cy="184" r="68" fill="url(#bgFull)" stroke="${gold}" stroke-width="3" />
+        ${giftTwemoji ? `<image href="${giftTwemoji}" x="940" y="139" width="90" height="90" />` : ''}
       </svg>
     `;
   }
@@ -422,14 +449,27 @@ async function generateStripSvg(
   // 2. STAMP COLLECTING STATE (Matching Google Wallet stamp grid)
   const twemojiDataUrl = await fetchTwemojiBase64(stampSymbol || '✨');
 
-  // Calculate dynamic grid
+  // Calculate dynamic grid with ENLARGED circles
   const colsPerRow = stampGoal <= 5 ? stampGoal : (stampGoal <= 10 ? Math.ceil(stampGoal / 2) : 6);
   const rows = Math.ceil(stampGoal / colsPerRow);
   
-  // Dimensions tailored for 1125x369 strip canvas
-  const size = rows === 1 ? 116 : (rows === 2 ? (stampGoal > 10 ? 76 : 88) : 68);
-  const gap = rows === 1 ? 28 : (rows === 2 ? 18 : 12);
-  const iconSize = size * 0.58;
+  // Dimensions tailored for 1125x369 strip canvas - maximize size
+  let size = 80;
+  let gap = 16;
+  if (stampGoal <= 4) {
+    size = 190;
+    gap = 36;
+  } else if (stampGoal === 5) {
+    size = 170;
+    gap = 26;
+  } else if (stampGoal <= 10) {
+    size = 124;
+    gap = 22;
+  } else {
+    size = 96;
+    gap = 16;
+  }
+  const iconSize = size * 0.60;
 
   let circlesSvg = '';
 
@@ -451,11 +491,11 @@ async function generateStripSvg(
       circlesSvg += `
         <g>
           <!-- Outer Stamp Glow -->
-          <circle cx="${cx}" cy="${cy}" r="${r + 4}" fill="rgba(${rgb}, 0.25)" />
+          <circle cx="${cx}" cy="${cy}" r="${r + 6}" fill="rgba(${rgb}, 0.35)" />
           <!-- Stamp Gradient Body -->
-          <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#goldGrad)" stroke="${gold}" stroke-width="3.5" />
+          <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#goldGrad)" stroke="${gold}" stroke-width="4" />
           <!-- Inner Rim -->
-          <circle cx="${cx}" cy="${cy}" r="${r - 4}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" />
+          <circle cx="${cx}" cy="${cy}" r="${r - 5}" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="2" />
           ${
             twemojiDataUrl
               ? `<image href="${twemojiDataUrl}" x="${iconX}" y="${iconY}" width="${iconSize}" height="${iconSize}" />`
@@ -469,7 +509,7 @@ async function generateStripSvg(
           <circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(0,0,0,0.55)" stroke="rgba(${rgb}, 0.45)" stroke-width="2.5" stroke-dasharray="6,6" />
           ${
             twemojiDataUrl
-              ? `<image href="${twemojiDataUrl}" x="${iconX}" y="${iconY}" width="${iconSize}" height="${iconSize}" opacity="0.22" />`
+              ? `<image href="${twemojiDataUrl}" x="${iconX}" y="${iconY}" width="${iconSize}" height="${iconSize}" opacity="0.25" />`
               : getStarPolygon(cx, cy, r * 0.42, `rgba(${rgb}, 0.25)`)
           }
         </g>
@@ -491,7 +531,7 @@ async function generateStripSvg(
           <stop offset="100%" stop-color="#8C6200" />
         </linearGradient>
         <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="rgba(${rgb}, 0.18)" />
+          <stop offset="0%" stop-color="rgba(${rgb}, 0.22)" />
           <stop offset="100%" stop-color="rgba(0,0,0,0)" />
         </radialGradient>
       </defs>
