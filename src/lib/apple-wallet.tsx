@@ -18,6 +18,8 @@ interface MerchantData {
   address?: string;
   contact_phone?: string;
   contact_email?: string;
+  latitude?: number | string;
+  longitude?: number | string;
   language?: string;
   logo_url?: string;
   push_settings?: any;
@@ -132,6 +134,17 @@ export function buildPassJson(merchant: MerchantData, customer: CustomerData) {
         altText: shortId,
       }
     ],
+    ...(merchant.latitude && merchant.longitude ? {
+      locations: [
+        {
+          latitude: Number(merchant.latitude),
+          longitude: Number(merchant.longitude),
+          relevantText: lang === 'fr'
+            ? `Bienvenue chez ${merchant.name} ! Présentez votre carte à la caisse.`
+            : `Willkommen bei ${merchant.name}! Zeige deine Treuekarte an der Kasse vor.`
+        }
+      ]
+    } : {}),
     storeCard: {
       headerFields: [
         {
@@ -573,18 +586,29 @@ async function generateStripBuffer(
                     justifyContent: 'center',
                     flexShrink: 0,
                     background: stamped
-                      ? `radial-gradient(circle at 35% 28%, ${gold}, #8A5D00, #3E2A00)`
-                      : `rgba(${rgb}, 0.08)`,
+                      ? `radial-gradient(circle at 35% 28%, ${gold}, ${gold}, #111111)`
+                      : `rgba(${rgb}, 0.07)`,
                     border: stamped
                       ? `4px solid ${gold}`
                       : `3px solid rgba(${rgb}, 0.45)`,
                     boxShadow: stamped
-                      ? `0 0 32px rgba(${rgb}, 0.9), 0 0 10px rgba(${rgb}, 0.6), inset 0 3px 0 rgba(255,255,255,0.3)`
+                      ? `0 0 45px rgba(${rgb}, 0.95), 0 0 16px rgba(${rgb}, 0.7), inset 0 4px 0 rgba(255,255,255,0.35)`
                       : `inset 0 3px 8px rgba(0,0,0,0.5)`,
                   }}
                 >
                   {stamped ? (
-                    <span style={{ fontSize: emojiSize, lineHeight: 1 }}>{stampSymbol}</span>
+                    <span
+                      style={{
+                        fontSize: emojiSize,
+                        lineHeight: 1,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        filter: `drop-shadow(0 0 10px rgba(${rgb}, 0.85)) drop-shadow(0 0 4px rgba(255, 255, 255, 0.6))`,
+                      }}
+                    >
+                      {stampSymbol}
+                    </span>
                   ) : (
                     <span style={{ fontSize: emojiSize, lineHeight: 1, opacity: 0.2 }}>
                       {stampSymbol}
