@@ -70,7 +70,7 @@ export async function POST(req: Request) {
     }
 
     // 4. Update Database (Customer & Stamps Log)
-    await adminSupabase.from('customers_loyality').update({ points: newPoints, updated_at: new Date().toISOString() }).eq('id', customer.id);
+    await adminSupabase.from('customers_loyality').update({ points: newPoints }).eq('id', customer.id);
     await adminSupabase.from('stamps_loyality').insert([
       { customer_id: customer.id, staff_id: staff.id, amount, type }
     ]);
