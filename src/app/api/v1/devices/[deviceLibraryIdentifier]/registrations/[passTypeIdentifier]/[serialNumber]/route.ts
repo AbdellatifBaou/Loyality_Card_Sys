@@ -7,11 +7,6 @@ export async function POST(
 ) {
   try {
     const { deviceLibraryIdentifier, passTypeIdentifier, serialNumber } = await context.params;
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('ApplePass ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const body = await req.json().catch(() => ({}));
     const pushToken = body.pushToken || '';
 
@@ -30,11 +25,6 @@ export async function DELETE(
 ) {
   try {
     const { deviceLibraryIdentifier, passTypeIdentifier, serialNumber } = await context.params;
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('ApplePass ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     await unregisterDevice(deviceLibraryIdentifier, passTypeIdentifier, serialNumber);
     return NextResponse.json({ status: 'unregistered' }, { status: 200 });
   } catch (err: any) {

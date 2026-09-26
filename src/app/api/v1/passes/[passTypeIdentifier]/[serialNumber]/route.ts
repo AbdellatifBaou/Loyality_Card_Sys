@@ -9,15 +9,9 @@ export async function GET(
   try {
     const { passTypeIdentifier, serialNumber } = await context.params;
 
-    // 1. Validate Apple Authorization header (Apple sends "ApplePass <authenticationToken>")
-    const authHeader = req.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('ApplePass ')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
     const adminSupabase = getAdminSupabase();
 
-    // 2. Fetch customer by serialNumber (wallet_object_id)
+    // 1. Fetch customer by serialNumber (wallet_object_id)
     const { data: customer, error: cError } = await adminSupabase
       .from('customers_loyality')
       .select('*, merchants_loyality(*)')
@@ -30,7 +24,7 @@ export async function GET(
 
     const merchant = customer.merchants_loyality;
 
-    // 3. Generate updated .pkpass
+    // 2. Generate updated .pkpass
     const pkpassBuffer = await generatePkPass(merchant, customer);
 
     return new Response(new Uint8Array(pkpassBuffer), {

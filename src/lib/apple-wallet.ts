@@ -19,6 +19,7 @@ interface MerchantData {
   language?: string;
   logo_url?: string;
   push_settings?: any;
+  latest_message?: { header: string; body: string; created_at?: string };
 }
 
 interface CustomerData {
@@ -153,6 +154,12 @@ export function buildPassJson(merchant: MerchantData, customer: CustomerData) {
         }
       ],
       backFields: [
+        ...(merchant.latest_message ? [{
+          key: 'latest_message',
+          label: lang === 'fr' ? 'MESSAGE / OFFRE' : 'AKTUELLE NACHRICHT',
+          value: `${merchant.latest_message.header}\n\n${merchant.latest_message.body}`,
+          changeMessage: '%@'
+        }] : []),
         {
           key: 'reward_detail',
           label: t.rewardLabel,
@@ -503,6 +510,27 @@ async function generateStripSvg(
  */
 export async function generatePkPass(merchant: MerchantData, customer: CustomerData): Promise<Buffer> {
   const credentials = getSignerCredentials();
+
+  // If latest_message is not set, attempt to fetch it from database
+  if (!merchant.latest_message && merchant.id) {
+    try {
+      const { getAdminSupabase } = require('./supabase');
+      const adminSupabase = getAdminSupabase();
+      const { data: latestMsg } = await adminSupabase
+        .from('messages_loyality')
+        .select('header, body, created_at')
+        .eq('merchant_id', merchant.id)
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .single();
+      if (latestMsg) {
+        merchant.latest_message = latestMsg;
+      }
+    } catch {
+      // Ignore
+    }
+  }
+
   const passJson = buildPassJson(merchant, customer);
   const passJsonBuffer = Buffer.from(JSON.stringify(passJson, null, 2), 'utf8');
 
