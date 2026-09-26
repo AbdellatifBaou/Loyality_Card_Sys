@@ -96,6 +96,8 @@ export function buildPassJson(merchant: MerchantData, customer: CustomerData) {
   const cleanAppUrl = rawAppUrl.replace(/\/api\/v1\/?$/, '').replace(/\/api\/?$/, '').replace(/\/$/, '');
   const isHttps = cleanAppUrl && cleanAppUrl.startsWith('https://');
 
+  const shortId = (customer.wallet_object_id || customer.id).split('-')[0] || (customer.wallet_object_id || customer.id).slice(0, 8);
+
   return {
     formatVersion: 1,
     passTypeIdentifier: passTypeId,
@@ -116,7 +118,7 @@ export function buildPassJson(merchant: MerchantData, customer: CustomerData) {
         format: 'PKBarcodeFormatQR',
         message: customer.wallet_object_id || customer.id,
         messageEncoding: 'iso-8859-1',
-        altText: customer.wallet_object_id || customer.id,
+        altText: shortId,
       }
     ],
     storeCard: {
@@ -146,7 +148,7 @@ export function buildPassJson(merchant: MerchantData, customer: CustomerData) {
         {
           key: 'customer_id',
           label: t.customerIdLabel,
-          value: customer.wallet_object_id || customer.id
+          value: shortId
         }
       ],
       backFields: [
@@ -262,6 +264,27 @@ function getSignerCredentials() {
   return cachedSigner;
 }
 
+async function loadBuffer(source?: string): Promise<Buffer | null> {
+  if (!source) return null;
+  try {
+    if (source.startsWith('http://') || source.startsWith('https://')) {
+      const res = await fetch(source, { cache: 'no-store' });
+      if (res.ok) {
+        const arr = await res.arrayBuffer();
+        return Buffer.from(arr);
+      }
+    } else if (source.startsWith('data:image/')) {
+      const base64Data = source.split(',')[1];
+      if (base64Data) return Buffer.from(base64Data, 'base64');
+    } else if (fs.existsSync(source)) {
+      return fs.readFileSync(source);
+    }
+  } catch (e) {
+    console.warn('[Apple Wallet] Could not load image buffer:', source, e);
+  }
+  return null;
+}
+
 function getStarPolygon(cx: number, cy: number, r: number, fill: string, stroke?: string): string {
   const points: string[] = [];
   for (let i = 0; i < 10; i++) {
@@ -269,10 +292,17 @@ function getStarPolygon(cx: number, cy: number, r: number, fill: string, stroke?
     const radius = (i % 2 === 0) ? r : r * 0.44;
     points.push(`${(cx + radius * Math.cos(angle)).toFixed(1)},${(cy + radius * Math.sin(angle)).toFixed(1)}`);
   }
-  return `<polygon points="${points.join(' ')}" fill="${fill}" stroke="${stroke || 'none'}" stroke-width="1" />`;
+  return `<polygon points="${points.join(' ')}" fill="${fill}" stroke="${stroke || 'none'}" stroke-width="1.5" />`;
 }
 
-function generateStripSvg(points: number, stampGoal: number, primaryColor?: string, stampSymbol?: string, language?: string) {
+function generateStripSvg(
+  points: number,
+  stampGoal: number,
+  primaryColor?: string,
+  language?: string,
+  rewardText?: string,
+  heroImageBase64?: string | null
+) {
   const width = 1125;
   const height = 369;
   const gold = primaryColor || '#D4AF37';
@@ -280,29 +310,38 @@ function generateStripSvg(points: number, stampGoal: number, primaryColor?: stri
 
   const isFull = points >= stampGoal;
 
+  const bgImageTag = heroImageBase64
+    ? `<image href="data:image/png;base64,${heroImageBase64}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid slice" opacity="0.65" />`
+    : '';
+
   if (isFull) {
-    const title = isFrench ? 'RÉCOMPENSE PRÊTE !' : 'BELOHNUNG BEREIT !';
-    const sub = isFrench ? 'Présentez votre carte en caisse' : 'Zeige deine Karte an der Kasse vor';
+    const title = isFrench ? 'FÉLICITATIONS !' : 'HERZLICHEN GLÜCKWUNSCH !';
+    const sub = isFrench ? 'Présentez cette carte lors de votre prochaine visite' : 'Zeige diese Karte beim nächsten Besuch vor';
+    const displayReward = rewardText || (isFrench ? 'Récompense prête' : 'Belohnung bereit');
+
     return `
       <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
         <defs>
           <linearGradient id="bgFull" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#241B08" />
-            <stop offset="50%" stop-color="#0E0B03" />
-            <stop offset="100%" stop-color="#241B08" />
+            <stop offset="0%" stop-color="#1E170A" />
+            <stop offset="50%" stop-color="#0E0C08" />
+            <stop offset="100%" stop-color="#1E170A" />
           </linearGradient>
           <linearGradient id="goldText" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#FFF0A0" />
+            <stop offset="0%" stop-color="#FFF5B8" />
             <stop offset="50%" stop-color="${gold}" />
-            <stop offset="100%" stop-color="#FFA000" />
+            <stop offset="100%" stop-color="#E5A800" />
           </linearGradient>
         </defs>
         <rect width="${width}" height="${height}" fill="url(#bgFull)" />
+        ${bgImageTag}
+        <rect width="${width}" height="${height}" fill="rgba(0,0,0,0.4)" />
         <line x1="0" y1="0" x2="${width}" y2="0" stroke="${gold}" stroke-width="6" opacity="0.9" />
         <line x1="0" y1="${height}" x2="${width}" y2="${height}" stroke="${gold}" stroke-width="6" opacity="0.9" />
-        <rect x="40" y="30" width="1045" height="309" rx="24" fill="rgba(212,175,55,0.08)" stroke="${gold}" stroke-width="2.5" stroke-dasharray="8,6" />
-        <text x="${width / 2}" y="155" font-size="54" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" text-anchor="middle" fill="url(#goldText)" letter-spacing="3">★ ${title} ★</text>
-        <text x="${width / 2}" y="230" font-size="34" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="500" text-anchor="middle" fill="#FFFFFF" opacity="0.95">${sub}</text>
+        <rect x="40" y="30" width="1045" height="309" rx="24" fill="rgba(0,0,0,0.5)" stroke="${gold}" stroke-width="2.5" stroke-dasharray="8,6" />
+        <text x="${width / 2}" y="125" font-size="46" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" text-anchor="middle" fill="url(#goldText)" letter-spacing="3">★ ${title} ★</text>
+        <text x="${width / 2}" y="195" font-size="36" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="700" text-anchor="middle" fill="#FFFFFF">${displayReward}</text>
+        <text x="${width / 2}" y="260" font-size="24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="500" text-anchor="middle" fill="#E0E0E0" opacity="0.9">${sub}</text>
       </svg>
     `;
   }
@@ -329,13 +368,13 @@ function generateStripSvg(points: number, stampGoal: number, primaryColor?: stri
     if (isStamped) {
       circlesSvg += `
         <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#goldGrad)" stroke="${gold}" stroke-width="3.5" />
-        <circle cx="${cx}" cy="${cy}" r="${r - 5}" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1.5" />
+        <circle cx="${cx}" cy="${cy}" r="${r - 5}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" />
         ${getStarPolygon(cx, cy, r * 0.58, '#14120D', 'rgba(255,255,255,0.3)')}
       `;
     } else {
       circlesSvg += `
-        <circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.28)" stroke-width="2.5" stroke-dasharray="6,6" />
-        ${getStarPolygon(cx, cy, r * 0.42, 'rgba(255,255,255,0.2)')}
+        <circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(0,0,0,0.5)" stroke="rgba(255,255,255,0.3)" stroke-width="2.5" stroke-dasharray="6,6" />
+        ${getStarPolygon(cx, cy, r * 0.42, 'rgba(255,255,255,0.25)')}
       `;
     }
   }
@@ -355,6 +394,7 @@ function generateStripSvg(points: number, stampGoal: number, primaryColor?: stri
         </linearGradient>
       </defs>
       <rect width="${width}" height="${height}" fill="url(#bgGrad)" />
+      ${bgImageTag}
       <line x1="0" y1="0" x2="${width}" y2="0" stroke="${gold}" stroke-width="4" opacity="0.8" />
       <line x1="0" y1="${height}" x2="${width}" y2="${height}" stroke="${gold}" stroke-width="4" opacity="0.8" />
       ${circlesSvg}
@@ -375,8 +415,25 @@ export async function generatePkPass(merchant: MerchantData, customer: CustomerD
   const iconPath = path.join(publicDir, 'icon-192x192.png');
   const defaultLogoPath = path.join(publicDir, 'Marketif_LOGO_Symbol.png');
 
-  const iconSource = fs.existsSync(iconPath) ? fs.readFileSync(iconPath) : null;
-  const logoSource = fs.existsSync(defaultLogoPath) ? fs.readFileSync(defaultLogoPath) : null;
+  const defaultIcon = fs.existsSync(iconPath) ? fs.readFileSync(iconPath) : null;
+  const defaultLogo = fs.existsSync(defaultLogoPath) ? fs.readFileSync(defaultLogoPath) : null;
+
+  // 1. Try to load merchant custom logo
+  const merchantLogoBuffer = await loadBuffer(merchant.logo_url);
+  const logoSource = merchantLogoBuffer || defaultLogo;
+  const iconSource = merchantLogoBuffer || defaultIcon || logoSource;
+
+  // 2. Try to load merchant hero cover image
+  const heroImageBuffer = await loadBuffer(merchant.push_settings?.hero_image);
+  let heroImageBase64: string | null = null;
+  if (heroImageBuffer) {
+    try {
+      const resizedHero = await sharp(heroImageBuffer).resize(1125, 369, { fit: 'cover' }).png().toBuffer();
+      heroImageBase64 = resizedHero.toString('base64');
+    } catch (e) {
+      console.warn('[Apple Wallet] Could not resize hero cover image:', e);
+    }
+  }
 
   const buffersMap: Record<string, Buffer> = {
     'pass.json': passJsonBuffer
@@ -407,8 +464,15 @@ export async function generatePkPass(merchant: MerchantData, customer: CustomerD
   // Generate dynamic strip banner with stamp circles (matching Google Wallet design)
   const stampGoal = merchant.stamp_goal || 9;
   const currentPoints = customer.points || 0;
-  const stampSymbol = (merchant as any).stamp_symbol || '★';
-  const stripSvg = generateStripSvg(currentPoints, stampGoal, merchant.primary_color, stampSymbol, merchant.language);
+  const rewardText = merchant.reward_text || (merchant.language === 'fr' ? '1 Récompense Gratuite' : '1 Gratis Belohnung');
+  const stripSvg = generateStripSvg(
+    currentPoints,
+    stampGoal,
+    merchant.primary_color,
+    merchant.language,
+    rewardText,
+    heroImageBase64
+  );
   const stripSvgBuffer = Buffer.from(stripSvg, 'utf8');
 
   const [strip1x, strip2x, strip3x] = await Promise.all([
