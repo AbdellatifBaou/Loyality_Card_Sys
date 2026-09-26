@@ -1,9 +1,11 @@
+import React from 'react';
 import crypto from 'crypto';
 import fs from 'fs';
 import path from 'path';
 import forge from 'node-forge';
 import { PKPass } from 'passkit-generator';
 import sharp from 'sharp';
+import { ImageResponse } from 'next/og';
 
 interface MerchantData {
   id: string;
@@ -72,6 +74,8 @@ const DICT: Record<string, any> = {
     supportText: "Bereitgestellt von Marketif (marketif.net) – Digitale Kundenkarten & Kundenbindung.",
     changeStamps: "Stempelstand aktualisiert: %@",
     changeReward: "Belohnung: %@",
+    congrats: "Herzlichen Glückwunsch!",
+    hint: "Zeige diese Karte beim nächsten Besuch vor"
   },
   fr: {
     stampsLabel: "TAMPONS",
@@ -85,6 +89,8 @@ const DICT: Record<string, any> = {
     supportText: "Propulsé par Marketif (marketif.net) – Cartes de fidélité digitales & rétention client.",
     changeStamps: "Tampons mis à jour : %@",
     changeReward: "Récompense : %@",
+    congrats: "Félicitations !",
+    hint: "Présentez cette carte lors de votre prochaine visite"
   }
 };
 
@@ -144,13 +150,6 @@ export function buildPassJson(merchant: MerchantData, customer: CustomerData) {
           label: t.rewardLabel,
           value: rewardText,
           changeMessage: t.changeReward
-        },
-        {
-          key: 'progress',
-          label: lang === 'fr' ? 'PROGRESSION' : 'STATUS',
-          value: currentPoints >= stampGoal
-            ? (lang === 'fr' ? 'Prêt à échanger 🎉' : 'Prämie bereit 🎉')
-            : (lang === 'fr' ? `${currentPoints} sur ${stampGoal} tampons` : `${currentPoints} von ${stampGoal} Stempeln`)
         }
       ],
       auxiliaryFields: [
@@ -158,11 +157,6 @@ export function buildPassJson(merchant: MerchantData, customer: CustomerData) {
           key: 'customer_id',
           label: t.customerIdLabel,
           value: shortId
-        },
-        {
-          key: 'merchant_info',
-          label: lang === 'fr' ? 'COMMERCE' : 'HÄNDLER',
-          value: merchant.name || 'Treuekarte'
         }
       ],
       backFields: [
@@ -305,244 +299,309 @@ async function loadBuffer(source?: string): Promise<Buffer | null> {
   return null;
 }
 
-// In-memory cache for Twemoji SVGs to ensure ultra-fast image generation
-const twemojiCache = new Map<string, string>();
-
-function emojiToTwemojiHex(emoji: string): string {
-  const codePoints: string[] = [];
-  for (let i = 0; i < emoji.length; i++) {
-    const cp = emoji.codePointAt(i);
-    if (cp !== undefined) {
-      if (cp > 0xffff) i++;
-      // Exclude emoji variation selector-16 (fe0f) if standalone to maximize CDN hit
-      codePoints.push(cp.toString(16).toLowerCase());
-    }
-  }
-  return codePoints.join('-');
-}
-
-async function fetchTwemojiBase64(emoji: string): Promise<string | null> {
-  if (!emoji) return null;
-  if (twemojiCache.has(emoji)) {
-    return twemojiCache.get(emoji)!;
-  }
-
-  try {
-    const hex = emojiToTwemojiHex(emoji);
-    const urls = [
-      `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/${hex}.svg`,
-      `https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/${hex}.svg`,
-    ];
-
-    // Also try without -fe0f if present
-    const simplifiedHex = hex.replace(/-fe0f/g, '');
-    if (simplifiedHex !== hex) {
-      urls.push(`https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/${simplifiedHex}.svg`);
-    }
-
-    for (const url of urls) {
-      try {
-        const res = await fetch(url, { cache: 'force-cache' });
-        if (res.ok) {
-          const text = await res.text();
-          const base64 = `data:image/svg+xml;base64,${Buffer.from(text).toString('base64')}`;
-          twemojiCache.set(emoji, base64);
-          return base64;
-        }
-      } catch {
-        // Try next URL
-      }
-    }
-  } catch (e) {
-    console.warn('[Apple Wallet] Twemoji fetch error:', e);
-  }
-  return null;
-}
-
-function getStarPolygon(cx: number, cy: number, r: number, fill: string, stroke?: string): string {
-  const points: string[] = [];
-  for (let i = 0; i < 10; i++) {
-    const angle = (i * Math.PI) / 5 - Math.PI / 2;
-    const radius = (i % 2 === 0) ? r : r * 0.44;
-    points.push(`${(cx + radius * Math.cos(angle)).toFixed(1)},${(cy + radius * Math.sin(angle)).toFixed(1)}`);
-  }
-  return `<polygon points="${points.join(' ')}" fill="${fill}" stroke="${stroke || 'none'}" stroke-width="1.5" />`;
-}
-
 /**
  * Generates the Apple Wallet Strip Banner (1125 x 369)
  * 1:1 identical to Google Wallet card design with custom Emojis, cover photo, glowing circles
  */
-async function generateStripSvg(
+async function generateStripBuffer(
   points: number,
   stampGoal: number,
   stampSymbol: string,
   primaryColor?: string,
   language?: string,
   rewardText?: string,
-  heroImageBase64?: string | null
-): Promise<string> {
-  const width = 1125;
-  const height = 369;
+  heroImageUrl?: string | null,
+  merchantName?: string
+): Promise<Buffer> {
   const gold = primaryColor || '#D4AF37';
   const rgb = hexToRgbRaw(gold);
-  const isFrench = language === 'fr';
+  const lang = language === 'fr' ? 'fr' : 'de';
+  const t = DICT[lang] || DICT.de;
   const isFull = points >= stampGoal;
+  const displayReward = rewardText || (lang === 'fr' ? '1 Récompense Gratuite' : '1 Gratis Belohnung');
 
-  const bgImageTag = heroImageBase64
-    ? `<image href="data:image/png;base64,${heroImageBase64}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid slice" opacity="0.65" />`
-    : '';
+  let element: React.ReactElement;
 
-  // 1. REWARD READY STATE (Pass is full - 4/4, 5/5, 9/9, etc.)
   if (isFull) {
-    const title = isFrench ? 'FELICITATIONS !' : 'HERZLICHEN GLUECKWUNSCH !';
-    const sub = isFrench ? 'Presentez cette carte lors de votre prochaine visite' : 'Zeige diese Karte beim naechsten Besuch vor';
-    const displayReward = rewardText || (isFrench ? 'Recompense prete' : 'Belohnung bereit');
+    // 1. REWARD READY STATE - 1:1 matching Google Wallet Redeem screen
+    element = (
+      <div
+        style={{
+          width: '1125px',
+          height: '369px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: heroImageUrl ? '#000000' : 'linear-gradient(160deg, #0E0B03 0%, #080808 55%, #0B0900 100%)',
+          fontFamily: 'sans-serif',
+          position: 'relative',
+          overflow: 'hidden',
+          gap: '10px',
+          padding: '20px 40px',
+        }}
+      >
+        {heroImageUrl && (
+          <img
+            src={heroImageUrl}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '1125px',
+              height: '369px',
+              objectFit: 'cover',
+              opacity: 0.55,
+            }}
+          />
+        )}
+        {/* Ambient gold glow */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: '900px',
+            height: '300px',
+            borderRadius: '50%',
+            background: `radial-gradient(ellipse, rgba(${rgb}, 0.25) 0%, transparent 65%)`,
+            transform: 'translate(-50%, -50%)',
+          }}
+        />
+        {/* Gold top border */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '4px',
+            background: `linear-gradient(90deg, transparent, ${gold} 20%, #FFF5B8 50%, ${gold} 80%, transparent)`,
+          }}
+        />
+        {/* Gold bottom border */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '3px',
+            background: `linear-gradient(90deg, transparent, rgba(${rgb}, 0.5) 50%, transparent)`,
+          }}
+        />
 
-    const [partyTwemoji, giftTwemoji] = await Promise.all([
-      fetchTwemojiBase64('🎉'),
-      fetchTwemojiBase64('🎁')
-    ]);
+        {/* Merchant name */}
+        <span
+          style={{
+            fontSize: '18px',
+            letterSpacing: '5px',
+            textTransform: 'uppercase',
+            color: '#FFFFFF',
+            fontWeight: 'bold',
+            textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+          }}
+        >
+          {merchantName || 'TREUEPROGRAMM'}
+        </span>
 
-    return `
-      <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-        <defs>
-          <linearGradient id="bgFull" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#1E170A" />
-            <stop offset="50%" stop-color="#0E0C08" />
-            <stop offset="100%" stop-color="#1E170A" />
-          </linearGradient>
-          <linearGradient id="goldText" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stop-color="#FFF5B8" />
-            <stop offset="50%" stop-color="${gold}" />
-            <stop offset="100%" stop-color="#E5A800" />
-          </linearGradient>
-          <radialGradient id="glowEffect" cx="50%" cy="50%" r="50%">
-            <stop offset="0%" stop-color="rgba(${rgb}, 0.35)" />
-            <stop offset="100%" stop-color="rgba(0,0,0,0)" />
-          </radialGradient>
-        </defs>
-        <rect width="${width}" height="${height}" fill="url(#bgFull)" />
-        ${bgImageTag}
-        <rect width="${width}" height="${height}" fill="rgba(0,0,0,0.45)" />
-        <rect width="${width}" height="${height}" fill="url(#glowEffect)" />
-        <line x1="0" y1="0" x2="${width}" y2="0" stroke="${gold}" stroke-width="6" opacity="0.95" />
-        <line x1="0" y1="${height}" x2="${width}" y2="${height}" stroke="${gold}" stroke-width="6" opacity="0.95" />
-        <rect x="30" y="20" width="1065" height="329" rx="24" fill="rgba(0,0,0,0.65)" stroke="${gold}" stroke-width="3" stroke-dasharray="8,6" />
-        
-        <!-- Left celebratory emoji badge -->
-        <circle cx="140" cy="184" r="68" fill="url(#bgFull)" stroke="${gold}" stroke-width="3" />
-        ${partyTwemoji ? `<image href="${partyTwemoji}" x="95" y="139" width="90" height="90" />` : ''}
+        {/* Main congrats */}
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '14px',
+          }}
+        >
+          <span
+            style={{
+              fontSize: '44px',
+              fontWeight: 'bold',
+              color: '#FFFFFF',
+              textShadow: '0 2px 12px rgba(0,0,0,0.8)',
+            }}
+          >
+            {t.congrats}
+          </span>
+          <span style={{ fontSize: '44px' }}>🎉</span>
+        </div>
 
-        <!-- Center Text Section -->
-        <text x="562" y="112" font-size="44" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-weight="bold" text-anchor="middle" fill="url(#goldText)">${title}</text>
-        <text x="562" y="188" font-size="36" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-weight="bold" text-anchor="middle" fill="#FFFFFF">${displayReward}</text>
-        <text x="562" y="255" font-size="22" font-family="DejaVu Sans, Arial, Helvetica, sans-serif" font-weight="normal" text-anchor="middle" fill="#E0E0E0" opacity="0.9">${sub}</text>
+        {/* Subtitle / Reward */}
+        <span
+          style={{
+            fontSize: '28px',
+            color: '#FFFFFF',
+            fontWeight: 'bold',
+            textAlign: 'center',
+            textShadow: '0 2px 10px rgba(0,0,0,0.8)',
+          }}
+        >
+          {displayReward}
+        </span>
 
-        <!-- Right reward gift badge -->
-        <circle cx="985" cy="184" r="68" fill="url(#bgFull)" stroke="${gold}" stroke-width="3" />
-        ${giftTwemoji ? `<image href="${giftTwemoji}" x="940" y="139" width="90" height="90" />` : ''}
-      </svg>
-    `;
-  }
-
-  // 2. STAMP COLLECTING STATE (Matching Google Wallet stamp grid)
-  const twemojiDataUrl = await fetchTwemojiBase64(stampSymbol || '✨');
-
-  // Calculate dynamic grid with ENLARGED circles
-  const colsPerRow = stampGoal <= 5 ? stampGoal : (stampGoal <= 10 ? Math.ceil(stampGoal / 2) : 6);
-  const rows = Math.ceil(stampGoal / colsPerRow);
-  
-  // Dimensions tailored for 1125x369 strip canvas - maximize size
-  let size = 80;
-  let gap = 16;
-  if (stampGoal <= 4) {
-    size = 190;
-    gap = 36;
-  } else if (stampGoal === 5) {
-    size = 170;
-    gap = 26;
-  } else if (stampGoal <= 10) {
-    size = 124;
-    gap = 22;
+        {/* Bottom hint */}
+        <span
+          style={{
+            fontSize: '16px',
+            color: '#E0E0E0',
+            letterSpacing: '1px',
+            textAlign: 'center',
+            textShadow: '0 2px 8px rgba(0,0,0,0.8)',
+          }}
+        >
+          {t.hint}
+        </span>
+      </div>
+    );
   } else {
-    size = 96;
-    gap = 16;
-  }
-  const iconSize = size * 0.60;
+    // 2. STAMP COLLECTING STATE - 1:1 matching Google Wallet Card design with harmonized sizes
+    const colsPerRow = stampGoal <= 5 ? stampGoal : (stampGoal <= 10 ? Math.ceil(stampGoal / 2) : 6);
+    const numRows = Math.ceil(stampGoal / colsPerRow);
 
-  let circlesSvg = '';
+    let size = 105;
+    let gap = 18;
+    let emojiSize = '46px';
 
-  for (let i = 0; i < stampGoal; i++) {
-    const row = Math.floor(i / colsPerRow);
-    const col = i % colsPerRow;
-    const totalInRow = (row === rows - 1) ? (stampGoal - row * colsPerRow) : colsPerRow;
-    const startX = (width - (totalInRow * size + (totalInRow - 1) * gap)) / 2;
-    const startY = (height - (rows * size + (rows - 1) * gap)) / 2;
-
-    const cx = startX + col * (size + gap) + size / 2;
-    const cy = startY + row * (size + gap) + size / 2;
-    const r = size / 2;
-    const isStamped = i < points;
-    const iconX = cx - iconSize / 2;
-    const iconY = cy - iconSize / 2;
-
-    if (isStamped) {
-      circlesSvg += `
-        <g>
-          <!-- Outer Stamp Glow -->
-          <circle cx="${cx}" cy="${cy}" r="${r + 6}" fill="rgba(${rgb}, 0.35)" />
-          <!-- Stamp Gradient Body -->
-          <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#goldGrad)" stroke="${gold}" stroke-width="4" />
-          <!-- Inner Rim -->
-          <circle cx="${cx}" cy="${cy}" r="${r - 5}" fill="none" stroke="rgba(255,255,255,0.45)" stroke-width="2" />
-          ${
-            twemojiDataUrl
-              ? `<image href="${twemojiDataUrl}" x="${iconX}" y="${iconY}" width="${iconSize}" height="${iconSize}" />`
-              : getStarPolygon(cx, cy, r * 0.58, '#14120D', 'rgba(255,255,255,0.4)')
-          }
-        </g>
-      `;
+    if (stampGoal <= 4) {
+      size = 140;
+      gap = 28;
+      emojiSize = '62px';
+    } else if (stampGoal === 5) {
+      size = 130;
+      gap = 22;
+      emojiSize = '56px';
+    } else if (stampGoal <= 10) {
+      size = 105;
+      gap = 18;
+      emojiSize = '46px';
     } else {
-      circlesSvg += `
-        <g>
-          <circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(0,0,0,0.55)" stroke="rgba(${rgb}, 0.45)" stroke-width="2.5" stroke-dasharray="6,6" />
-          ${
-            twemojiDataUrl
-              ? `<image href="${twemojiDataUrl}" x="${iconX}" y="${iconY}" width="${iconSize}" height="${iconSize}" opacity="0.25" />`
-              : getStarPolygon(cx, cy, r * 0.42, `rgba(${rgb}, 0.25)`)
-          }
-        </g>
-      `;
+      size = 85;
+      gap = 14;
+      emojiSize = '36px';
     }
+
+    const rowsArray: number[][] = [];
+    for (let r = 0; r < numRows; r++) {
+      const rowItems: number[] = [];
+      const count = (r === numRows - 1) ? (stampGoal - r * colsPerRow) : colsPerRow;
+      for (let c = 0; c < count; c++) {
+        rowItems.push(r * colsPerRow + c);
+      }
+      rowsArray.push(rowItems);
+    }
+
+    element = (
+      <div
+        style={{
+          width: '1125px',
+          height: '369px',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          background: heroImageUrl ? '#000000' : 'linear-gradient(160deg, #0E0B03 0%, #080808 55%, #0B0900 100%)',
+          position: 'relative',
+          overflow: 'hidden',
+          gap: `${gap}px`,
+          padding: '20px',
+        }}
+      >
+        {heroImageUrl && (
+          <img
+            src={heroImageUrl}
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '1125px',
+              height: '369px',
+              objectFit: 'cover',
+              opacity: 0.65,
+            }}
+          />
+        )}
+        {/* Ambient glow */}
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            width: '900px',
+            height: '300px',
+            borderRadius: '50%',
+            background: `radial-gradient(ellipse, rgba(${rgb}, 0.18) 0%, transparent 65%)`,
+            transform: 'translate(-50%, -50%)',
+          }}
+        />
+        {/* Gold top border */}
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            right: 0,
+            height: '4px',
+            background: `linear-gradient(90deg, transparent, ${gold} 20%, #FFF5B8 50%, ${gold} 80%, transparent)`,
+          }}
+        />
+        {/* Gold bottom border */}
+        <div
+          style={{
+            position: 'absolute',
+            bottom: 0,
+            left: 0,
+            right: 0,
+            height: '3px',
+            background: `linear-gradient(90deg, transparent, rgba(${rgb}, 0.5) 50%, transparent)`,
+          }}
+        />
+
+        {rowsArray.map((row, rIdx) => (
+          <div key={rIdx} style={{ display: 'flex', gap: `${gap}px`, alignItems: 'center', justifyContent: 'center' }}>
+            {row.map((itemIdx) => {
+              const stamped = itemIdx < points;
+              return (
+                <div
+                  key={itemIdx}
+                  style={{
+                    width: `${size}px`,
+                    height: `${size}px`,
+                    borderRadius: '50%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    flexShrink: 0,
+                    background: stamped
+                      ? `radial-gradient(circle at 35% 28%, ${gold}, #8A5D00, #3E2A00)`
+                      : `rgba(${rgb}, 0.08)`,
+                    border: stamped
+                      ? `4px solid ${gold}`
+                      : `3px solid rgba(${rgb}, 0.45)`,
+                    boxShadow: stamped
+                      ? `0 0 32px rgba(${rgb}, 0.9), 0 0 10px rgba(${rgb}, 0.6), inset 0 3px 0 rgba(255,255,255,0.3)`
+                      : `inset 0 3px 8px rgba(0,0,0,0.5)`,
+                  }}
+                >
+                  {stamped ? (
+                    <span style={{ fontSize: emojiSize, lineHeight: 1 }}>{stampSymbol}</span>
+                  ) : (
+                    <span style={{ fontSize: emojiSize, lineHeight: 1, opacity: 0.2 }}>
+                      {stampSymbol}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    );
   }
 
-  return `
-    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
-      <defs>
-        <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#181510" />
-          <stop offset="50%" stop-color="#0A0907" />
-          <stop offset="100%" stop-color="#14110B" />
-        </linearGradient>
-        <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#FFF2B2" />
-          <stop offset="45%" stop-color="${gold}" />
-          <stop offset="100%" stop-color="#8C6200" />
-        </linearGradient>
-        <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stop-color="rgba(${rgb}, 0.22)" />
-          <stop offset="100%" stop-color="rgba(0,0,0,0)" />
-        </radialGradient>
-      </defs>
-      <rect width="${width}" height="${height}" fill="url(#bgGrad)" />
-      ${bgImageTag}
-      <rect width="${width}" height="${height}" fill="url(#centerGlow)" />
-      <line x1="0" y1="0" x2="${width}" y2="0" stroke="${gold}" stroke-width="4.5" opacity="0.9" />
-      <line x1="0" y1="${height}" x2="${width}" y2="${height}" stroke="${gold}" stroke-width="4.5" opacity="0.9" />
-      ${circlesSvg}
-    </svg>
-  `;
+  const imageRes = new ImageResponse(element, { width: 1125, height: 369 });
+  const arrayBuffer = await imageRes.arrayBuffer();
+  return Buffer.from(arrayBuffer);
 }
 
 /**
@@ -587,18 +646,6 @@ export async function generatePkPass(merchant: MerchantData, customer: CustomerD
   const logoSource = merchantLogoBuffer || defaultLogo;
   const iconSource = merchantLogoBuffer || defaultIcon || logoSource;
 
-  // 2. Try to load merchant hero cover image
-  const heroImageBuffer = await loadBuffer(merchant.push_settings?.hero_image);
-  let heroImageBase64: string | null = null;
-  if (heroImageBuffer) {
-    try {
-      const resizedHero = await sharp(heroImageBuffer).resize(1125, 369, { fit: 'cover' }).png().toBuffer();
-      heroImageBase64 = resizedHero.toString('base64');
-    } catch (e) {
-      console.warn('[Apple Wallet] Could not resize hero cover image:', e);
-    }
-  }
-
   const buffersMap: Record<string, Buffer> = {
     'pass.json': passJsonBuffer
   };
@@ -625,27 +672,27 @@ export async function generatePkPass(merchant: MerchantData, customer: CustomerD
     buffersMap['logo@3x.png'] = logo3x;
   }
 
-  // Generate dynamic strip banner with stamp circles & emojis (matching Google Wallet design)
+  // Generate dynamic strip banner with stamp circles & emojis using Next.js ImageResponse (matching Google Wallet 1:1)
   const stampGoal = merchant.stamp_goal || 9;
   const currentPoints = customer.points || 0;
   const stampSymbol = merchant.stamp_symbol || '✨';
   const rewardText = merchant.reward_text || (merchant.language === 'fr' ? '1 Récompense Gratuite' : '1 Gratis Belohnung');
+  const heroImageUrl = merchant.push_settings?.hero_image || null;
 
-  const stripSvg = await generateStripSvg(
+  const strip3x = await generateStripBuffer(
     currentPoints,
     stampGoal,
     stampSymbol,
     merchant.primary_color,
     merchant.language,
     rewardText,
-    heroImageBase64
+    heroImageUrl,
+    merchant.name
   );
-  const stripSvgBuffer = Buffer.from(stripSvg, 'utf8');
 
-  const [strip1x, strip2x, strip3x] = await Promise.all([
-    sharp(stripSvgBuffer).resize(375, 123).png().toBuffer(),
-    sharp(stripSvgBuffer).resize(750, 246).png().toBuffer(),
-    sharp(stripSvgBuffer).resize(1125, 369).png().toBuffer(),
+  const [strip1x, strip2x] = await Promise.all([
+    sharp(strip3x).resize(375, 123).png().toBuffer(),
+    sharp(strip3x).resize(750, 246).png().toBuffer(),
   ]);
 
   buffersMap['strip.png'] = strip1x;
