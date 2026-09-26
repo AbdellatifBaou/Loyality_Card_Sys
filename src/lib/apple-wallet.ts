@@ -10,6 +10,7 @@ interface MerchantData {
   name: string;
   slug: string;
   primary_color?: string;
+  stamp_symbol?: string;
   stamp_goal?: number;
   reward_text?: string;
   address?: string;
@@ -43,10 +44,23 @@ export function hexToRgb(hex: string): string {
   return `rgb(${r}, ${g}, ${b})`;
 }
 
+export function hexToRgbRaw(hex: string): string {
+  if (!hex) return '212, 175, 55';
+  let cleaned = hex.replace('#', '');
+  if (cleaned.length === 3) {
+    cleaned = cleaned.split('').map(c => c + c).join('');
+  }
+  const num = parseInt(cleaned, 16);
+  if (isNaN(num)) return '212, 175, 55';
+  const r = (num >> 16) & 255;
+  const g = (num >> 8) & 255;
+  const b = num & 255;
+  return `${r}, ${g}, ${b}`;
+}
+
 const DICT: Record<string, any> = {
   de: {
     stampsLabel: "STEMPEL",
-    statusLabel: "STATUS",
     rewardLabel: "BELOHNUNG",
     customerIdLabel: "KUNDEN-ID",
     termsLabel: "TEILNAHMEBEDINGUNGEN",
@@ -55,13 +69,11 @@ const DICT: Record<string, any> = {
     supportLabel: "DIGITALE STEMPELKARTE",
     termsText: "Zeige diese digitale Treuekarte bei jedem Besuch an der Kasse vor. Pro Einkauf/Bestellung erhältst du Stempel. Bei voller Karte wird deine Belohnung eingelöst!",
     supportText: "Bereitgestellt von Marketif (marketif.net) – Digitale Kundenkarten & Kundenbindung.",
-    almostDone: "Fast geschafft! Noch 1 Stempel 🎉",
-    rewardReady: "BELOHNUNG BEREIT! 🎉",
-    collecting: "Fleißig sammeln 🚀",
+    changeStamps: "Stempelstand aktualisiert: %@",
+    changeReward: "Belohnung: %@",
   },
   fr: {
     stampsLabel: "TAMPONS",
-    statusLabel: "STATUT",
     rewardLabel: "RÉCOMPENSE",
     customerIdLabel: "ID CLIENT",
     termsLabel: "CONDITIONS DU PROGRAMME",
@@ -70,9 +82,8 @@ const DICT: Record<string, any> = {
     supportLabel: "CARTE DE FIDÉLITÉ DIGITALE",
     termsText: "Présentez cette carte digitale à chaque passage en caisse. Cumulez des tampons et débloquez votre récompense exclusive!",
     supportText: "Propulsé par Marketif (marketif.net) – Cartes de fidélité digitales & rétention client.",
-    almostDone: "Presque prêt! Plus qu'1 tampon 🎉",
-    rewardReady: "RÉCOMPENSE PRÊTE! 🎉",
-    collecting: "En cours de collecte 🚀",
+    changeStamps: "Tampons mis à jour : %@",
+    changeReward: "Récompense : %@",
   }
 };
 
@@ -82,13 +93,6 @@ export function buildPassJson(merchant: MerchantData, customer: CustomerData) {
   const stampGoal = merchant.stamp_goal || 9;
   const currentPoints = customer.points || 0;
   const rewardText = merchant.reward_text || (lang === 'fr' ? '1 Récompense Gratuite' : '1 Gratis Belohnung');
-
-  let statusText = t.collecting;
-  if (currentPoints >= stampGoal) {
-    statusText = t.rewardReady;
-  } else if (currentPoints === stampGoal - 1) {
-    statusText = t.almostDone;
-  }
 
   const passTypeId = process.env.APPLE_PASS_TYPE_IDENTIFIER || 'pass.de.marketif.loyalty';
   const teamId = process.env.APPLE_TEAM_ID || 'HA5ATW8338';
@@ -127,21 +131,18 @@ export function buildPassJson(merchant: MerchantData, customer: CustomerData) {
           key: 'points_header',
           label: t.stampsLabel,
           value: `${currentPoints} / ${stampGoal}`,
-          textAlignment: 'PKTextAlignmentRight'
+          textAlignment: 'PKTextAlignmentRight',
+          changeMessage: t.changeStamps
         }
       ],
-      primaryFields: [
-        {
-          key: 'status',
-          label: t.statusLabel,
-          value: statusText
-        }
-      ],
+      // No primaryFields: leaves the main front card body fully open for strip.png banner
+      primaryFields: [],
       secondaryFields: [
         {
           key: 'reward',
           label: t.rewardLabel,
-          value: rewardText
+          value: rewardText,
+          changeMessage: t.changeReward
         }
       ],
       auxiliaryFields: [
@@ -209,7 +210,7 @@ function getSignerCredentials() {
   const directKeyPem = parsePem(process.env.APPLE_PASS_SIGNER_KEY_PEM);
   const wwdrPem = parsePem(process.env.APPLE_WWDR_CERT_PEM);
 
-  // 1. If direct PEM credentials are provided, use them directly (zero password/decoding issues)
+  // 1. If direct PEM credentials are provided, use them directly
   if (directCertPem && directKeyPem) {
     cachedSigner = {
       signerCert: directCertPem,
@@ -224,7 +225,7 @@ function getSignerCredentials() {
   const p12Password = cleanEnv(process.env.APPLE_PASS_CERT_PASSWORD);
 
   if (!p12Base64) {
-    throw new Error('Apple Wallet credentials missing. Please set APPLE_PASS_SIGNER_CERT_PEM and APPLE_PASS_SIGNER_KEY_PEM (or APPLE_PASS_CERT_P12_BASE64).');
+    throw new Error('Apple Wallet credentials missing. Please set APPLE_PASS_SIGNER_CERT_PEM and APPLE_PASS_SIGNER_KEY_PEM.');
   }
 
   const sanitizedBase64 = p12Base64.replace(/\s+/g, '');
@@ -285,6 +286,60 @@ async function loadBuffer(source?: string): Promise<Buffer | null> {
   return null;
 }
 
+// In-memory cache for Twemoji SVGs to ensure ultra-fast image generation
+const twemojiCache = new Map<string, string>();
+
+function emojiToTwemojiHex(emoji: string): string {
+  const codePoints: string[] = [];
+  for (let i = 0; i < emoji.length; i++) {
+    const cp = emoji.codePointAt(i);
+    if (cp !== undefined) {
+      if (cp > 0xffff) i++;
+      // Exclude emoji variation selector-16 (fe0f) if standalone to maximize CDN hit
+      codePoints.push(cp.toString(16).toLowerCase());
+    }
+  }
+  return codePoints.join('-');
+}
+
+async function fetchTwemojiBase64(emoji: string): Promise<string | null> {
+  if (!emoji) return null;
+  if (twemojiCache.has(emoji)) {
+    return twemojiCache.get(emoji)!;
+  }
+
+  try {
+    const hex = emojiToTwemojiHex(emoji);
+    const urls = [
+      `https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/${hex}.svg`,
+      `https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/${hex}.svg`,
+    ];
+
+    // Also try without -fe0f if present
+    const simplifiedHex = hex.replace(/-fe0f/g, '');
+    if (simplifiedHex !== hex) {
+      urls.push(`https://cdn.jsdelivr.net/gh/twitter/twemoji@14.0.2/assets/svg/${simplifiedHex}.svg`);
+    }
+
+    for (const url of urls) {
+      try {
+        const res = await fetch(url, { cache: 'force-cache' });
+        if (res.ok) {
+          const text = await res.text();
+          const base64 = `data:image/svg+xml;base64,${Buffer.from(text).toString('base64')}`;
+          twemojiCache.set(emoji, base64);
+          return base64;
+        }
+      } catch {
+        // Try next URL
+      }
+    }
+  } catch (e) {
+    console.warn('[Apple Wallet] Twemoji fetch error:', e);
+  }
+  return null;
+}
+
 function getStarPolygon(cx: number, cy: number, r: number, fill: string, stroke?: string): string {
   const points: string[] = [];
   for (let i = 0; i < 10; i++) {
@@ -295,25 +350,31 @@ function getStarPolygon(cx: number, cy: number, r: number, fill: string, stroke?
   return `<polygon points="${points.join(' ')}" fill="${fill}" stroke="${stroke || 'none'}" stroke-width="1.5" />`;
 }
 
-function generateStripSvg(
+/**
+ * Generates the Apple Wallet Strip Banner (1125 x 369)
+ * 1:1 identical to Google Wallet card design with custom Emojis, cover photo, glowing circles
+ */
+async function generateStripSvg(
   points: number,
   stampGoal: number,
+  stampSymbol: string,
   primaryColor?: string,
   language?: string,
   rewardText?: string,
   heroImageBase64?: string | null
-) {
+): Promise<string> {
   const width = 1125;
   const height = 369;
   const gold = primaryColor || '#D4AF37';
+  const rgb = hexToRgbRaw(gold);
   const isFrench = language === 'fr';
-
   const isFull = points >= stampGoal;
 
   const bgImageTag = heroImageBase64
     ? `<image href="data:image/png;base64,${heroImageBase64}" width="${width}" height="${height}" preserveAspectRatio="xMidYMid slice" opacity="0.65" />`
     : '';
 
+  // 1. REWARD READY STATE (Pass is full)
   if (isFull) {
     const title = isFrench ? 'FÉLICITATIONS !' : 'HERZLICHEN GLÜCKWUNSCH !';
     const sub = isFrench ? 'Présentez cette carte lors de votre prochaine visite' : 'Zeige diese Karte beim nächsten Besuch vor';
@@ -332,49 +393,79 @@ function generateStripSvg(
             <stop offset="50%" stop-color="${gold}" />
             <stop offset="100%" stop-color="#E5A800" />
           </linearGradient>
+          <radialGradient id="glowEffect" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="rgba(${rgb}, 0.25)" />
+            <stop offset="100%" stop-color="rgba(0,0,0,0)" />
+          </radialGradient>
         </defs>
         <rect width="${width}" height="${height}" fill="url(#bgFull)" />
         ${bgImageTag}
-        <rect width="${width}" height="${height}" fill="rgba(0,0,0,0.4)" />
-        <line x1="0" y1="0" x2="${width}" y2="0" stroke="${gold}" stroke-width="6" opacity="0.9" />
-        <line x1="0" y1="${height}" x2="${width}" y2="${height}" stroke="${gold}" stroke-width="6" opacity="0.9" />
-        <rect x="40" y="30" width="1045" height="309" rx="24" fill="rgba(0,0,0,0.5)" stroke="${gold}" stroke-width="2.5" stroke-dasharray="8,6" />
-        <text x="${width / 2}" y="125" font-size="46" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" text-anchor="middle" fill="url(#goldText)" letter-spacing="3">★ ${title} ★</text>
-        <text x="${width / 2}" y="195" font-size="36" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="700" text-anchor="middle" fill="#FFFFFF">${displayReward}</text>
-        <text x="${width / 2}" y="260" font-size="24" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="500" text-anchor="middle" fill="#E0E0E0" opacity="0.9">${sub}</text>
+        <rect width="${width}" height="${height}" fill="rgba(0,0,0,0.45)" />
+        <rect width="${width}" height="${height}" fill="url(#glowEffect)" />
+        <line x1="0" y1="0" x2="${width}" y2="0" stroke="${gold}" stroke-width="6" opacity="0.95" />
+        <line x1="0" y1="${height}" x2="${width}" y2="${height}" stroke="${gold}" stroke-width="6" opacity="0.95" />
+        <rect x="40" y="24" width="1045" height="321" rx="24" fill="rgba(0,0,0,0.65)" stroke="${gold}" stroke-width="2.5" stroke-dasharray="8,6" />
+        <text x="${width / 2}" y="115" font-size="44" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="900" text-anchor="middle" fill="url(#goldText)" letter-spacing="3">★ ${title} ★</text>
+        <text x="${width / 2}" y="190" font-size="36" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="700" text-anchor="middle" fill="#FFFFFF">${displayReward}</text>
+        <text x="${width / 2}" y="260" font-size="22" font-family="-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif" font-weight="500" text-anchor="middle" fill="#E0E0E0" opacity="0.9">${sub}</text>
       </svg>
     `;
   }
 
-  const colsPerRow = stampGoal > 10 ? 6 : (stampGoal > 5 ? 5 : stampGoal);
+  // 2. STAMP COLLECTING STATE (Matching Google Wallet stamp grid)
+  const twemojiDataUrl = await fetchTwemojiBase64(stampSymbol || '✨');
+
+  // Calculate dynamic grid
+  const colsPerRow = stampGoal <= 5 ? stampGoal : (stampGoal <= 10 ? Math.ceil(stampGoal / 2) : 6);
   const rows = Math.ceil(stampGoal / colsPerRow);
-  const size = rows > 2 ? 80 : 102;
-  const gap = rows > 2 ? 18 : 24;
+  
+  // Dimensions tailored for 1125x369 strip canvas
+  const size = rows === 1 ? 116 : (rows === 2 ? (stampGoal > 10 ? 76 : 88) : 68);
+  const gap = rows === 1 ? 28 : (rows === 2 ? 18 : 12);
+  const iconSize = size * 0.58;
 
   let circlesSvg = '';
-  
+
   for (let i = 0; i < stampGoal; i++) {
     const row = Math.floor(i / colsPerRow);
     const col = i % colsPerRow;
     const totalInRow = (row === rows - 1) ? (stampGoal - row * colsPerRow) : colsPerRow;
     const startX = (width - (totalInRow * size + (totalInRow - 1) * gap)) / 2;
     const startY = (height - (rows * size + (rows - 1) * gap)) / 2;
-    
+
     const cx = startX + col * (size + gap) + size / 2;
     const cy = startY + row * (size + gap) + size / 2;
     const r = size / 2;
     const isStamped = i < points;
+    const iconX = cx - iconSize / 2;
+    const iconY = cy - iconSize / 2;
 
     if (isStamped) {
       circlesSvg += `
-        <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#goldGrad)" stroke="${gold}" stroke-width="3.5" />
-        <circle cx="${cx}" cy="${cy}" r="${r - 5}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" />
-        ${getStarPolygon(cx, cy, r * 0.58, '#14120D', 'rgba(255,255,255,0.3)')}
+        <g>
+          <!-- Outer Stamp Glow -->
+          <circle cx="${cx}" cy="${cy}" r="${r + 4}" fill="rgba(${rgb}, 0.25)" />
+          <!-- Stamp Gradient Body -->
+          <circle cx="${cx}" cy="${cy}" r="${r}" fill="url(#goldGrad)" stroke="${gold}" stroke-width="3.5" />
+          <!-- Inner Rim -->
+          <circle cx="${cx}" cy="${cy}" r="${r - 4}" fill="none" stroke="rgba(255,255,255,0.4)" stroke-width="1.5" />
+          ${
+            twemojiDataUrl
+              ? `<image href="${twemojiDataUrl}" x="${iconX}" y="${iconY}" width="${iconSize}" height="${iconSize}" />`
+              : getStarPolygon(cx, cy, r * 0.58, '#14120D', 'rgba(255,255,255,0.4)')
+          }
+        </g>
       `;
     } else {
       circlesSvg += `
-        <circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(0,0,0,0.5)" stroke="rgba(255,255,255,0.3)" stroke-width="2.5" stroke-dasharray="6,6" />
-        ${getStarPolygon(cx, cy, r * 0.42, 'rgba(255,255,255,0.25)')}
+        <g>
+          <circle cx="${cx}" cy="${cy}" r="${r}" fill="rgba(0,0,0,0.55)" stroke="rgba(${rgb}, 0.45)" stroke-width="2.5" stroke-dasharray="6,6" />
+          ${
+            twemojiDataUrl
+              ? `<image href="${twemojiDataUrl}" x="${iconX}" y="${iconY}" width="${iconSize}" height="${iconSize}" opacity="0.22" />`
+              : getStarPolygon(cx, cy, r * 0.42, `rgba(${rgb}, 0.25)`)
+          }
+        </g>
       `;
     }
   }
@@ -383,20 +474,25 @@ function generateStripSvg(
     <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
       <defs>
         <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-          <stop offset="0%" stop-color="#1C1914" />
-          <stop offset="50%" stop-color="#0E0C0A" />
-          <stop offset="100%" stop-color="#1C1914" />
+          <stop offset="0%" stop-color="#181510" />
+          <stop offset="50%" stop-color="#0A0907" />
+          <stop offset="100%" stop-color="#14110B" />
         </linearGradient>
         <linearGradient id="goldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
           <stop offset="0%" stop-color="#FFF2B2" />
           <stop offset="45%" stop-color="${gold}" />
           <stop offset="100%" stop-color="#8C6200" />
         </linearGradient>
+        <radialGradient id="centerGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="rgba(${rgb}, 0.18)" />
+          <stop offset="100%" stop-color="rgba(0,0,0,0)" />
+        </radialGradient>
       </defs>
       <rect width="${width}" height="${height}" fill="url(#bgGrad)" />
       ${bgImageTag}
-      <line x1="0" y1="0" x2="${width}" y2="0" stroke="${gold}" stroke-width="4" opacity="0.8" />
-      <line x1="0" y1="${height}" x2="${width}" y2="${height}" stroke="${gold}" stroke-width="4" opacity="0.8" />
+      <rect width="${width}" height="${height}" fill="url(#centerGlow)" />
+      <line x1="0" y1="0" x2="${width}" y2="0" stroke="${gold}" stroke-width="4.5" opacity="0.9" />
+      <line x1="0" y1="${height}" x2="${width}" y2="${height}" stroke="${gold}" stroke-width="4.5" opacity="0.9" />
       ${circlesSvg}
     </svg>
   `;
@@ -461,13 +557,16 @@ export async function generatePkPass(merchant: MerchantData, customer: CustomerD
     buffersMap['logo@3x.png'] = logo3x;
   }
 
-  // Generate dynamic strip banner with stamp circles (matching Google Wallet design)
+  // Generate dynamic strip banner with stamp circles & emojis (matching Google Wallet design)
   const stampGoal = merchant.stamp_goal || 9;
   const currentPoints = customer.points || 0;
+  const stampSymbol = merchant.stamp_symbol || '✨';
   const rewardText = merchant.reward_text || (merchant.language === 'fr' ? '1 Récompense Gratuite' : '1 Gratis Belohnung');
-  const stripSvg = generateStripSvg(
+
+  const stripSvg = await generateStripSvg(
     currentPoints,
     stampGoal,
+    stampSymbol,
     merchant.primary_color,
     merchant.language,
     rewardText,
