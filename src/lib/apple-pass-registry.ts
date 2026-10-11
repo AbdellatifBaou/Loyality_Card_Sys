@@ -1,4 +1,6 @@
 import http2 from 'http2';
+import tls from 'tls';
+import crypto from 'crypto';
 import { getAdminSupabase } from './supabase';
 import { getSignerCredentials } from './apple-wallet';
 
@@ -143,12 +145,10 @@ export async function notifyApplePassUpdate(serialNumber: string): Promise<{ sen
   
   let certPem = '';
   let keyPem = '';
-  let wwdrPem = '';
   try {
     const creds = getSignerCredentials();
     certPem = creds.signerCert;
     keyPem = creds.signerKey;
-    wwdrPem = creds.wwdr || '';
   } catch (err: any) {
     console.warn('[Apple PassKit] Failed to load signer credentials for APNs push:', err.message);
     return { sent: 0, tokens: [], details: [{ error: `Credentials load error: ${err.message}` }] };
@@ -193,7 +193,7 @@ export async function notifyApplePassUpdate(serialNumber: string): Promise<{ sen
   const details: any[] = [];
   for (const token of pushTokens) {
     try {
-      const res = await sendApnsPush(token, passTypeId, certPem, keyPem, wwdrPem);
+      const res = await sendApnsPush(token, passTypeId, certPem, keyPem);
       console.log(`[Apple PassKit] APNs push to ${token.slice(0, 10)}... → ${res.ok ? 'OK (200)' : 'FAILED: ' + (res.error || res.status)}`);
       if (res.ok) successCount++;
       details.push({ token: token.slice(0, 10) + '...', ...res });
@@ -206,7 +206,7 @@ export async function notifyApplePassUpdate(serialNumber: string): Promise<{ sen
   return { sent: successCount, tokens: pushTokens, details };
 }
 
-function sendApnsPush(pushToken: string, topic: string, cert: string, key: string, ca?: string): Promise<{ ok: boolean; status?: number; error?: string; body?: string }> {
+function sendApnsPush(pushToken: string, topic: string, cert: string, key: string): Promise<{ ok: boolean; status?: number; error?: string; body?: string }> {
   return new Promise((resolve) => {
     let client: http2.ClientHttp2Session | null = null;
     let finished = false;
@@ -220,16 +220,53 @@ function sendApnsPush(pushToken: string, topic: string, cert: string, key: strin
     }, 5000);
 
     try {
-      const connectOpts: http2.SecureClientSessionOptions = {
-        cert,
-        key,
-        rejectUnauthorized: false
-      };
-      if (ca && ca.includes('-----BEGIN')) {
-        connectOpts.ca = ca;
+      const cleanCert = cert.replace(/\r\n/g, '\n').trim();
+      let cleanKey = key.replace(/\r\n/g, '\n').trim();
+
+      // Ensure key is standard PKCS#8 PEM
+      try {
+        const parsedKey = crypto.createPrivateKey(cleanKey);
+        cleanKey = parsedKey.export({ type: 'pkcs8', format: 'pem' }).toString().trim();
+      } catch (kErr: any) {
+        console.warn('[APNs] PKCS8 conversion note:', kErr.message);
       }
 
-      client = http2.connect('https://api.push.apple.com', connectOpts);
+      // Pre-flight check individual credentials to catch any PEM routine issues
+      try {
+        tls.createSecureContext({ cert: cleanCert });
+      } catch (cErr: any) {
+        if (!finished) {
+          finished = true;
+          clearTimeout(timer);
+          return resolve({ ok: false, error: `Cert validation error: ${cErr.message}` });
+        }
+      }
+
+      try {
+        tls.createSecureContext({ key: cleanKey });
+      } catch (kErr: any) {
+        if (!finished) {
+          finished = true;
+          clearTimeout(timer);
+          return resolve({ ok: false, error: `Key validation error: ${kErr.message}` });
+        }
+      }
+
+      try {
+        tls.createSecureContext({ cert: cleanCert, key: cleanKey });
+      } catch (pairErr: any) {
+        if (!finished) {
+          finished = true;
+          clearTimeout(timer);
+          return resolve({ ok: false, error: `Cert/Key pair error: ${pairErr.message}` });
+        }
+      }
+
+      client = http2.connect('https://api.push.apple.com', {
+        cert: cleanCert,
+        key: cleanKey,
+        rejectUnauthorized: false
+      });
 
       client.on('error', (err) => {
         console.warn('[APNs] HTTP2 Client error:', err.message);
