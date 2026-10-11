@@ -225,6 +225,26 @@ function cleanEnv(val?: string): string {
   return cleaned;
 }
 
+export function repairFlattenedPem(pemStr: string): string {
+  if (!pemStr) return '';
+  let str = pemStr.trim();
+  if ((str.startsWith('"') && str.endsWith('"')) || (str.startsWith("'") && str.endsWith("'"))) {
+    str = str.slice(1, -1).trim();
+  }
+  str = str.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\\r/g, '\n');
+
+  // Match PEM that may have had newlines replaced by spaces or single-line flattened
+  const match = str.match(/(-----BEGIN [^-]+-----)\s+([\s\S]+?)\s+(-----END [^-]+-----)/);
+  if (match) {
+    const header = match[1];
+    const body = match[2].replace(/\s+/g, ''); // remove all whitespace/newlines/spaces
+    const footer = match[3];
+    const chunks = body.match(/.{1,64}/g) || [];
+    return [header, ...chunks, footer].join('\n');
+  }
+  return str;
+}
+
 function parsePem(pemStr?: string): string {
   if (!pemStr) return '';
   let cleaned = cleanEnv(pemStr);
@@ -239,10 +259,8 @@ function parsePem(pemStr?: string): string {
     } catch {}
   }
 
-  // Replace literal '\r\n', '\n', '\r' with real newlines
-  cleaned = cleaned.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\\r/g, '\n');
-  // Normalize actual CRLF to LF
-  cleaned = cleaned.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+  // Repair space-flattened or single-line PEMs
+  cleaned = repairFlattenedPem(cleaned);
 
   // Re-serialize natively if it is a certificate or key
   if (cleaned.includes('-----BEGIN CERTIFICATE')) {

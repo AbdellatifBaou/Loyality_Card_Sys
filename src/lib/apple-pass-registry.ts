@@ -2,7 +2,7 @@ import http2 from 'http2';
 import tls from 'tls';
 import crypto from 'crypto';
 import { getAdminSupabase } from './supabase';
-import { getSignerCredentials } from './apple-wallet';
+import { getSignerCredentials, repairFlattenedPem } from './apple-wallet';
 
 /**
  * Apple PassKit Device Registry
@@ -220,8 +220,8 @@ function sendApnsPush(pushToken: string, topic: string, cert: string, key: strin
     }, 5000);
 
     try {
-      // 1. Normalize Certificate via native Node.js X509 parser
-      let cleanCert = cert.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\r\n/g, '\n').trim();
+      // 1. Normalize Certificate via repairFlattenedPem and native Node.js X509 parser
+      let cleanCert = repairFlattenedPem(cert);
       let x509Error = '';
       try {
         const x509 = new crypto.X509Certificate(cleanCert);
@@ -231,8 +231,8 @@ function sendApnsPush(pushToken: string, topic: string, cert: string, key: strin
         console.warn('[APNs] X509 re-serialization note:', xErr.message);
       }
 
-      // 2. Normalize Private Key to standard PKCS#8 PEM via native Node.js crypto
-      let cleanKey = key.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\r\n/g, '\n').trim();
+      // 2. Normalize Private Key via repairFlattenedPem and standard PKCS#8 PEM
+      let cleanKey = repairFlattenedPem(key);
       let keyError = '';
       try {
         const parsedKey = crypto.createPrivateKey(cleanKey);
