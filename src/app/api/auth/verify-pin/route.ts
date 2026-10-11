@@ -67,7 +67,7 @@ export async function POST(req: Request) {
 
     let query = adminSupabase
       .from('staff_loyality')
-      .select('id, name, merchant_id, merchants_loyality!inner(id, primary_color, logo_url, name, slug, language, is_active, failed_login_attempts, lockout_until)')
+      .select('id, name, merchant_id, merchants_loyality!inner(id, primary_color, logo_url, name, slug, language, is_active, failed_login_attempts, lockout_until, stamp_goal, address, reward_text, latitude, longitude, push_settings, stamp_symbol)')
       .eq('pin', pin);
 
     if (normalizedSlug) {
