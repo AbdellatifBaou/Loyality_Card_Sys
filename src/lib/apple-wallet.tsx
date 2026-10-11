@@ -159,6 +159,12 @@ export function buildPassJson(merchant: MerchantData, customer: CustomerData) {
       primaryFields: [],
       secondaryFields: [
         {
+          key: 'points_status',
+          label: t.stampsLabel,
+          value: `${currentPoints} / ${stampGoal}`,
+          changeMessage: t.changeStamps
+        },
+        {
           key: 'reward',
           label: t.rewardLabel,
           value: rewardText,
