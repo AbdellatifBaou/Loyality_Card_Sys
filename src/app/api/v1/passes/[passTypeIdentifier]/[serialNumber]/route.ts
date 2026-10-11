@@ -27,11 +27,13 @@ export async function GET(
     // 2. Generate updated .pkpass
     const pkpassBuffer = await generatePkPass(merchant, customer);
 
+    console.log(`[Apple PassKit] Serving updated pass for ${serialNumber} to Apple Wallet (points: ${customer.points})`);
+
     return new Response(new Uint8Array(pkpassBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.apple.pkpass',
-        'Last-Modified': new Date(customer.updated_at || Date.now()).toUTCString(),
+        'Last-Modified': new Date().toUTCString(),
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
         'Expires': '0',

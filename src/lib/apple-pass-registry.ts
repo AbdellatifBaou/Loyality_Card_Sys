@@ -93,21 +93,31 @@ export async function getDeviceUpdatedPasses(
   passesUpdatedSince?: string
 ): Promise<{ serialNumbers: string[]; lastUpdated: string }> {
   const adminSupabase = getAdminSupabase();
-  const sinceTime = passesUpdatedSince ? parseInt(passesUpdatedSince, 10) || 0 : 0;
 
+  // Fetch all registrations for this device
   const { data, error } = await adminSupabase
     .from('apple_device_registrations_loyality')
-    .select('serial_number')
+    .select('serial_number, updated_at')
     .eq('device_library_identifier', deviceLibraryIdentifier)
-    .eq('pass_type_identifier', passTypeIdentifier)
-    .gt('updated_at', sinceTime);
+    .eq('pass_type_identifier', passTypeIdentifier);
 
-  if (error) {
-    console.error('[Apple PassKit] getDeviceUpdatedPasses DB error:', error.message);
+  if (error || !data) {
+    console.error('[Apple PassKit] getDeviceUpdatedPasses DB error:', error?.message);
     return { serialNumbers: [], lastUpdated: Date.now().toString() };
   }
 
-  const serialNumbers = (data || []).map((r: any) => r.serial_number);
+  const sinceTime = passesUpdatedSince ? parseInt(passesUpdatedSince, 10) || 0 : 0;
+  
+  // Return passes updated since timestamp, or all registered passes as allowed by Apple PassKit spec
+  let matching = data.filter((r: any) => sinceTime === 0 || (r.updated_at && r.updated_at >= sinceTime - 2000));
+  if (matching.length === 0 && data.length > 0) {
+    // Fallback: Apple allows returning all serial numbers associated with the device
+    matching = data;
+  }
+
+  const serialNumbers = Array.from(new Set(matching.map((r: any) => r.serial_number)));
+  console.log(`[Apple PassKit] getDeviceUpdatedPasses for device ${deviceLibraryIdentifier.slice(0, 8)}... (since ${sinceTime}): returning ${serialNumbers.length} pass(es) [${serialNumbers.join(', ')}]`);
+
   return {
     serialNumbers,
     lastUpdated: Date.now().toString(),
@@ -203,15 +213,14 @@ function sendApnsPush(pushToken: string, topic: string, cert: string, key: strin
         resolve(false);
       });
 
-      // PassKit Apple Push Notification spec:
-      // - Topic: passTypeIdentifier (e.g. pass.de.marketif.loyalty)
-      // - Payload: empty JSON dictionary ({})
-      // - No apns-push-type (setting 'background' with priority 10 causes APNs HTTP 400 BadPriority)
+      // Valid for 24 hours so APNs delivers if device was locked or briefly offline
+      const expiration = (Math.floor(Date.now() / 1000) + 86400).toString();
+
       const headers: Record<string, string> = {
         ':method': 'POST',
         ':path': `/3/device/${pushToken}`,
         'apns-topic': topic,
-        'apns-expiration': '0',
+        'apns-expiration': expiration,
         'apns-priority': '10',
       };
 
