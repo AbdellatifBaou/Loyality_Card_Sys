@@ -1,15 +1,26 @@
 import { NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase';
+import { notifyApplePassUpdate } from '@/lib/apple-pass-registry';
 
 /**
- * Debug endpoint: GET /api/debug/apple-wallet?serial=<wallet_object_id>
+ * Debug endpoint: GET /api/debug/apple-wallet?serial=<wallet_object_id>&action=push
  * Shows registered devices and push tokens for a given pass serial number.
- * Remove or protect this endpoint in production after debugging.
+ * Can also send a live test push.
  */
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const serial = searchParams.get('serial');
+    const action = searchParams.get('action');
+
+    if (action === 'push' && serial) {
+      const pushResult = await notifyApplePassUpdate(serial);
+      return NextResponse.json({
+        status: 'push_triggered',
+        serial,
+        pushResult,
+      });
+    }
 
     const adminSupabase = getAdminSupabase();
 

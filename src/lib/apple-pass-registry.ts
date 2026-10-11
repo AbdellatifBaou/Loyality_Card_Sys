@@ -101,26 +101,19 @@ export async function getDeviceUpdatedPasses(
     .eq('device_library_identifier', deviceLibraryIdentifier)
     .eq('pass_type_identifier', passTypeIdentifier);
 
-  if (error || !data) {
-    console.error('[Apple PassKit] getDeviceUpdatedPasses DB error:', error?.message);
-    return { serialNumbers: [], lastUpdated: Date.now().toString() };
+  if (error || !data || data.length === 0) {
+    console.log(`[Apple PassKit] getDeviceUpdatedPasses for device ${deviceLibraryIdentifier.slice(0, 8)}...: no passes found`);
+    return { serialNumbers: [], lastUpdated: Math.floor(Date.now() / 1000).toString() };
   }
 
-  const sinceTime = passesUpdatedSince ? parseInt(passesUpdatedSince, 10) || 0 : 0;
-  
-  // Return passes updated since timestamp, or all registered passes as allowed by Apple PassKit spec
-  let matching = data.filter((r: any) => sinceTime === 0 || (r.updated_at && r.updated_at >= sinceTime - 2000));
-  if (matching.length === 0 && data.length > 0) {
-    // Fallback: Apple allows returning all serial numbers associated with the device
-    matching = data;
-  }
-
-  const serialNumbers = Array.from(new Set(matching.map((r: any) => r.serial_number)));
-  console.log(`[Apple PassKit] getDeviceUpdatedPasses for device ${deviceLibraryIdentifier.slice(0, 8)}... (since ${sinceTime}): returning ${serialNumbers.length} pass(es) [${serialNumbers.join(', ')}]`);
+  // Apple PassKit spec: returning all serial numbers ensures the device always fetches the latest card
+  const serialNumbers = Array.from(new Set(data.map((r: any) => r.serial_number)));
+  const nowTag = Math.floor(Date.now() / 1000).toString();
+  console.log(`[Apple PassKit] getDeviceUpdatedPasses for device ${deviceLibraryIdentifier.slice(0, 8)}...: returning ${serialNumbers.length} pass(es) [${serialNumbers.join(', ')}]`);
 
   return {
     serialNumbers,
-    lastUpdated: Date.now().toString(),
+    lastUpdated: nowTag,
   };
 }
 
@@ -145,7 +138,7 @@ async function markPassAsUpdated(serialNumber: string): Promise<void> {
  * Sends silent APNs push notification to all devices registered for this pass serialNumber.
  * Tokens are loaded from Supabase — survives server restarts.
  */
-export async function notifyApplePassUpdate(serialNumber: string): Promise<void> {
+export async function notifyApplePassUpdate(serialNumber: string): Promise<{ sent: number; tokens: string[] }> {
   const passTypeId = process.env.APPLE_PASS_TYPE_IDENTIFIER || 'pass.de.marketif.loyalty';
   
   let certPem = '';
@@ -156,12 +149,12 @@ export async function notifyApplePassUpdate(serialNumber: string): Promise<void>
     keyPem = creds.signerKey;
   } catch (err: any) {
     console.warn('[Apple PassKit] Failed to load signer credentials for APNs push:', err.message);
-    return;
+    return { sent: 0, tokens: [] };
   }
 
   if (!certPem || !keyPem) {
     console.warn('[Apple PassKit] APNs push skipped: missing certificate or private key');
-    return;
+    return { sent: 0, tokens: [] };
   }
 
   // 1. Mark pass as updated in DB so Apple can fetch the new version
@@ -176,32 +169,52 @@ export async function notifyApplePassUpdate(serialNumber: string): Promise<void>
 
   if (error) {
     console.error('[Apple PassKit] Failed to load push tokens:', error.message);
-    return;
+    return { sent: 0, tokens: [] };
   }
 
-  const pushTokens = new Set<string>((data || []).map((r: any) => r.push_token).filter(Boolean));
+  // Filter out any invalid non-hex tokens (APNs tokens are exactly 64 hex characters)
+  const pushTokens = Array.from(new Set<string>(
+    (data || [])
+      .map((r: any) => r.push_token)
+      .filter((t: string) => t && /^[0-9a-fA-F]{64}$/.test(t))
+  ));
 
-  if (pushTokens.size === 0) {
-    console.log(`[Apple PassKit] No registered push tokens found for pass ${serialNumber}`);
-    return;
+  if (pushTokens.length === 0) {
+    console.log(`[Apple PassKit] No valid APNs push tokens found for pass ${serialNumber}`);
+    return { sent: 0, tokens: [] };
   }
 
-  console.log(`[Apple PassKit] Sending APNs push to ${pushTokens.size} device(s) for pass ${serialNumber}`);
+  console.log(`[Apple PassKit] Sending APNs push to ${pushTokens.length} device(s) for pass ${serialNumber}`);
 
+  let successCount = 0;
   for (const token of pushTokens) {
     try {
       const ok = await sendApnsPush(token, passTypeId, certPem, keyPem);
-      console.log(`[Apple PassKit] APNs push to ${token.slice(0, 10)}... → ${ok ? 'OK' : 'FAILED'}`);
+      console.log(`[Apple PassKit] APNs push to ${token.slice(0, 10)}... → ${ok ? 'OK (200)' : 'FAILED'}`);
+      if (ok) successCount++;
     } catch (err: any) {
       console.warn(`[Apple PassKit] APNs push error for token ${token.slice(0, 8)}...:`, err.message);
     }
   }
+
+  return { sent: successCount, tokens: pushTokens };
 }
 
 function sendApnsPush(pushToken: string, topic: string, cert: string, key: string): Promise<boolean> {
   return new Promise((resolve) => {
+    let client: http2.ClientHttp2Session | null = null;
+    let finished = false;
+
+    const timer = setTimeout(() => {
+      if (!finished) {
+        finished = true;
+        try { if (client) client.close(); } catch {}
+        resolve(false);
+      }
+    }, 5000);
+
     try {
-      const client = http2.connect('https://api.push.apple.com', {
+      client = http2.connect('https://api.push.apple.com', {
         cert,
         key,
         rejectUnauthorized: false
@@ -209,15 +222,22 @@ function sendApnsPush(pushToken: string, topic: string, cert: string, key: strin
 
       client.on('error', (err) => {
         console.warn('[APNs] HTTP2 Client error:', err.message);
-        try { client.close(); } catch {}
-        resolve(false);
+        if (!finished) {
+          finished = true;
+          clearTimeout(timer);
+          try { if (client) client.close(); } catch {}
+          resolve(false);
+        }
       });
 
+      // PassKit Apple Push Notification spec:
+      // - Topic: passTypeIdentifier (e.g. pass.de.marketif.loyalty)
+      // - Payload: empty JSON dictionary ({})
+      // - No extra headers (apns-priority or apns-push-type cause APNs rejection or connection reset)
       const headers: Record<string, string> = {
         ':method': 'POST',
         ':path': `/3/device/${pushToken}`,
         'apns-topic': topic,
-        'apns-priority': '10',
       };
 
       const req = client.request(headers);
@@ -231,28 +251,40 @@ function sendApnsPush(pushToken: string, topic: string, cert: string, key: strin
         });
 
         req.on('end', () => {
-          try { client.close(); } catch {}
-          if (status === 200) {
-            console.log(`[Apple APNs Push] SUCCESS for token ${pushToken.slice(0, 10)}... (status 200)`);
-            resolve(true);
-          } else {
-            console.warn(`[Apple APNs Push] FAILED (status ${status}) for token ${pushToken.slice(0, 10)}... Response:`, responseBody);
-            resolve(false);
+          if (!finished) {
+            finished = true;
+            clearTimeout(timer);
+            try { if (client) client.close(); } catch {}
+            if (status === 200) {
+              console.log(`[Apple APNs Push] SUCCESS for token ${pushToken.slice(0, 10)}... (status 200)`);
+              resolve(true);
+            } else {
+              console.warn(`[Apple APNs Push] FAILED (status ${status}) for token ${pushToken.slice(0, 10)}... Response:`, responseBody);
+              resolve(false);
+            }
           }
         });
       });
 
       req.on('error', (err) => {
         console.warn('[APNs] Request error:', err.message);
-        try { client.close(); } catch {}
-        resolve(false);
+        if (!finished) {
+          finished = true;
+          clearTimeout(timer);
+          try { if (client) client.close(); } catch {}
+          resolve(false);
+        }
       });
 
-      req.write(JSON.stringify({}));
+      req.write('{}');
       req.end();
     } catch (e: any) {
       console.warn('[APNs] Execution error:', e.message);
-      resolve(false);
+      if (!finished) {
+        finished = true;
+        clearTimeout(timer);
+        resolve(false);
+      }
     }
   });
 }
