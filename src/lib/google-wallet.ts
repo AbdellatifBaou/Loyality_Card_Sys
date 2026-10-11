@@ -161,29 +161,22 @@ function getCredentials() {
   return credentials;
 }
 
-// Initialize Google Auth
-const getAuth = () => {
-  try {
-    const credentials = getCredentials();
-    return new google.auth.GoogleAuth({
-      credentials,
-      scopes: ['https://www.googleapis.com/auth/wallet_object.issuer'],
-    });
-  } catch (e) {
-    console.error('Google Auth initialization failed:', e);
-    return new google.auth.GoogleAuth({
-      scopes: ['https://www.googleapis.com/auth/wallet_object.issuer'],
-    });
-  }
+// Lazy walletClient: creates a fresh auth instance on every call so that
+// credential issues at startup don't permanently break wallet operations.
+function getWalletClient() {
+  const credentials = getCredentials();
+  const freshAuth = new google.auth.GoogleAuth({
+    credentials,
+    scopes: ['https://www.googleapis.com/auth/wallet_object.issuer'],
+  });
+  return google.walletobjects({ version: 'v1', auth: freshAuth });
+}
+
+// Backwards-compatible export (used by some routes directly)
+export const walletClient = { 
+  get loyaltyclass() { return getWalletClient().loyaltyclass; },
+  get loyaltyobject() { return getWalletClient().loyaltyobject; },
 };
-
-const auth = getAuth();
-const issuerId = process.env.GOOGLE_ISSUER_ID || '';
-
-export const walletClient = google.walletobjects({
-  version: 'v1',
-  auth: auth,
-});
 
 /**
  * Updates an existing LoyaltyClass on Google Wallet
