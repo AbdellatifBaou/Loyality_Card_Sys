@@ -188,29 +188,47 @@ function sendApnsPush(pushToken: string, topic: string, cert: string, key: strin
 
       client.on('error', (err) => {
         console.warn('[APNs] HTTP2 Client error:', err.message);
-        client.close();
+        try { client.close(); } catch {}
         resolve(false);
       });
 
-      const req = client.request({
+      // PassKit Apple Push Notification spec:
+      // - Topic: passTypeIdentifier (e.g. pass.de.marketif.loyalty)
+      // - Payload: empty JSON dictionary ({})
+      // - No apns-push-type (setting 'background' with priority 10 causes APNs HTTP 400 BadPriority)
+      const headers: Record<string, string> = {
         ':method': 'POST',
         ':path': `/3/device/${pushToken}`,
         'apns-topic': topic,
-        'apns-push-type': 'background',
-        'apns-priority': '5',
         'apns-expiration': '0',
-      });
+        'apns-priority': '10',
+      };
 
-      req.on('response', (headers) => {
-        const status = headers[':status'];
-        console.log(`[Apple APNs Push] Token ${pushToken.slice(0, 10)}... status: ${status}`);
-        client.close();
-        resolve(status === 200);
+      const req = client.request(headers);
+
+      let responseBody = '';
+
+      req.on('response', (resHeaders) => {
+        const status = Number(resHeaders[':status']);
+        req.on('data', (chunk) => {
+          responseBody += chunk.toString();
+        });
+
+        req.on('end', () => {
+          try { client.close(); } catch {}
+          if (status === 200) {
+            console.log(`[Apple APNs Push] SUCCESS for token ${pushToken.slice(0, 10)}... (status 200)`);
+            resolve(true);
+          } else {
+            console.warn(`[Apple APNs Push] FAILED (status ${status}) for token ${pushToken.slice(0, 10)}... Response:`, responseBody);
+            resolve(false);
+          }
+        });
       });
 
       req.on('error', (err) => {
         console.warn('[APNs] Request error:', err.message);
-        client.close();
+        try { client.close(); } catch {}
         resolve(false);
       });
 
