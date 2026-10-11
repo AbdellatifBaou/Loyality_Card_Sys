@@ -74,6 +74,9 @@ export async function POST(req: Request) {
       try {
         const { notifyApplePassUpdate } = require('@/lib/apple-pass-registry');
         await notifyApplePassUpdate(customer.wallet_object_id);
+        if (customer.id && customer.id !== customer.wallet_object_id) {
+          await notifyApplePassUpdate(customer.id);
+        }
       } catch (aErr: any) {
         console.warn('[Admin Update Points] Apple Wallet update skipped:', aErr?.message || aErr);
       }

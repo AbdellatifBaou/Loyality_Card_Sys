@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase';
 import { notifyApplePassUpdate } from '@/lib/apple-pass-registry';
-import { getSignerCredentials } from '@/lib/apple-wallet';
+import { getSignerCredentials, generatePkPass } from '@/lib/apple-wallet';
 
 /**
  * Debug endpoint: GET /api/debug/apple-wallet?serial=<wallet_object_id>&action=push
  * Shows registered devices and push tokens for a given pass serial number.
- * Can also send a live test push.
+ * Can also send a live test push or test .pkpass generation.
  */
 export async function GET(req: Request) {
   try {
@@ -29,6 +29,46 @@ export async function GET(req: Request) {
       };
     } catch (e: any) {
       credsInfo = { error: e.message };
+    }
+
+    if (action === 'test_pass' && serial) {
+      const adminSupabase = getAdminSupabase();
+      let { data: customer } = await adminSupabase
+        .from('customers_loyality')
+        .select('*, merchants_loyality(*)')
+        .eq('wallet_object_id', serial)
+        .maybeSingle();
+
+      if (!customer) {
+        const { data: customerById } = await adminSupabase
+          .from('customers_loyality')
+          .select('*, merchants_loyality(*)')
+          .eq('id', serial)
+          .maybeSingle();
+        customer = customerById;
+      }
+
+      if (!customer) {
+        return NextResponse.json({ error: 'Customer not found in DB', serial }, { status: 404 });
+      }
+
+      try {
+        const pkpassBuffer = await generatePkPass(customer.merchants_loyality, customer);
+        return NextResponse.json({
+          status: 'ok',
+          pass_generated: true,
+          pkpass_bytes: pkpassBuffer.length,
+          customer_points: customer.points,
+          merchant_name: customer.merchants_loyality?.name,
+        });
+      } catch (genErr: any) {
+        return NextResponse.json({
+          status: 'error',
+          pass_generated: false,
+          error: genErr.message,
+          stack: genErr.stack,
+        }, { status: 500 });
+      }
     }
 
     if (action === 'push' && serial) {

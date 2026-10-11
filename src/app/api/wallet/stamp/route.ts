@@ -88,6 +88,9 @@ export async function POST(req: Request) {
     // 6. Push live update to Apple Wallet devices
     try {
       await notifyApplePassUpdate(customer.wallet_object_id);
+      if (customer.id && customer.id !== customer.wallet_object_id) {
+        await notifyApplePassUpdate(customer.id);
+      }
     } catch (aErr: any) {
       console.warn('[Stamp API] Apple Wallet push notification skipped:', aErr?.message || aErr);
     }

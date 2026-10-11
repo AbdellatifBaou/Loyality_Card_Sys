@@ -33,15 +33,19 @@ export async function GET(
 
     const merchant = customer.merchants_loyality;
 
+    // Ensure serialNumber in pass.json matches the exact serialNumber requested by Apple Wallet
+    customer.wallet_object_id = serialNumber;
+
     // 2. Generate updated .pkpass
     const pkpassBuffer = await generatePkPass(merchant, customer);
 
-    console.log(`[Apple PassKit] Serving updated pass for ${serialNumber} to Apple Wallet (points: ${customer.points})`);
+    console.log(`[Apple PassKit] Serving updated pass for ${serialNumber} to Apple Wallet (points: ${customer.points}, size: ${pkpassBuffer.length} bytes)`);
 
     return new Response(new Uint8Array(pkpassBuffer), {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.apple.pkpass',
+        'Content-Length': pkpassBuffer.length.toString(),
         'Last-Modified': new Date().toUTCString(),
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
