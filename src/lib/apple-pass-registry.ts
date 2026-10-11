@@ -213,14 +213,10 @@ function sendApnsPush(pushToken: string, topic: string, cert: string, key: strin
         resolve(false);
       });
 
-      // Valid for 24 hours so APNs delivers if device was locked or briefly offline
-      const expiration = (Math.floor(Date.now() / 1000) + 86400).toString();
-
       const headers: Record<string, string> = {
         ':method': 'POST',
         ':path': `/3/device/${pushToken}`,
         'apns-topic': topic,
-        'apns-expiration': expiration,
         'apns-priority': '10',
       };
 
