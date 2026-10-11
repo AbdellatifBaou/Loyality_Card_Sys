@@ -138,7 +138,7 @@ async function markPassAsUpdated(serialNumber: string): Promise<void> {
  * Sends silent APNs push notification to all devices registered for this pass serialNumber.
  * Tokens are loaded from Supabase — survives server restarts.
  */
-export async function notifyApplePassUpdate(serialNumber: string): Promise<{ sent: number; tokens: string[] }> {
+export async function notifyApplePassUpdate(serialNumber: string): Promise<{ sent: number; tokens: string[]; details: any[] }> {
   const passTypeId = process.env.APPLE_PASS_TYPE_IDENTIFIER || 'pass.de.marketif.loyalty';
   
   let certPem = '';
@@ -149,12 +149,12 @@ export async function notifyApplePassUpdate(serialNumber: string): Promise<{ sen
     keyPem = creds.signerKey;
   } catch (err: any) {
     console.warn('[Apple PassKit] Failed to load signer credentials for APNs push:', err.message);
-    return { sent: 0, tokens: [] };
+    return { sent: 0, tokens: [], details: [{ error: `Credentials load error: ${err.message}` }] };
   }
 
   if (!certPem || !keyPem) {
     console.warn('[Apple PassKit] APNs push skipped: missing certificate or private key');
-    return { sent: 0, tokens: [] };
+    return { sent: 0, tokens: [], details: [{ error: 'Missing certPem or keyPem' }] };
   }
 
   // 1. Mark pass as updated in DB so Apple can fetch the new version
@@ -169,7 +169,7 @@ export async function notifyApplePassUpdate(serialNumber: string): Promise<{ sen
 
   if (error) {
     console.error('[Apple PassKit] Failed to load push tokens:', error.message);
-    return { sent: 0, tokens: [] };
+    return { sent: 0, tokens: [], details: [{ error: `DB query error: ${error.message}` }] };
   }
 
   // Filter out any invalid non-hex tokens (APNs tokens are exactly 64 hex characters)
@@ -181,26 +181,29 @@ export async function notifyApplePassUpdate(serialNumber: string): Promise<{ sen
 
   if (pushTokens.length === 0) {
     console.log(`[Apple PassKit] No valid APNs push tokens found for pass ${serialNumber}`);
-    return { sent: 0, tokens: [] };
+    return { sent: 0, tokens: [], details: [{ message: 'No valid 64-char hex tokens found' }] };
   }
 
   console.log(`[Apple PassKit] Sending APNs push to ${pushTokens.length} device(s) for pass ${serialNumber}`);
 
   let successCount = 0;
+  const details: any[] = [];
   for (const token of pushTokens) {
     try {
-      const ok = await sendApnsPush(token, passTypeId, certPem, keyPem);
-      console.log(`[Apple PassKit] APNs push to ${token.slice(0, 10)}... → ${ok ? 'OK (200)' : 'FAILED'}`);
-      if (ok) successCount++;
+      const res = await sendApnsPush(token, passTypeId, certPem, keyPem);
+      console.log(`[Apple PassKit] APNs push to ${token.slice(0, 10)}... → ${res.ok ? 'OK (200)' : 'FAILED: ' + (res.error || res.status)}`);
+      if (res.ok) successCount++;
+      details.push({ token: token.slice(0, 10) + '...', ...res });
     } catch (err: any) {
       console.warn(`[Apple PassKit] APNs push error for token ${token.slice(0, 8)}...:`, err.message);
+      details.push({ token: token.slice(0, 10) + '...', ok: false, error: err.message });
     }
   }
 
-  return { sent: successCount, tokens: pushTokens };
+  return { sent: successCount, tokens: pushTokens, details };
 }
 
-function sendApnsPush(pushToken: string, topic: string, cert: string, key: string): Promise<boolean> {
+function sendApnsPush(pushToken: string, topic: string, cert: string, key: string): Promise<{ ok: boolean; status?: number; error?: string; body?: string }> {
   return new Promise((resolve) => {
     let client: http2.ClientHttp2Session | null = null;
     let finished = false;
@@ -209,7 +212,7 @@ function sendApnsPush(pushToken: string, topic: string, cert: string, key: strin
       if (!finished) {
         finished = true;
         try { if (client) client.close(); } catch {}
-        resolve(false);
+        resolve({ ok: false, error: 'APNs connection timeout (5s)' });
       }
     }, 5000);
 
@@ -226,14 +229,10 @@ function sendApnsPush(pushToken: string, topic: string, cert: string, key: strin
           finished = true;
           clearTimeout(timer);
           try { if (client) client.close(); } catch {}
-          resolve(false);
+          resolve({ ok: false, error: `Client error: ${err.message}` });
         }
       });
 
-      // PassKit Apple Push Notification spec:
-      // - Topic: passTypeIdentifier (e.g. pass.de.marketif.loyalty)
-      // - Payload: empty JSON dictionary ({})
-      // - No extra headers (apns-priority or apns-push-type cause APNs rejection or connection reset)
       const headers: Record<string, string> = {
         ':method': 'POST',
         ':path': `/3/device/${pushToken}`,
@@ -257,10 +256,10 @@ function sendApnsPush(pushToken: string, topic: string, cert: string, key: strin
             try { if (client) client.close(); } catch {}
             if (status === 200) {
               console.log(`[Apple APNs Push] SUCCESS for token ${pushToken.slice(0, 10)}... (status 200)`);
-              resolve(true);
+              resolve({ ok: true, status });
             } else {
               console.warn(`[Apple APNs Push] FAILED (status ${status}) for token ${pushToken.slice(0, 10)}... Response:`, responseBody);
-              resolve(false);
+              resolve({ ok: false, status, body: responseBody });
             }
           }
         });
@@ -272,7 +271,7 @@ function sendApnsPush(pushToken: string, topic: string, cert: string, key: strin
           finished = true;
           clearTimeout(timer);
           try { if (client) client.close(); } catch {}
-          resolve(false);
+          resolve({ ok: false, error: `Request error: ${err.message}` });
         }
       });
 
@@ -283,7 +282,7 @@ function sendApnsPush(pushToken: string, topic: string, cert: string, key: strin
       if (!finished) {
         finished = true;
         clearTimeout(timer);
-        resolve(false);
+        resolve({ ok: false, error: `Execution error: ${e.message}` });
       }
     }
   });

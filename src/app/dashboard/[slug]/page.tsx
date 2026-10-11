@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, use } from 'react';
-import { Users, Pizza, Gift, Activity, Bell, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock, BarChart2, BarChart3, Printer, Megaphone, Send, ExternalLink, Eye, EyeOff, CheckCircle, Save, Star, MessageCircle } from 'lucide-react';
+import { Users, Pizza, Gift, Activity, Bell, CreditCard, RefreshCw, Trash2, AlertTriangle, Lock, LogOut, UserPlus, Settings, Download, X, Edit3, Minus, Plus, Clock, BarChart2, BarChart3, Printer, Megaphone, Send, ExternalLink, Eye, EyeOff, CheckCircle, Save, Star, MessageCircle, Copy, Check } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { PRICING } from '@/lib/pricing';
 import { MERCHANT_DICT } from '@/locales/merchant';
@@ -65,6 +65,7 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
   const [editPoints, setEditPoints] = useState<number | null>(null);
   const [savingPoints, setSavingPoints] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [copiedId, setCopiedId] = useState(false);
   const [systemNews, setSystemNews] = useState('');
   
   // New Analytics State
@@ -2111,9 +2112,27 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
           >
             {/* Drawer Header */}
             <div className="p-6 border-b border-white/5 flex items-center justify-between sticky top-0 bg-[#0E0E0E] z-10">
-              <div>
+              <div className="flex-1 pr-3 min-w-0">
                 <h3 className="text-white font-bold text-lg">{t.customerDetail}</h3>
-                <p className="font-mono text-xs text-white/30 mt-0.5">{selectedCustomer.wallet_object_id?.substring(0, 20)}...</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="font-mono text-xs text-white/50 select-all break-all">
+                    {selectedCustomer.wallet_object_id || selectedCustomer.id}
+                  </span>
+                  <button
+                    onClick={() => {
+                      const idToCopy = selectedCustomer.wallet_object_id || selectedCustomer.id;
+                      if (idToCopy) {
+                        navigator.clipboard.writeText(idToCopy);
+                        setCopiedId(true);
+                        setTimeout(() => setCopiedId(false), 2000);
+                      }
+                    }}
+                    title="Kopieren"
+                    className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-colors shrink-0"
+                  >
+                    {copiedId ? <Check size={13} className="text-emerald-400" /> : <Copy size={13} />}
+                  </button>
+                </div>
               </div>
               <button onClick={() => setSelectedCustomer(null)} className="p-2 rounded-xl bg-white/5 text-white/40 hover:text-white transition-colors">
                 <X size={20} />
