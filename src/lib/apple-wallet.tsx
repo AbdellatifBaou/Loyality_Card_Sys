@@ -228,6 +228,8 @@ function cleanEnv(val?: string): string {
 function parsePem(pemStr?: string): string {
   if (!pemStr) return '';
   let cleaned = cleanEnv(pemStr);
+
+  // Check if base64 encoded
   if (!cleaned.includes('-----BEGIN') && /^[A-Za-z0-9+/=\s]+$/.test(cleaned) && cleaned.length > 50) {
     try {
       const decoded = Buffer.from(cleaned.replace(/\s+/g, ''), 'base64').toString('utf8');
@@ -236,10 +238,26 @@ function parsePem(pemStr?: string): string {
       }
     } catch {}
   }
-  if (cleaned.includes('\\n')) {
-    cleaned = cleaned.replace(/\\n/g, '\n');
+
+  // Replace literal '\r\n', '\n', '\r' with real newlines
+  cleaned = cleaned.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\\r/g, '\n');
+  // Normalize actual CRLF to LF
+  cleaned = cleaned.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+
+  // Re-serialize natively if it is a certificate or key
+  if (cleaned.includes('-----BEGIN CERTIFICATE')) {
+    try {
+      const x509 = new crypto.X509Certificate(cleaned);
+      cleaned = x509.toString().trim();
+    } catch {}
+  } else if (cleaned.includes('-----BEGIN') && cleaned.includes('KEY')) {
+    try {
+      const privKey = crypto.createPrivateKey(cleaned);
+      cleaned = privKey.export({ type: 'pkcs8', format: 'pem' }).toString().trim();
+    } catch {}
   }
-  return cleaned.replace(/\r\n/g, '\n').trim();
+
+  return cleaned.trim();
 }
 
 let cachedSigner: { signerCert: string; signerKey: string; wwdr: string; source?: string } | null = null;
@@ -251,7 +269,7 @@ export function getSignerCredentials() {
   const directKeyPem = parsePem(process.env.APPLE_PASS_SIGNER_KEY_PEM);
   let wwdrPem = parsePem(process.env.APPLE_WWDR_CERT_PEM);
 
-  // 1. If direct PEM credentials are provided, test if they pass TLS validation before trusting them
+  // 1. If direct PEM credentials are provided, test TLS and use them
   if (directCertPem?.includes('-----BEGIN') && directKeyPem?.includes('-----BEGIN')) {
     try {
       tls.createSecureContext({ cert: directCertPem, key: directKeyPem });
@@ -263,16 +281,25 @@ export function getSignerCredentials() {
       };
       return cachedSigner;
     } catch (tlsErr: any) {
-      console.warn('[Apple Wallet] Direct PEM credentials failed TLS validation (' + tlsErr.message + '), falling back to P12 bundle...');
+      console.warn('[Apple Wallet] Direct PEM credentials TLS warning (' + tlsErr.message + '), checking P12 fallback...');
     }
   }
 
-  // 2. Fallback to P12 Base64
+  // 2. Fallback to P12 Base64 if available
   const p12Base64 = cleanEnv(process.env.APPLE_PASS_CERT_P12_BASE64);
   const p12Password = cleanEnv(process.env.APPLE_PASS_CERT_PASSWORD);
 
   if (!p12Base64) {
-    throw new Error('Apple Wallet credentials missing. Please set APPLE_PASS_SIGNER_CERT_PEM or APPLE_PASS_CERT_P12_BASE64.');
+    if (directCertPem && directKeyPem) {
+      cachedSigner = {
+        signerCert: directCertPem,
+        signerKey: directKeyPem,
+        wwdr: wwdrPem,
+        source: 'direct_pem_fallback'
+      };
+      return cachedSigner;
+    }
+    throw new Error('Apple Wallet credentials missing. Please set APPLE_PASS_SIGNER_CERT_PEM and APPLE_PASS_SIGNER_KEY_PEM or APPLE_PASS_CERT_P12_BASE64.');
   }
 
   const sanitizedBase64 = p12Base64.replace(/\s+/g, '');
