@@ -227,10 +227,18 @@ function cleanEnv(val?: string): string {
 function parsePem(pemStr?: string): string {
   if (!pemStr) return '';
   let cleaned = cleanEnv(pemStr);
+  if (!cleaned.includes('-----BEGIN') && /^[A-Za-z0-9+/=\s]+$/.test(cleaned) && cleaned.length > 50) {
+    try {
+      const decoded = Buffer.from(cleaned.replace(/\s+/g, ''), 'base64').toString('utf8');
+      if (decoded.includes('-----BEGIN')) {
+        cleaned = decoded;
+      }
+    } catch {}
+  }
   if (cleaned.includes('\\n')) {
     cleaned = cleaned.replace(/\\n/g, '\n');
   }
-  return cleaned;
+  return cleaned.replace(/\r\n/g, '\n').trim();
 }
 
 let cachedSigner: { signerCert: string; signerKey: string; wwdr: string } | null = null;
@@ -240,10 +248,10 @@ export function getSignerCredentials() {
 
   const directCertPem = parsePem(process.env.APPLE_PASS_SIGNER_CERT_PEM);
   const directKeyPem = parsePem(process.env.APPLE_PASS_SIGNER_KEY_PEM);
-  const wwdrPem = parsePem(process.env.APPLE_WWDR_CERT_PEM);
+  let wwdrPem = parsePem(process.env.APPLE_WWDR_CERT_PEM);
 
-  // 1. If direct PEM credentials are provided, use them directly
-  if (directCertPem && directKeyPem) {
+  // 1. If direct PEM credentials are provided and contain valid PEM markers, use them directly
+  if (directCertPem?.includes('-----BEGIN') && directKeyPem?.includes('-----BEGIN')) {
     cachedSigner = {
       signerCert: directCertPem,
       signerKey: directKeyPem,
@@ -257,7 +265,7 @@ export function getSignerCredentials() {
   const p12Password = cleanEnv(process.env.APPLE_PASS_CERT_PASSWORD);
 
   if (!p12Base64) {
-    throw new Error('Apple Wallet credentials missing. Please set APPLE_PASS_SIGNER_CERT_PEM and APPLE_PASS_SIGNER_KEY_PEM.');
+    throw new Error('Apple Wallet credentials missing. Please set APPLE_PASS_SIGNER_CERT_PEM or APPLE_PASS_CERT_P12_BASE64.');
   }
 
   const sanitizedBase64 = p12Base64.replace(/\s+/g, '');
@@ -273,8 +281,13 @@ export function getSignerCredentials() {
       if (safeBag.type === forge.pki.oids.certBag) {
         const c = safeBag.cert;
         const cnAttr = c?.subject?.attributes?.find((a: any) => a.name === 'commonName' || a.shortName === 'CN');
-        if (cnAttr && (cnAttr.value.includes('pass.') || cnAttr.value.includes('Pass Type ID'))) {
+        const cnVal = cnAttr?.value || '';
+        if (cnVal.includes('pass.') || cnVal.includes('Pass Type ID')) {
           signerCertPem = forge.pki.certificateToPem(c);
+        } else if (cnVal.includes('Worldwide Developer Relations') || cnVal.includes('Apple Root CA')) {
+          if (!wwdrPem) {
+            wwdrPem = forge.pki.certificateToPem(c);
+          }
         } else if (!signerCertPem) {
           signerCertPem = forge.pki.certificateToPem(c);
         }
@@ -286,6 +299,12 @@ export function getSignerCredentials() {
 
   if (!signerCertPem || !signerKeyPem) {
     throw new Error('Failed to extract Apple Wallet signer certificate or private key from P12 bundle');
+  }
+
+  signerCertPem = signerCertPem.replace(/\r\n/g, '\n').trim();
+  signerKeyPem = signerKeyPem.replace(/\r\n/g, '\n').trim();
+  if (wwdrPem) {
+    wwdrPem = wwdrPem.replace(/\r\n/g, '\n').trim();
   }
 
   cachedSigner = {

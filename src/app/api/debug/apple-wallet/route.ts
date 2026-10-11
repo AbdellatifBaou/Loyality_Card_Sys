@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { getAdminSupabase } from '@/lib/supabase';
 import { notifyApplePassUpdate } from '@/lib/apple-pass-registry';
+import { getSignerCredentials } from '@/lib/apple-wallet';
 
 /**
  * Debug endpoint: GET /api/debug/apple-wallet?serial=<wallet_object_id>&action=push
@@ -13,11 +14,28 @@ export async function GET(req: Request) {
     const serial = searchParams.get('serial');
     const action = searchParams.get('action');
 
+    let credsInfo: any = {};
+    try {
+      const creds = getSignerCredentials();
+      credsInfo = {
+        has_signer_cert: !!creds.signerCert,
+        signer_cert_len: creds.signerCert?.length || 0,
+        signer_cert_starts_with_pem: creds.signerCert?.startsWith('-----BEGIN') || false,
+        has_signer_key: !!creds.signerKey,
+        signer_key_len: creds.signerKey?.length || 0,
+        signer_key_starts_with_pem: creds.signerKey?.startsWith('-----BEGIN') || false,
+        has_wwdr: !!creds.wwdr,
+      };
+    } catch (e: any) {
+      credsInfo = { error: e.message };
+    }
+
     if (action === 'push' && serial) {
       const pushResult = await notifyApplePassUpdate(serial);
       return NextResponse.json({
         status: 'push_triggered',
         serial,
+        creds_check: credsInfo,
         pushResult,
       });
     }
@@ -46,6 +64,7 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       status: 'ok',
+      creds_check: credsInfo,
       table_exists: true,
       total_registrations: (registrations || []).length,
       filtered_by_serial: serial || 'none',

@@ -143,18 +143,21 @@ export async function notifyApplePassUpdate(serialNumber: string): Promise<{ sen
   
   let certPem = '';
   let keyPem = '';
+  let wwdrPem = '';
   try {
     const creds = getSignerCredentials();
     certPem = creds.signerCert;
     keyPem = creds.signerKey;
+    wwdrPem = creds.wwdr || '';
   } catch (err: any) {
     console.warn('[Apple PassKit] Failed to load signer credentials for APNs push:', err.message);
     return { sent: 0, tokens: [], details: [{ error: `Credentials load error: ${err.message}` }] };
   }
 
-  if (!certPem || !keyPem) {
-    console.warn('[Apple PassKit] APNs push skipped: missing certificate or private key');
-    return { sent: 0, tokens: [], details: [{ error: 'Missing certPem or keyPem' }] };
+  if (!certPem || !keyPem || !certPem.includes('-----BEGIN') || !keyPem.includes('-----BEGIN')) {
+    const errDesc = `Invalid PEM format - cert starts with: '${certPem?.slice(0, 20)}' (len: ${certPem?.length}), key starts with: '${keyPem?.slice(0, 20)}' (len: ${keyPem?.length})`;
+    console.warn('[Apple PassKit] APNs push skipped: ' + errDesc);
+    return { sent: 0, tokens: [], details: [{ error: errDesc }] };
   }
 
   // 1. Mark pass as updated in DB so Apple can fetch the new version
@@ -190,7 +193,7 @@ export async function notifyApplePassUpdate(serialNumber: string): Promise<{ sen
   const details: any[] = [];
   for (const token of pushTokens) {
     try {
-      const res = await sendApnsPush(token, passTypeId, certPem, keyPem);
+      const res = await sendApnsPush(token, passTypeId, certPem, keyPem, wwdrPem);
       console.log(`[Apple PassKit] APNs push to ${token.slice(0, 10)}... → ${res.ok ? 'OK (200)' : 'FAILED: ' + (res.error || res.status)}`);
       if (res.ok) successCount++;
       details.push({ token: token.slice(0, 10) + '...', ...res });
@@ -203,7 +206,7 @@ export async function notifyApplePassUpdate(serialNumber: string): Promise<{ sen
   return { sent: successCount, tokens: pushTokens, details };
 }
 
-function sendApnsPush(pushToken: string, topic: string, cert: string, key: string): Promise<{ ok: boolean; status?: number; error?: string; body?: string }> {
+function sendApnsPush(pushToken: string, topic: string, cert: string, key: string, ca?: string): Promise<{ ok: boolean; status?: number; error?: string; body?: string }> {
   return new Promise((resolve) => {
     let client: http2.ClientHttp2Session | null = null;
     let finished = false;
@@ -217,11 +220,16 @@ function sendApnsPush(pushToken: string, topic: string, cert: string, key: strin
     }, 5000);
 
     try {
-      client = http2.connect('https://api.push.apple.com', {
+      const connectOpts: http2.SecureClientSessionOptions = {
         cert,
         key,
         rejectUnauthorized: false
-      });
+      };
+      if (ca && ca.includes('-----BEGIN')) {
+        connectOpts.ca = ca;
+      }
+
+      client = http2.connect('https://api.push.apple.com', connectOpts);
 
       client.on('error', (err) => {
         console.warn('[APNs] HTTP2 Client error:', err.message);
