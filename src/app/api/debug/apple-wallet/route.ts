@@ -110,7 +110,7 @@ export async function GET(req: Request) {
       total_registrations: (registrations || []).length,
       filtered_by_serial: serial || 'none',
       registrations: filtered.map((r: any) => ({
-        device_id: r.device_library_identifier?.slice(0, 10) + '...',
+        device_id: r.device_library_identifier,
         pass_type: r.pass_type_identifier,
         serial_number: r.serial_number,
         push_token: r.push_token ? r.push_token.slice(0, 15) + '...' : 'MISSING',

@@ -284,6 +284,9 @@ function sendApnsPush(pushToken: string, topic: string, cert: string, key: strin
         ':method': 'POST',
         ':path': `/3/device/${pushToken}`,
         'apns-topic': topic,
+        'apns-push-type': 'background',
+        'apns-priority': '5',
+        'apns-expiration': '0',
       };
 
       const req = client.request(headers);
