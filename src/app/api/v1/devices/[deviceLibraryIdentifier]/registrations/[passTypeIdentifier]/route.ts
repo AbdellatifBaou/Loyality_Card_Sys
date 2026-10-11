@@ -12,6 +12,17 @@ export async function GET(
 
     const result = await getDeviceUpdatedPasses(deviceLibraryIdentifier, passTypeIdentifier, passesUpdatedSince);
 
+    const logs = ((globalThis as any).__appleLogs = (globalThis as any).__appleLogs || []);
+    logs.unshift({
+      timestamp: new Date().toISOString(),
+      type: 'device_poll_updated_passes',
+      device: deviceLibraryIdentifier.slice(0, 10) + '...',
+      passesUpdatedSince: passesUpdatedSince || 'none',
+      returnedSerials: result.serialNumbers,
+      statusCode: result.serialNumbers.length === 0 ? 204 : 200,
+    });
+    if (logs.length > 50) logs.pop();
+
     if (result.serialNumbers.length === 0) {
       return new Response(null, { status: 204 });
     }

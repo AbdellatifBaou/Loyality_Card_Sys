@@ -41,6 +41,17 @@ export async function GET(
 
     console.log(`[Apple PassKit] Serving updated pass for ${serialNumber} to Apple Wallet (points: ${customer.points}, size: ${pkpassBuffer.length} bytes)`);
 
+    const logs = ((globalThis as any).__appleLogs = (globalThis as any).__appleLogs || []);
+    logs.unshift({
+      timestamp: new Date().toISOString(),
+      type: 'pass_download',
+      serialNumber,
+      points: customer.points,
+      userAgent: req.headers.get('user-agent')?.slice(0, 40),
+      ifModifiedSince: req.headers.get('if-modified-since') || 'none',
+    });
+    if (logs.length > 50) logs.pop();
+
     return new Response(new Uint8Array(pkpassBuffer), {
       status: 200,
       headers: {

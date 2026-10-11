@@ -108,10 +108,20 @@ export async function getDeviceUpdatedPasses(
     return { serialNumbers: [], lastUpdated: Math.floor(Date.now() / 1000).toString() };
   }
 
-  // Apple PassKit spec: returning all serial numbers ensures the device always fetches the latest card
-  const serialNumbers = Array.from(new Set(data.map((r: any) => r.serial_number)));
+  // Apple PassKit spec: if passesUpdatedSince is provided, return only passes modified after that tag
+  let filtered = data;
+  if (passesUpdatedSince) {
+    const sinceNum = parseInt(passesUpdatedSince, 10);
+    if (!isNaN(sinceNum)) {
+      // In DB, updated_at is stored in ms. If passesUpdatedSince is in seconds, convert to ms
+      const sinceMs = sinceNum < 10000000000 ? sinceNum * 1000 : sinceNum;
+      filtered = data.filter((r: any) => Number(r.updated_at) > sinceMs);
+    }
+  }
+
+  const serialNumbers = Array.from(new Set(filtered.map((r: any) => r.serial_number)));
   const nowTag = Math.floor(Date.now() / 1000).toString();
-  console.log(`[Apple PassKit] getDeviceUpdatedPasses for device ${deviceLibraryIdentifier.slice(0, 8)}...: returning ${serialNumbers.length} pass(es) [${serialNumbers.join(', ')}]`);
+  console.log(`[Apple PassKit] getDeviceUpdatedPasses for device ${deviceLibraryIdentifier.slice(0, 8)}...: returning ${serialNumbers.length} pass(es) [${serialNumbers.join(', ')}] (passesUpdatedSince: ${passesUpdatedSince || 'none'})`);
 
   return {
     serialNumbers,

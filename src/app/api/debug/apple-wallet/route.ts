@@ -116,6 +116,7 @@ export async function GET(req: Request) {
         push_token: r.push_token ? r.push_token.slice(0, 15) + '...' : 'MISSING',
         updated_at: new Date(r.updated_at).toISOString(),
       })),
+      recent_activity_logs: (globalThis as any).__appleLogs || [],
     });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
