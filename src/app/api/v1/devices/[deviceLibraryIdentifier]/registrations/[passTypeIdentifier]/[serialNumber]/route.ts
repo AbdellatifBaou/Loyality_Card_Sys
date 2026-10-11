@@ -12,10 +12,20 @@ export async function POST(
 
     const { isNew } = await registerDevice(deviceLibraryIdentifier, passTypeIdentifier, serialNumber, pushToken);
 
-    return NextResponse.json({ status: 'registered' }, { status: isNew ? 201 : 200 });
+    const logs = ((globalThis as any).__appleLogs = (globalThis as any).__appleLogs || []);
+    logs.unshift({
+      timestamp: new Date().toISOString(),
+      type: 'device_registration_event',
+      device: deviceLibraryIdentifier.slice(0, 10) + '...',
+      serialNumber,
+      isNew,
+    });
+    if (logs.length > 50) logs.pop();
+
+    return new Response(null, { status: isNew ? 201 : 200 });
   } catch (err: any) {
     console.error('[Apple PassKit Registration Error]:', err);
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    return new Response(null, { status: 500 });
   }
 }
 
@@ -26,8 +36,18 @@ export async function DELETE(
   try {
     const { deviceLibraryIdentifier, passTypeIdentifier, serialNumber } = await context.params;
     await unregisterDevice(deviceLibraryIdentifier, passTypeIdentifier, serialNumber);
-    return NextResponse.json({ status: 'unregistered' }, { status: 200 });
+
+    const logs = ((globalThis as any).__appleLogs = (globalThis as any).__appleLogs || []);
+    logs.unshift({
+      timestamp: new Date().toISOString(),
+      type: 'device_unregistered_event',
+      device: deviceLibraryIdentifier.slice(0, 10) + '...',
+      serialNumber,
+    });
+    if (logs.length > 50) logs.pop();
+
+    return new Response(null, { status: 200 });
   } catch (err: any) {
-    return NextResponse.json({ error: 'Internal error' }, { status: 500 });
+    return new Response(null, { status: 500 });
   }
 }
