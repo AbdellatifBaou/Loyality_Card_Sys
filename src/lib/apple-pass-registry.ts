@@ -221,20 +221,24 @@ function sendApnsPush(pushToken: string, topic: string, cert: string, key: strin
 
     try {
       // 1. Normalize Certificate via native Node.js X509 parser
-      let cleanCert = cert.replace(/\r\n/g, '\n').trim();
+      let cleanCert = cert.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\r\n/g, '\n').trim();
+      let x509Error = '';
       try {
         const x509 = new crypto.X509Certificate(cleanCert);
         cleanCert = x509.toString().trim();
       } catch (xErr: any) {
+        x509Error = xErr.message;
         console.warn('[APNs] X509 re-serialization note:', xErr.message);
       }
 
       // 2. Normalize Private Key to standard PKCS#8 PEM via native Node.js crypto
-      let cleanKey = key.replace(/\r\n/g, '\n').trim();
+      let cleanKey = key.replace(/\\r\\n/g, '\n').replace(/\\n/g, '\n').replace(/\r\n/g, '\n').trim();
+      let keyError = '';
       try {
         const parsedKey = crypto.createPrivateKey(cleanKey);
         cleanKey = parsedKey.export({ type: 'pkcs8', format: 'pem' }).toString().trim();
       } catch (kErr: any) {
+        keyError = kErr.message;
         console.warn('[APNs] PKCS8 conversion note:', kErr.message);
       }
 
@@ -245,7 +249,18 @@ function sendApnsPush(pushToken: string, topic: string, cert: string, key: strin
         if (!finished) {
           finished = true;
           clearTimeout(timer);
-          return resolve({ ok: false, error: `Cert/Key pair error: ${pairErr.message}` });
+          return resolve({
+            ok: false,
+            error: `Cert/Key pair error: ${pairErr.message}`,
+            diag: {
+              cert_len: cleanCert.length,
+              key_len: cleanKey.length,
+              cert_header: cleanCert.slice(0, 30),
+              key_header: cleanKey.slice(0, 30),
+              x509_err: x509Error || 'ok',
+              key_err: keyError || 'ok'
+            }
+          });
         }
       }
 

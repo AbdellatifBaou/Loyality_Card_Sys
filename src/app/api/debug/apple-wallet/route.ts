@@ -24,6 +24,7 @@ export async function GET(req: Request) {
         has_signer_key: !!creds.signerKey,
         signer_key_len: creds.signerKey?.length || 0,
         signer_key_starts_with_pem: creds.signerKey?.startsWith('-----BEGIN') || false,
+        source: (creds as any).source || 'unknown',
         has_wwdr: !!creds.wwdr,
       };
     } catch (e: any) {

@@ -1,5 +1,6 @@
 import React from 'react';
 import crypto from 'crypto';
+import tls from 'tls';
 import fs from 'fs';
 import path from 'path';
 import forge from 'node-forge';
@@ -241,7 +242,7 @@ function parsePem(pemStr?: string): string {
   return cleaned.replace(/\r\n/g, '\n').trim();
 }
 
-let cachedSigner: { signerCert: string; signerKey: string; wwdr: string } | null = null;
+let cachedSigner: { signerCert: string; signerKey: string; wwdr: string; source?: string } | null = null;
 
 export function getSignerCredentials() {
   if (cachedSigner) return cachedSigner;
@@ -250,14 +251,20 @@ export function getSignerCredentials() {
   const directKeyPem = parsePem(process.env.APPLE_PASS_SIGNER_KEY_PEM);
   let wwdrPem = parsePem(process.env.APPLE_WWDR_CERT_PEM);
 
-  // 1. If direct PEM credentials are provided and contain valid PEM markers, use them directly
+  // 1. If direct PEM credentials are provided, test if they pass TLS validation before trusting them
   if (directCertPem?.includes('-----BEGIN') && directKeyPem?.includes('-----BEGIN')) {
-    cachedSigner = {
-      signerCert: directCertPem,
-      signerKey: directKeyPem,
-      wwdr: wwdrPem
-    };
-    return cachedSigner;
+    try {
+      tls.createSecureContext({ cert: directCertPem, key: directKeyPem });
+      cachedSigner = {
+        signerCert: directCertPem,
+        signerKey: directKeyPem,
+        wwdr: wwdrPem,
+        source: 'direct_pem'
+      };
+      return cachedSigner;
+    } catch (tlsErr: any) {
+      console.warn('[Apple Wallet] Direct PEM credentials failed TLS validation (' + tlsErr.message + '), falling back to P12 bundle...');
+    }
   }
 
   // 2. Fallback to P12 Base64
@@ -301,8 +308,17 @@ export function getSignerCredentials() {
     throw new Error('Failed to extract Apple Wallet signer certificate or private key from P12 bundle');
   }
 
-  signerCertPem = signerCertPem.replace(/\r\n/g, '\n').trim();
-  signerKeyPem = signerKeyPem.replace(/\r\n/g, '\n').trim();
+  // Native re-serialization ensures 100% compliant PEM formatting for OpenSSL
+  try {
+    const x509 = new crypto.X509Certificate(signerCertPem);
+    signerCertPem = x509.toString().trim();
+  } catch {}
+
+  try {
+    const privKey = crypto.createPrivateKey(signerKeyPem);
+    signerKeyPem = privKey.export({ type: 'pkcs8', format: 'pem' }).toString().trim();
+  } catch {}
+
   if (wwdrPem) {
     wwdrPem = wwdrPem.replace(/\r\n/g, '\n').trim();
   }
@@ -310,7 +326,8 @@ export function getSignerCredentials() {
   cachedSigner = {
     signerCert: signerCertPem,
     signerKey: signerKeyPem,
-    wwdr: wwdrPem
+    wwdr: wwdrPem,
+    source: 'p12'
   };
 
   return cachedSigner;
