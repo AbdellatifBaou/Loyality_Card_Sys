@@ -229,7 +229,7 @@ function parsePem(pemStr?: string): string {
 
 let cachedSigner: { signerCert: string; signerKey: string; wwdr: string } | null = null;
 
-function getSignerCredentials() {
+export function getSignerCredentials() {
   if (cachedSigner) return cachedSigner;
 
   const directCertPem = parsePem(process.env.APPLE_PASS_SIGNER_CERT_PEM);
