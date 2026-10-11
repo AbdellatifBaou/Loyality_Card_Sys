@@ -810,6 +810,11 @@ export async function generatePkPass(merchant: MerchantData, customer: CustomerD
   buffersMap['strip@2x.png'] = strip2x;
   buffersMap['strip@3x.png'] = strip3x;
 
-  const pass = new PKPass(buffersMap, credentials);
+  // PassKit generator strictly permits only wwdr, signerCert, signerKey, signerKeyPassphrase (rejects extraneous props like 'source')
+  const pass = new PKPass(buffersMap, {
+    signerCert: credentials.signerCert,
+    signerKey: credentials.signerKey,
+    wwdr: credentials.wwdr,
+  });
   return pass.getAsBuffer();
 }
