@@ -139,7 +139,7 @@ function getCredentials() {
     credentials = parseCredentials(serviceAccountVar);
   } else {
     const keyFile = process.env.GOOGLE_APPLICATION_CREDENTIALS || 'marketif-loyality-389b67921d03.json';
-    const keyFilePath = path.resolve(process.cwd(), keyFile);
+    const keyFilePath = path.join(/*turbopackIgnore: true*/ process.cwd(), keyFile);
     
     if (!fs.existsSync(keyFilePath)) {
       console.error(`Google Wallet: Service account key file NOT found at: ${keyFilePath}`);
