@@ -11,15 +11,24 @@ export async function GET(
 
     const adminSupabase = getAdminSupabase();
 
-    // 1. Fetch customer by serialNumber (wallet_object_id)
-    const { data: customer, error: cError } = await adminSupabase
+    // 1. Fetch customer by serialNumber (wallet_object_id or id)
+    let { data: customer } = await adminSupabase
       .from('customers_loyality')
       .select('*, merchants_loyality(*)')
       .eq('wallet_object_id', serialNumber)
-      .single();
+      .maybeSingle();
 
-    if (cError || !customer || !customer.merchants_loyality) {
-      return NextResponse.json({ error: 'Pass not found' }, { status: 404 });
+    if (!customer) {
+      const { data: customerById } = await adminSupabase
+        .from('customers_loyality')
+        .select('*, merchants_loyality(*)')
+        .eq('id', serialNumber)
+        .maybeSingle();
+      customer = customerById;
+    }
+
+    if (!customer || !customer.merchants_loyality) {
+      return NextResponse.json({ error: `Pass not found for serial: ${serialNumber}` }, { status: 404 });
     }
 
     const merchant = customer.merchants_loyality;
@@ -41,6 +50,6 @@ export async function GET(
     });
   } catch (err: any) {
     console.error('Apple PassKit Get Pass Error:', err);
-    return NextResponse.json({ error: 'Internal Error' }, { status: 500 });
+    return NextResponse.json({ error: err.message, stack: err.stack }, { status: 500 });
   }
 }
