@@ -220,10 +220,17 @@ function sendApnsPush(pushToken: string, topic: string, cert: string, key: strin
     }, 5000);
 
     try {
-      const cleanCert = cert.replace(/\r\n/g, '\n').trim();
-      let cleanKey = key.replace(/\r\n/g, '\n').trim();
+      // 1. Normalize Certificate via native Node.js X509 parser
+      let cleanCert = cert.replace(/\r\n/g, '\n').trim();
+      try {
+        const x509 = new crypto.X509Certificate(cleanCert);
+        cleanCert = x509.toString().trim();
+      } catch (xErr: any) {
+        console.warn('[APNs] X509 re-serialization note:', xErr.message);
+      }
 
-      // Ensure key is standard PKCS#8 PEM
+      // 2. Normalize Private Key to standard PKCS#8 PEM via native Node.js crypto
+      let cleanKey = key.replace(/\r\n/g, '\n').trim();
       try {
         const parsedKey = crypto.createPrivateKey(cleanKey);
         cleanKey = parsedKey.export({ type: 'pkcs8', format: 'pem' }).toString().trim();
@@ -231,27 +238,7 @@ function sendApnsPush(pushToken: string, topic: string, cert: string, key: strin
         console.warn('[APNs] PKCS8 conversion note:', kErr.message);
       }
 
-      // Pre-flight check individual credentials to catch any PEM routine issues
-      try {
-        tls.createSecureContext({ cert: cleanCert });
-      } catch (cErr: any) {
-        if (!finished) {
-          finished = true;
-          clearTimeout(timer);
-          return resolve({ ok: false, error: `Cert validation error: ${cErr.message}` });
-        }
-      }
-
-      try {
-        tls.createSecureContext({ key: cleanKey });
-      } catch (kErr: any) {
-        if (!finished) {
-          finished = true;
-          clearTimeout(timer);
-          return resolve({ ok: false, error: `Key validation error: ${kErr.message}` });
-        }
-      }
-
+      // 3. Pre-flight check cert + key pair together
       try {
         tls.createSecureContext({ cert: cleanCert, key: cleanKey });
       } catch (pairErr: any) {
