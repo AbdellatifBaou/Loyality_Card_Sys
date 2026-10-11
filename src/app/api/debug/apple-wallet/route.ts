@@ -113,7 +113,7 @@ export async function GET(req: Request) {
         device_id: r.device_library_identifier,
         pass_type: r.pass_type_identifier,
         serial_number: r.serial_number,
-        push_token: r.push_token ? r.push_token.slice(0, 15) + '...' : 'MISSING',
+        push_token: r.push_token || 'MISSING',
         updated_at: new Date(r.updated_at).toISOString(),
       })),
       recent_activity_logs: (globalThis as any).__appleLogs || [],

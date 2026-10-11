@@ -118,7 +118,7 @@ export async function GET(req: Request) {
     })
   ];
 
-  const issuerId = process.env.GOOGLE_ISSUER_ID;
+  const issuerId = process.env.GOOGLE_ISSUER_ID || '3388000000023128093';
   let sentCount = 0;
 
   // 5. Send push notifications

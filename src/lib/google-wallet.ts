@@ -78,6 +78,7 @@ const IMAGE_VERSION = '13';
 
 // Normalize App URL: remove trailing slash if present
 const appUrl = (process.env.NEXT_PUBLIC_APP_URL || '').replace(/\/$/, '');
+const issuerId = process.env.GOOGLE_ISSUER_ID || '3388000000023128093';
 
 // Safely parse service account JSON, fixing newline corruption from env vars
 function normalizePrivateKey(key: string): string {
@@ -352,8 +353,6 @@ export async function generateLoyaltyObjectJwt(classId: string, objectId: string
  */
 export async function invalidateLoyaltyObject(objectId: string) {
   try {
-    const issuerId = process.env.GOOGLE_ISSUER_ID;
-    
     // We patch the state to EXPIRED which removes it from the active passes
     const response = await walletClient.loyaltyobject.patch({
       resourceId: `${issuerId}.${objectId}`,
@@ -382,7 +381,6 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
   const lang = merchant?.language || 'de';
   const t = DICT[lang as keyof typeof DICT] || DICT.de;
   try {
-    const issuerId = process.env.GOOGLE_ISSUER_ID;
     const isPublicUrl = appUrl && !appUrl.includes('localhost');
     
     const stampGoal = merchant?.stamp_goal || 9;
@@ -487,8 +485,6 @@ export async function updateLoyaltyObjectPoints(objectId: string, points: number
  */
 export async function sendClassMessage(classId: string, header: string, body: string) {
   try {
-    const issuerId = process.env.GOOGLE_ISSUER_ID;
-    
     const message = {
       header: header,
       body: body,
