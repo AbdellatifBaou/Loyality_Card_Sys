@@ -64,7 +64,24 @@ async function handlePassGeneration(slug: string, customerId?: string) {
     customer = createdCustomer;
   }
 
-  // 3. Generate .pkpass buffer
+  // 3. Attach latest message if one exists
+  const { data: latestMessage } = await adminSupabase
+    .from('messages_loyality')
+    .select('header, body, created_at')
+    .eq('merchant_id', merchant.id)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (latestMessage) {
+    merchant.latest_message = {
+      header: latestMessage.header,
+      body: latestMessage.body,
+      created_at: latestMessage.created_at,
+    };
+  }
+
+  // 4. Generate .pkpass buffer
   const pkpassBuffer = await generatePkPass(merchant, customer);
 
   // 4. Return .pkpass as downloadable file stream

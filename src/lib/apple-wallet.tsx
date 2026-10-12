@@ -180,12 +180,16 @@ export function buildPassJson(merchant: MerchantData, customer: CustomerData) {
         }
       ],
       backFields: [
-        ...(merchant.latest_message ? [{
+        {
           key: 'latest_message',
           label: lang === 'fr' ? 'MESSAGE / OFFRE' : 'AKTUELLE NACHRICHT',
-          value: `${merchant.latest_message.header}\n\n${merchant.latest_message.body}`,
+          value: merchant.latest_message
+            ? (merchant.latest_message.body
+                ? `${merchant.latest_message.header}\n${merchant.latest_message.body}`
+                : merchant.latest_message.header)
+            : (lang === 'fr' ? 'Aucun nouveau message.' : 'Aktuell keine neuen Angebote.'),
           changeMessage: '%@'
-        }] : []),
+        },
         {
           key: 'reward_detail',
           label: t.rewardLabel,
@@ -732,7 +736,7 @@ export async function generatePkPass(merchant: MerchantData, customer: CustomerD
         .eq('merchant_id', merchant.id)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+        .maybeSingle();
       if (latestMsg) {
         merchant.latest_message = latestMsg;
       }

@@ -36,7 +36,7 @@ export async function GET(
     // Check If-Modified-Since header per Apple PassKit spec
     const ifModifiedSinceHeader = req.headers.get('if-modified-since');
 
-    // Determine accurate modification timestamp from latest stamp (or customer creation)
+    // 1. Fetch latest stamp for this customer
     const { data: latestStamp } = await adminSupabase
       .from('stamps_loyality')
       .select('created_at')
@@ -45,9 +45,30 @@ export async function GET(
       .limit(1)
       .maybeSingle();
 
-    const customerUpdated = latestStamp?.created_at || customer.created_at || new Date().toISOString();
-    const customerLastModifiedDate = new Date(customerUpdated);
-    const lastModifiedSec = Math.floor(customerLastModifiedDate.getTime() / 1000);
+    // 2. Fetch latest broadcast message for this merchant
+    const { data: latestMessage } = await adminSupabase
+      .from('messages_loyality')
+      .select('header, body, created_at')
+      .eq('merchant_id', merchant.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (latestMessage) {
+      merchant.latest_message = {
+        header: latestMessage.header,
+        body: latestMessage.body,
+        created_at: latestMessage.created_at,
+      };
+    }
+
+    // Determine accurate modification timestamp from latest stamp, latest broadcast message, or customer creation
+    const stampTime = latestStamp?.created_at ? new Date(latestStamp.created_at).getTime() : 0;
+    const messageTime = latestMessage?.created_at ? new Date(latestMessage.created_at).getTime() : 0;
+    const customerTime = customer.created_at ? new Date(customer.created_at).getTime() : 0;
+
+    const mostRecentMs = Math.max(stampTime, messageTime, customerTime, 0);
+    const lastModifiedSec = Math.floor((mostRecentMs || Date.now()) / 1000);
 
     if (ifModifiedSinceHeader) {
       const ifModifiedSinceDate = new Date(ifModifiedSinceHeader);
