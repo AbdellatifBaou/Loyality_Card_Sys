@@ -213,6 +213,17 @@ export async function notifyApplePassUpdate(serialNumber: string): Promise<{ sen
     }
   }
 
+  const logs = ((globalThis as any).__appleLogs = (globalThis as any).__appleLogs || []);
+  logs.unshift({
+    timestamp: new Date().toISOString(),
+    type: 'apns_push_dispatched',
+    serialNumber,
+    sent: successCount,
+    tokensCount: pushTokens.length,
+    details,
+  });
+  if (logs.length > 50) logs.pop();
+
   return { sent: successCount, tokens: pushTokens, details };
 }
 

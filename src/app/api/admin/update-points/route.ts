@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/lib/supabase';
 import { updateLoyaltyObjectPoints } from '@/lib/google-wallet';
 import { validateAuth } from '@/lib/auth';
+import { notifyApplePassUpdate } from '@/lib/apple-pass-registry';
 
 export async function POST(req: Request) {
   try {
@@ -72,13 +73,12 @@ export async function POST(req: Request) {
 
       // 4. Update Apple Wallet
       try {
-        const { notifyApplePassUpdate } = require('@/lib/apple-pass-registry');
         await notifyApplePassUpdate(customer.wallet_object_id);
         if (customer.id && customer.id !== customer.wallet_object_id) {
           await notifyApplePassUpdate(customer.id);
         }
       } catch (aErr: any) {
-        console.warn('[Admin Update Points] Apple Wallet update skipped:', aErr?.message || aErr);
+        console.warn('[Admin Update Points] Apple Wallet update error:', aErr?.message || aErr);
       }
     }
 
