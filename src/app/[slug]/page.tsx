@@ -72,10 +72,12 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
   const [message, setMessage] = useState('');
   const [newPoints, setNewPoints] = useState<number | null>(null);
   const [stampAmount, setStampAmount] = useState(1);
-  const stampAmountRef = useRef(stampAmount);
-  useEffect(() => {
-    stampAmountRef.current = stampAmount;
-  }, [stampAmount]);
+  const stampAmountRef = useRef(1);
+
+  const handleSelectAmount = (val: number) => {
+    stampAmountRef.current = val;
+    setStampAmount(val);
+  };
 
   const pinRef = useRef(pin);
   useEffect(() => {
@@ -280,7 +282,7 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
         setScanStatus('idle');
         setNewPoints(null);
         setManualId('');
-        setStampAmount(1);
+        handleSelectAmount(1);
         if (scannerInstance) {
           try { scannerInstance.resume(); } catch {}
         }
@@ -450,8 +452,8 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
             <div className="w-full space-y-4">
               <div className="flex gap-2">
                 <div className="flex flex-1 bg-white/5 p-1 rounded-2xl border border-white/10">
-                  <button onClick={() => setStampAmount(1)} className={`flex-1 py-3 rounded-xl text-sm font-bold ${stampAmount === 1 ? 'text-black' : 'text-white/40'}`} style={stampAmount === 1 ? { backgroundColor: primaryColor } : {}}>+1</button>
-                  <button onClick={() => setStampAmount(2)} className={`flex-1 py-3 rounded-xl text-sm font-bold ${stampAmount === 2 ? 'text-black' : 'text-white/40'}`} style={stampAmount === 2 ? { backgroundColor: primaryColor } : {}}>+2</button>
+                  <button type="button" onClick={() => handleSelectAmount(1)} className={`flex-1 py-3 rounded-xl text-sm font-bold ${stampAmount === 1 ? 'text-black' : 'text-white/40'}`} style={stampAmount === 1 ? { backgroundColor: primaryColor } : {}}>+1</button>
+                  <button type="button" onClick={() => handleSelectAmount(2)} className={`flex-1 py-3 rounded-xl text-sm font-bold ${stampAmount === 2 ? 'text-black' : 'text-white/40'}`} style={stampAmount === 2 ? { backgroundColor: primaryColor } : {}}>+2</button>
                 </div>
                 <button
                   onClick={() => setShowManualInput(!showManualInput)}
