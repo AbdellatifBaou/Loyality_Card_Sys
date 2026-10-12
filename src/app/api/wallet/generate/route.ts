@@ -18,12 +18,12 @@ export async function POST(req: Request) {
     );
 
     // 1. Get Merchant from Supabase
-    const slug = classId.replace('marketif_loyalty_', '').replace(/_(de|fr|en)$/, '');
+    const slug = classId.replace('marketif_loyalty_', '').replace(/_(de|fr|en)$/, '').toLowerCase();
     const { data: merchant, error: merchantError } = await adminSupabase
       .from('merchants_loyality')
       .select('*')
-      .eq('slug', slug)
-      .single();
+      .ilike('slug', slug)
+      .maybeSingle();
 
     if (merchantError || !merchant) {
       return NextResponse.json({ error: 'Merchant not found' }, { status: 404 });

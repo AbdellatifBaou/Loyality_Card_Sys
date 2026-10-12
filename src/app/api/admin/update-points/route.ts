@@ -35,7 +35,8 @@ export async function POST(req: Request) {
     if (!authValidation.authorized) {
       return NextResponse.json({ error: authValidation.error }, { status: 401 });
     }
-    const isRedeem = (customer.points >= 9 && newPoints === 0);
+    const stampGoal = Number(merchant.stamp_goal) || 9;
+    const isRedeem = (customer.points >= stampGoal && newPoints === 0);
     const type = isRedeem ? 'redeem' : 'correction';
 
     // 2. Update Database (Customer points)

@@ -13,8 +13,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Kunden-ID oder PIN fehlt' }, { status: 400 });
     }
 
-    // Rate Limiting: max 1 request every 5 seconds per customer objectId
-    const rl = rateLimit(`stamp:${objectId}`, 1, 5000);
+    // Rate Limiting: max 1 request every 3.5 seconds per customer objectId
+    const rl = rateLimit(`stamp:${objectId}`, 1, 3500);
     if (!rl.success) {
       return NextResponse.json({ error: 'Zu viele Anfragen. Bitte kurz warten.' }, { status: 429 });
     }
@@ -25,13 +25,23 @@ export async function POST(req: Request) {
     );
 
     // 1. Get customer and their merchant first (to know which merchant the PIN belongs to)
-    const { data: customer, error: customerError } = await adminSupabase
+    let { data: customer, error: customerError } = await adminSupabase
       .from('customers_loyality')
       .select('id, wallet_object_id, points, merchants_loyality(*)')
       .ilike('wallet_object_id', `${objectId}%`)
-      .single();
+      .limit(1)
+      .maybeSingle();
 
-    if (customerError || !customer) {
+    if (!customer) {
+      const { data: customerById } = await adminSupabase
+        .from('customers_loyality')
+        .select('id, wallet_object_id, points, merchants_loyality(*)')
+        .eq('id', objectId)
+        .maybeSingle();
+      customer = customerById;
+    }
+
+    if (!customer) {
       return NextResponse.json({ error: 'Kunde nicht gefunden' }, { status: 404 });
     }
 
