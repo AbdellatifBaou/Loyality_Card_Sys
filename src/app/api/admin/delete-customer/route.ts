@@ -21,7 +21,7 @@ export async function POST(req: Request) {
 
     const { data: customer, error: customerLookupError } = await adminSupabase
       .from('customers_loyality')
-      .select('merchant_id')
+      .select('merchant_id, wallet_object_id')
       .eq('id', customerId)
       .single();
 
@@ -34,6 +34,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: authValidation.error }, { status: 401 });
     }
 
+    const walletObjectId = customer.wallet_object_id || customerId;
+
     // 1. Delete stamps
     const { error: stampError } = await adminSupabase
       .from('stamps_loyality')
@@ -42,7 +44,13 @@ export async function POST(req: Request) {
 
     if (stampError) throw stampError;
 
-    // 2. Delete customer
+    // 2. Delete Apple Device Registrations
+    await adminSupabase
+      .from('apple_device_registrations_loyality')
+      .delete()
+      .or(`serial_number.eq.${customerId},serial_number.eq.${walletObjectId}`);
+
+    // 3. Delete customer
     const { error: customerError } = await adminSupabase
       .from('customers_loyality')
       .delete()
@@ -50,9 +58,9 @@ export async function POST(req: Request) {
 
     if (customerError) throw customerError;
 
-    // 3. Invalidate Google Wallet Object (Fire & Forget)
+    // 4. Invalidate Google Wallet Object (Fire & Forget)
     import('@/lib/google-wallet').then(({ invalidateLoyaltyObject }) => {
-      invalidateLoyaltyObject(customerId).catch(console.error);
+      invalidateLoyaltyObject(walletObjectId).catch(console.error);
     }).catch(console.error);
 
     return NextResponse.json({ success: true });

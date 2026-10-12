@@ -30,8 +30,8 @@ export async function POST(req: Request) {
         const { data: merchantData } = await adminSupabase
           .from('merchants_loyality')
           .select('*')
-          .eq('slug', normalizedSlug)
-          .single();
+          .ilike('slug', normalizedSlug)
+          .maybeSingle();
         if (merchantData) {
           return NextResponse.json({
             success: true,
@@ -50,8 +50,8 @@ export async function POST(req: Request) {
       const { data: merchantData } = await adminSupabase
         .from('merchants_loyality')
         .select('id, language, failed_login_attempts, lockout_until')
-        .eq('slug', normalizedSlug)
-        .single();
+        .ilike('slug', normalizedSlug)
+        .maybeSingle();
         
       const isLocked = (merchantData?.failed_login_attempts >= 5) || 
                        (merchantData?.lockout_until && new Date(merchantData.lockout_until) > new Date());
@@ -71,10 +71,10 @@ export async function POST(req: Request) {
       .eq('pin', pin);
 
     if (normalizedSlug) {
-      query = query.eq('merchants_loyality.slug', normalizedSlug);
+      query = query.ilike('merchants_loyality.slug', normalizedSlug);
     }
 
-    const { data: staff, error } = await query.single();
+    const { data: staff, error } = await query.limit(1).maybeSingle();
 
     if (error || !staff) {
       // Increment failed login attempts for this merchant
@@ -82,8 +82,8 @@ export async function POST(req: Request) {
         const { data: mData } = await adminSupabase
           .from('merchants_loyality')
           .select('id, language, failed_login_attempts')
-          .eq('slug', normalizedSlug)
-          .single();
+          .ilike('slug', normalizedSlug)
+          .maybeSingle();
 
         if (mData) {
           const newAttempts = (mData.failed_login_attempts || 0) + 1;
