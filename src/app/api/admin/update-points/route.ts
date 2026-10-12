@@ -40,7 +40,10 @@ export async function POST(req: Request) {
     // 2. Update Database (Customer points)
     const { error: updateError } = await adminSupabase
       .from('customers_loyality')
-      .update({ points: newPoints })
+      .update({ 
+        points: newPoints,
+        updated_at: new Date().toISOString(),
+      })
       .eq('id', customerId);
 
     if (updateError) {

@@ -33,6 +33,37 @@ export async function GET(
 
     const merchant = customer.merchants_loyality;
 
+    // Check If-Modified-Since header per Apple PassKit spec
+    const ifModifiedSinceHeader = req.headers.get('if-modified-since');
+    const customerUpdated = customer.updated_at || customer.created_at || new Date().toISOString();
+    const customerLastModifiedDate = new Date(customerUpdated);
+    const lastModifiedSec = Math.floor(customerLastModifiedDate.getTime() / 1000);
+
+    if (ifModifiedSinceHeader) {
+      const ifModifiedSinceDate = new Date(ifModifiedSinceHeader);
+      const ifModifiedSinceSec = Math.floor(ifModifiedSinceDate.getTime() / 1000);
+
+      if (!isNaN(ifModifiedSinceSec) && lastModifiedSec <= ifModifiedSinceSec) {
+        console.log(`[Apple PassKit] Pass ${serialNumber} unchanged since ${ifModifiedSinceHeader}, returning 304 Not Modified`);
+        const logs = ((globalThis as any).__appleLogs = (globalThis as any).__appleLogs || []);
+        logs.unshift({
+          timestamp: new Date().toISOString(),
+          type: 'pass_304_not_modified',
+          serialNumber,
+          points: customer.points,
+          ifModifiedSince: ifModifiedSinceHeader,
+        });
+        if (logs.length > 50) logs.pop();
+
+        return new Response(null, {
+          status: 304,
+          headers: {
+            'Last-Modified': new Date(lastModifiedSec * 1000).toUTCString(),
+          },
+        });
+      }
+    }
+
     // Ensure serialNumber in pass.json matches the exact serialNumber requested by Apple Wallet
     customer.wallet_object_id = serialNumber;
 
@@ -48,7 +79,7 @@ export async function GET(
       serialNumber,
       points: customer.points,
       userAgent: req.headers.get('user-agent')?.slice(0, 40),
-      ifModifiedSince: req.headers.get('if-modified-since') || 'none',
+      ifModifiedSince: ifModifiedSinceHeader || 'none',
     });
     if (logs.length > 50) logs.pop();
 
@@ -57,7 +88,7 @@ export async function GET(
       headers: {
         'Content-Type': 'application/vnd.apple.pkpass',
         'Content-Length': pkpassBuffer.length.toString(),
-        'Last-Modified': new Date().toUTCString(),
+        'Last-Modified': new Date(lastModifiedSec * 1000).toUTCString(),
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
         'Expires': '0',
