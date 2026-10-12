@@ -71,11 +71,12 @@ export default function DynamicJoinPage({ params }: { params: Promise<{ slug: st
 
   useEffect(() => {
     async function loadMerchant() {
+      const cleanSlug = decodeURIComponent(slug).toLowerCase();
       const { data, error } = await supabase
         .from('merchants_loyality')
         .select('*')
-        .eq('slug', slug)
-        .single();
+        .ilike('slug', cleanSlug)
+        .maybeSingle();
 
       if (error || !data) {
         setError('Händler nicht gefunden.');

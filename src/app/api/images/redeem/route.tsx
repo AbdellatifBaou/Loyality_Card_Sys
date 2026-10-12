@@ -22,7 +22,12 @@ export async function GET(req: NextRequest) {
       process.env.NEXT_PUBLIC_SUPABASE_URL,
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
-    const { data } = await adminSupabase.from('merchants_loyality').select('primary_color, name, reward_text, logo_url, language, push_settings').eq('slug', merchantSlug).single();
+    const cleanSlug = decodeURIComponent(merchantSlug).toLowerCase();
+    const { data } = await adminSupabase
+      .from('merchants_loyality')
+      .select('primary_color, name, reward_text, logo_url, language, push_settings')
+      .ilike('slug', cleanSlug)
+      .maybeSingle();
     if (data) {
       if (data.primary_color) primaryColor = data.primary_color;
       if (data.name) merchantName = data.name;

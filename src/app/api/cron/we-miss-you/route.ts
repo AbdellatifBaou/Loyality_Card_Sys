@@ -129,17 +129,40 @@ export async function GET(req: Request) {
       const customHeader = push.miss_you_header || `Wir vermissen dich bei ${merchant.name}! 👋`;
       const customBody = push.miss_you_body || 'Du warst schon länger nicht mehr da. Komm vorbei und zeige deine Karte — deine Stempel warten!';
 
-      await walletClient.loyaltyobject.addmessage({
-        resourceId: `${issuerId}.${customer.wallet_object_id}`,
-        requestBody: {
-          message: {
-            header: customHeader,
-            body: customBody,
-            id: `WE_MISS_YOU_${Date.now()}_${customer.id.substring(0, 8)}`,
-            messageType: 'TEXT_AND_NOTIFY',
+      let notified = false;
+
+      // 5a. Try Google Wallet
+      try {
+        await walletClient.loyaltyobject.addmessage({
+          resourceId: `${issuerId}.${customer.wallet_object_id}`,
+          requestBody: {
+            message: {
+              header: customHeader,
+              body: customBody,
+              id: `WE_MISS_YOU_${Date.now()}_${customer.id.substring(0, 8)}`,
+              messageType: 'TEXT_AND_NOTIFY',
+            },
           },
-        },
-      });
+        });
+        notified = true;
+      } catch (gErr: any) {
+        // Customer might be on Apple Wallet only
+      }
+
+      // 5b. Try Apple Wallet
+      try {
+        const { notifyApplePassUpdate } = require('@/lib/apple-pass-registry');
+        if (customer.wallet_object_id) {
+          const res = await notifyApplePassUpdate(customer.wallet_object_id);
+          if (res.sent > 0) notified = true;
+        }
+        if (customer.id && customer.id !== customer.wallet_object_id) {
+          const res = await notifyApplePassUpdate(customer.id);
+          if (res.sent > 0) notified = true;
+        }
+      } catch (aErr: any) {
+        // Customer might be on Google Wallet only
+      }
 
       await db
         .from('customers_loyality')

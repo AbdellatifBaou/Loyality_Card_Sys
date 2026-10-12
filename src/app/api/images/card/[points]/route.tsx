@@ -12,8 +12,6 @@ export async function GET(
   try {
     const { points: pointsStr } = await params;
     const points = parseInt(pointsStr, 10);
-    const validPoints = isNaN(points) ? 0 : Math.max(0, Math.min(10, points));
-
     const { searchParams } = new URL(_req.url);
     const merchantSlug = searchParams.get('merchant');
     let primaryColor = '#D4AF37';
@@ -28,12 +26,20 @@ export async function GET(
         process.env.NEXT_PUBLIC_SUPABASE_URL,
         process.env.SUPABASE_SERVICE_ROLE_KEY
       );
-      const { data } = await adminSupabase.from('merchants_loyality').select('primary_color, stamp_symbol, stamp_goal, push_settings').eq('slug', merchantSlug).single();
+      const cleanSlug = decodeURIComponent(merchantSlug).toLowerCase();
+      const { data } = await adminSupabase
+        .from('merchants_loyality')
+        .select('primary_color, stamp_symbol, stamp_goal, push_settings')
+        .ilike('slug', cleanSlug)
+        .maybeSingle();
+
       if (data?.primary_color) primaryColor = data.primary_color;
       if (data?.stamp_symbol) stampSymbol = data.stamp_symbol;
-      if (data?.stamp_goal) stampGoal = data.stamp_goal;
+      if (data?.stamp_goal) stampGoal = Number(data.stamp_goal) || 9;
       heroImage = data?.push_settings?.hero_image || null;
     }
+
+    const validPoints = isNaN(points) ? 0 : Math.max(0, Math.min(stampGoal, points));
 
     const GOLD       = primaryColor;
     const GOLD_LIGHT = primaryColor;
