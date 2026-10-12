@@ -7,6 +7,7 @@ import { rateLimit } from '@/lib/ratelimit';
 export async function POST(req: Request) {
   try {
     const { objectId, pin, amount = 1 } = await req.json();
+    const parsedAmount = Math.max(1, parseInt(String(amount), 10) || 1);
 
     if (!objectId || !pin) {
       return NextResponse.json({ error: 'Kunden-ID oder PIN fehlt' }, { status: 400 });
@@ -52,14 +53,14 @@ export async function POST(req: Request) {
     }
 
     // 3. Calculate new points
-    let newPoints = customer.points + amount;
+    let newPoints = Number(customer.points) + parsedAmount;
     let type = 'earn';
 
-    const stampGoal = merchant.stamp_goal || 9;
+    const stampGoal = Number(merchant.stamp_goal) || 9;
     
     // Reward logic:
     // 1. If they ALREADY had stampGoal points (card full) and add a stamp, it resets to 0 and counts as a redemption.
-    if (customer.points >= stampGoal && amount > 0) {
+    if (customer.points >= stampGoal && parsedAmount > 0) {
       newPoints = 0;
       type = 'redeem';
     } 
@@ -74,7 +75,7 @@ export async function POST(req: Request) {
       points: newPoints,
     }).eq('id', customer.id);
     await adminSupabase.from('stamps_loyality').insert([
-      { customer_id: customer.id, staff_id: staff.id, amount, type }
+      { customer_id: customer.id, staff_id: staff.id, amount: parsedAmount, type }
     ]);
 
     // 5. Update Google Wallet (if customer pass exists in Google Wallet)

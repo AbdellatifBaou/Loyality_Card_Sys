@@ -72,6 +72,17 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
   const [message, setMessage] = useState('');
   const [newPoints, setNewPoints] = useState<number | null>(null);
   const [stampAmount, setStampAmount] = useState(1);
+  const stampAmountRef = useRef(stampAmount);
+  useEffect(() => {
+    stampAmountRef.current = stampAmount;
+  }, [stampAmount]);
+
+  const pinRef = useRef(pin);
+  useEffect(() => {
+    pinRef.current = pin;
+  }, [pin]);
+
+  const processScanRef = useRef<(objectId: string, scannerInstance: any) => Promise<void>>((() => {}) as any);
 
   const [manualId, setManualId] = useState('');
   const [showManualInput, setShowManualInput] = useState(false);
@@ -193,7 +204,7 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
       scanner.render(
         async (decodedText) => {
           scanner.pause(true);
-          await processScan(decodedText, scanner);
+          await processScanRef.current(decodedText, scanner);
         },
         () => {}
       );
@@ -223,12 +234,14 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
 
   const processScan = async (objectId: string, scannerInstance: any) => {
     setScanStatus('loading');
+    const currentAmount = stampAmountRef.current;
+    const currentPin = pinRef.current;
 
     try {
       const response = await fetch('/api/wallet/stamp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ objectId, pin, amount: stampAmount }),
+        body: JSON.stringify({ objectId, pin: currentPin, amount: currentAmount }),
       });
 
       const data = await response.json();
@@ -236,20 +249,24 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
       if (!response.ok) throw new Error(data.error || t.errorStamping);
 
       setNewPoints(data.newPoints);
-      setMessage(data.type === 'redeem' ? t.rewardReached : t.stampAddedSuccess);
+      setMessage(
+        data.type === 'redeem'
+          ? t.rewardReached
+          : (currentAmount > 1 ? `+${currentAmount} ${t.stampAddedSuccess}` : t.stampAddedSuccess)
+      );
       setScanStatus('success');
 
       if (navigator.vibrate) navigator.vibrate([200]);
       playPling();
 
       // After a successful online scan, sync any queued items
-      syncQueue(pin);
+      syncQueue(currentPin);
 
     } catch (err: any) {
       const isNetworkError = !navigator.onLine || err instanceof TypeError;
 
       if (isNetworkError) {
-        enqueue({ objectId, pin, amount: stampAmount, timestamp: Date.now() });
+        enqueue({ objectId, pin: currentPin, amount: currentAmount, timestamp: Date.now() });
         setPendingCount(loadQueue().length);
         setMessage(t.offlineSavedDesc);
         setScanStatus('queued');
@@ -263,12 +280,17 @@ export default function MerchantScannerPage({ params }: { params: Promise<{ slug
         setScanStatus('idle');
         setNewPoints(null);
         setManualId('');
+        setStampAmount(1);
         if (scannerInstance) {
           try { scannerInstance.resume(); } catch {}
         }
       }, 4000);
     }
   };
+
+  useEffect(() => {
+    processScanRef.current = processScan;
+  });
 
   const toggleTorch = async () => {
     try {
