@@ -35,7 +35,17 @@ export async function GET(
 
     // Check If-Modified-Since header per Apple PassKit spec
     const ifModifiedSinceHeader = req.headers.get('if-modified-since');
-    const customerUpdated = customer.updated_at || customer.created_at || new Date().toISOString();
+
+    // Determine accurate modification timestamp from latest stamp (or customer creation)
+    const { data: latestStamp } = await adminSupabase
+      .from('stamps_loyality')
+      .select('created_at')
+      .eq('customer_id', customer.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const customerUpdated = latestStamp?.created_at || customer.created_at || new Date().toISOString();
     const customerLastModifiedDate = new Date(customerUpdated);
     const lastModifiedSec = Math.floor(customerLastModifiedDate.getTime() / 1000);
 

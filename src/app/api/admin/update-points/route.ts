@@ -40,15 +40,12 @@ export async function POST(req: Request) {
     // 2. Update Database (Customer points)
     const { error: updateError } = await adminSupabase
       .from('customers_loyality')
-      .update({ 
-        points: newPoints,
-        updated_at: new Date().toISOString(),
-      })
+      .update({ points: newPoints })
       .eq('id', customerId);
 
     if (updateError) {
       console.error('Update points DB error:', updateError);
-      return NextResponse.json({ error: 'Failed to update database' }, { status: 500 });
+      return NextResponse.json({ error: updateError.message || 'Failed to update database' }, { status: 500 });
     }
 
     // Insert correction record into stamps table to keep history consistent
