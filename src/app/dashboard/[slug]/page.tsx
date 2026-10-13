@@ -269,15 +269,20 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
         }
       } catch (err) {}
 
+      const currentPush = merchantData?.push_settings || {};
       setPushSettings({
-        stamp_header: merchantData?.push_settings?.stamp_header || `{points}${((MERCHANT_DICT as any)[merchantData?.language || 'de']?.defaultStampHeader1 || ' von 9 Stempeln ').replace('9', (merchantData?.stamp_goal || 9).toString())} ${merchantData?.stamp_symbol || '✨'}`,
-        stamp_body: merchantData?.push_settings?.stamp_body || `${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultStampBody || 'Du hast {points} Stempel gesammelt.'}${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultStampBodyEnd || ' Weiter so!'}`,
-        reward_header: merchantData?.push_settings?.reward_header || (MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.rewardHeader || 'Belohnung bereit! ✨',
-        reward_body: merchantData?.push_settings?.reward_body || merchantData?.reward_text || (MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultRewardBody || 'Herzlichen Glückwunsch!',
-        redeem_header: merchantData?.push_settings?.redeem_header || `${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.redeemHeader || 'Prämie eingelöst! '}${merchantData?.stamp_symbol || '✨'}`,
-        redeem_body: merchantData?.push_settings?.redeem_body || `${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.redeemBody || 'Viel Spaß mit deiner Prämie!'} ${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultRedeemBodyEnd || ' Deine Karte wurde auf 0 zurückgesetzt.'}`,
-        miss_you_header: merchantData?.push_settings?.miss_you_header || `${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultMissYouHeader || 'Wir vermissen dich bei'} ${merchantData?.name || 'uns'}! 👋`,
-        miss_you_body: merchantData?.push_settings?.miss_you_body || (MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultMissYouBody || 'Du warst schon länger nicht mehr da.'
+        ...currentPush,
+        welcome_bonus: currentPush.welcome_bonus !== undefined && currentPush.welcome_bonus !== null ? Number(currentPush.welcome_bonus) : 0,
+        we_miss_you_days: currentPush.we_miss_you_days !== undefined && currentPush.we_miss_you_days !== null ? Number(currentPush.we_miss_you_days) : 30,
+        hero_image: currentPush.hero_image || null,
+        stamp_header: currentPush.stamp_header || `{points}${((MERCHANT_DICT as any)[merchantData?.language || 'de']?.defaultStampHeader1 || ' von 9 Stempeln ').replace('9', (merchantData?.stamp_goal || 9).toString())} ${merchantData?.stamp_symbol || '✨'}`,
+        stamp_body: currentPush.stamp_body || `${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultStampBody || 'Du hast {points} Stempel gesammelt.'}${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultStampBodyEnd || ' Weiter so!'}`,
+        reward_header: currentPush.reward_header || (MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.rewardHeader || 'Belohnung bereit! ✨',
+        reward_body: currentPush.reward_body || merchantData?.reward_text || (MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultRewardBody || 'Herzlichen Glückwunsch!',
+        redeem_header: currentPush.redeem_header || `${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.redeemHeader || 'Prämie eingelöst! '}${merchantData?.stamp_symbol || '✨'}`,
+        redeem_body: currentPush.redeem_body || `${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.redeemBody || 'Viel Spaß mit deiner Prämie!'} ${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultRedeemBodyEnd || ' Deine Karte wurde auf 0 zurückgesetzt.'}`,
+        miss_you_header: currentPush.miss_you_header || `${(MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultMissYouHeader || 'Wir vermissen dich bei'} ${merchantData?.name || 'uns'}! 👋`,
+        miss_you_body: currentPush.miss_you_body || (MERCHANT_DICT as any)[merchantData?.language || merchant?.language || 'de']?.defaultMissYouBody || 'Du warst schon länger nicht mehr da.'
       });
       setCustomerCount(cc || 0);
       setEarnCount(earnStamps?.length || 0);
@@ -621,16 +626,27 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
 
   const savePushSettings = async () => {
     setSavingPush(true);
+    const normalizedSettings = {
+      ...pushSettings,
+      welcome_bonus: typeof pushSettings.welcome_bonus === 'number'
+        ? pushSettings.welcome_bonus
+        : (parseInt(pushSettings.welcome_bonus, 10) || 0)
+    };
     try {
       const response = await fetch('/api/merchant/update-push-settings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${localStorage.getItem(`auth_${slug}`)}` },
         body: JSON.stringify({
           merchantId: merchant.id,
-          settings: pushSettings
+          settings: normalizedSettings
         })
       });
       if (response.ok) {
+        setPushSettings(normalizedSettings);
+        setMerchant((prev: any) => ({
+          ...prev,
+          push_settings: normalizedSettings
+        }));
         showToast('Push-Einstellungen gespeichert!');
       } else {
         showToast((t as any).errSave || 'Fehler beim Speichern.', 'error');
@@ -1616,8 +1632,14 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                         min="0"
                         max={(merchant?.stamp_goal || 9) - 1}
                         className="w-full bg-black/50 border border-white/10 rounded-lg px-4 py-2 text-white outline-none focus:border-white/50"
-                        value={pushSettings.welcome_bonus || 0}
-                        onChange={(e) => setPushSettings({...pushSettings, welcome_bonus: parseInt(e.target.value) || 0})}
+                        value={pushSettings.welcome_bonus ?? 0}
+                        onChange={(e) => {
+                          const val = e.target.value === '' ? '' : parseInt(e.target.value, 10);
+                          setPushSettings({
+                            ...pushSettings,
+                            welcome_bonus: val === '' ? '' : (isNaN(val as number) ? 0 : Math.max(0, val as number))
+                          });
+                        }}
                       />
                     </div>
                   </div>
