@@ -241,48 +241,37 @@ export default function DynamicJoinPage({ params }: { params: Promise<{ slug: st
           </div>
         )}
 
-        {/* Primary Action Button (Device-aware) */}
+        {/* Primary Action Button (Device-aware: iOS shows only Apple Wallet, Android shows only Google Wallet) */}
         {deviceType === 'ios' ? (
-          <>
-            <a
-              href={`/api/wallet/apple/generate?slug=${encodeURIComponent(merchant.slug)}`}
-              className="w-full font-black py-5 rounded-[22px] flex items-center justify-center gap-3 transition-all active:scale-95 overflow-hidden relative bg-black text-white border border-white/20 shadow-xl text-sm uppercase tracking-wider"
-            >
-              <span className="text-xl"></span> {t.addToAppleWallet}
-              <ArrowRight size={18} strokeWidth={2.5} />
-            </a>
-            <button
-              onClick={handleJoinGoogle}
-              disabled={joining}
-              className="w-full text-center text-xs font-bold text-white/50 hover:text-white pt-2 transition-colors cursor-pointer"
-            >
-              {t.addToGoogleWallet}
-            </button>
-          </>
+          <a
+            href={`/api/wallet/apple/generate?slug=${encodeURIComponent(merchant.slug)}`}
+            className="w-full font-black py-5 rounded-[22px] flex items-center justify-center gap-3 transition-all active:scale-95 overflow-hidden relative bg-black text-white border border-white/20 shadow-xl text-sm uppercase tracking-wider"
+          >
+            <span className="text-xl"></span> {t.addToAppleWallet}
+            <ArrowRight size={18} strokeWidth={2.5} />
+          </a>
         ) : deviceType === 'android' ? (
-          <>
-            <button
-              onClick={handleJoinGoogle}
-              disabled={joining}
-              className="w-full font-black py-5 rounded-[22px] flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50 overflow-hidden relative text-black text-sm uppercase tracking-wider shadow-xl cursor-pointer"
-              style={{
-                background: `linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor}dd 100%)`,
-                boxShadow: `0 15px 30px ${primaryColor}30`,
-              }}
-            >
-              <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/>
-              </svg>
-              {t.addToGoogleWallet}
-              <ArrowRight size={18} strokeWidth={2.5} />
-            </button>
-            <a
-              href={`/api/wallet/apple/generate?slug=${encodeURIComponent(merchant.slug)}`}
-              className="w-full text-center text-xs font-bold text-white/50 hover:text-white pt-2 transition-colors block"
-            >
-               {t.addToAppleWallet} (.pkpass)
-            </a>
-          </>
+          <button
+            onClick={handleJoinGoogle}
+            disabled={joining}
+            className="w-full font-black py-5 rounded-[22px] flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50 overflow-hidden relative text-black text-sm uppercase tracking-wider shadow-xl cursor-pointer"
+            style={{
+              background: `linear-gradient(135deg, ${primaryColor} 0%, ${primaryColor}dd 100%)`,
+              boxShadow: `0 15px 30px ${primaryColor}30`,
+            }}
+          >
+            {joining ? (
+              <Loader2 className="animate-spin" size={20} />
+            ) : (
+              <>
+                <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/>
+                </svg>
+                {t.addToGoogleWallet}
+                <ArrowRight size={18} strokeWidth={2.5} />
+              </>
+            )}
+          </button>
         ) : (
           <div className="space-y-3">
             <a
@@ -297,10 +286,16 @@ export default function DynamicJoinPage({ params }: { params: Promise<{ slug: st
               className="w-full font-bold py-4 rounded-[20px] flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50 text-black text-sm shadow-md"
               style={{ background: primaryColor }}
             >
-              <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/>
-              </svg>
-              {t.addToGoogleWallet}
+              {joining ? (
+                <Loader2 className="animate-spin mx-auto" size={20} />
+              ) : (
+                <>
+                  <svg className="w-4 h-4 fill-current" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14.5v-9l6 4.5-6 4.5z"/>
+                  </svg>
+                  {t.addToGoogleWallet}
+                </>
+              )}
             </button>
           </div>
         )}
