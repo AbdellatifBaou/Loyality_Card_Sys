@@ -72,18 +72,31 @@ export async function unregisterDevice(
 ): Promise<void> {
   const adminSupabase = getAdminSupabase();
 
+  // Find customer to see if there is an alternate ID (id vs wallet_object_id)
+  const { data: customer } = await adminSupabase
+    .from('customers_loyality')
+    .select('id, wallet_object_id')
+    .or(`id.eq.${serialNumber},wallet_object_id.eq.${serialNumber}`)
+    .maybeSingle();
+
+  const serials = new Set<string>([serialNumber]);
+  if (customer) {
+    if (customer.id) serials.add(customer.id);
+    if (customer.wallet_object_id) serials.add(customer.wallet_object_id);
+  }
+
   const { error } = await adminSupabase
     .from('apple_device_registrations_loyality')
     .delete()
     .eq('device_library_identifier', deviceLibraryIdentifier)
     .eq('pass_type_identifier', passTypeIdentifier)
-    .eq('serial_number', serialNumber);
+    .in('serial_number', Array.from(serials));
 
   if (error) {
     console.error('[Apple PassKit] unregisterDevice DB error:', error.message);
   }
 
-  console.log(`[Apple PassKit] Unregistered device ${deviceLibraryIdentifier} for pass ${serialNumber}`);
+  console.log(`[Apple PassKit] Unregistered device ${deviceLibraryIdentifier} for pass(es): ${Array.from(serials).join(', ')}`);
 }
 
 /**

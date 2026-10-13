@@ -36,7 +36,32 @@ export async function POST(req: Request) {
 
     const walletObjectId = customer.wallet_object_id || customerId;
 
-    // 1. Delete stamps
+    // 1. Notify Apple Wallet devices BEFORE deleting registration tokens so the APNs push goes through
+    try {
+      const { notifyApplePassUpdate } = require('@/lib/apple-pass-registry');
+      await notifyApplePassUpdate(walletObjectId);
+      if (customerId !== walletObjectId) {
+        await notifyApplePassUpdate(customerId);
+      }
+    } catch (e: any) {
+      console.warn('[Delete Customer] Apple Wallet notification skipped:', e?.message || e);
+    }
+
+    // 2. Invalidate Google Wallet Object (Sets state to EXPIRED)
+    try {
+      const { invalidateLoyaltyObject } = require('@/lib/google-wallet');
+      await invalidateLoyaltyObject(walletObjectId);
+    } catch (gErr: any) {
+      console.warn('[Delete Customer] Google Wallet invalidate skipped:', gErr?.message || gErr);
+    }
+
+    // 3. Delete Apple Device Registrations
+    await adminSupabase
+      .from('apple_device_registrations_loyality')
+      .delete()
+      .or(`serial_number.eq.${customerId},serial_number.eq.${walletObjectId}`);
+
+    // 4. Delete stamps
     const { error: stampError } = await adminSupabase
       .from('stamps_loyality')
       .delete()
@@ -44,24 +69,13 @@ export async function POST(req: Request) {
 
     if (stampError) throw stampError;
 
-    // 2. Delete Apple Device Registrations
-    await adminSupabase
-      .from('apple_device_registrations_loyality')
-      .delete()
-      .or(`serial_number.eq.${customerId},serial_number.eq.${walletObjectId}`);
-
-    // 3. Delete customer
+    // 5. Delete customer
     const { error: customerError } = await adminSupabase
       .from('customers_loyality')
       .delete()
       .eq('id', customerId);
 
     if (customerError) throw customerError;
-
-    // 4. Invalidate Google Wallet Object (Fire & Forget)
-    import('@/lib/google-wallet').then(({ invalidateLoyaltyObject }) => {
-      invalidateLoyaltyObject(walletObjectId).catch(console.error);
-    }).catch(console.error);
 
     return NextResponse.json({ success: true });
   } catch (error: any) {
