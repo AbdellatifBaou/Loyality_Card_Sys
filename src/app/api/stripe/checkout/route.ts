@@ -39,6 +39,21 @@ export async function POST(req: Request) {
     const billingData = Array.isArray(merchant.merchant_billing) ? merchant.merchant_billing[0] : merchant.merchant_billing;
     let customerId = billingData?.stripe_customer_id;
 
+    if (customerId) {
+      try {
+        const existing = await stripe.customers.retrieve(customerId);
+        if ((existing as any).deleted) {
+          customerId = null;
+        }
+      } catch (e: any) {
+        if (e.code === 'resource_missing' || e.message?.includes('No such customer')) {
+          customerId = null;
+        } else {
+          throw e;
+        }
+      }
+    }
+
     // Wenn der Händler noch keinen Stripe-Kunden hat, lege einen an
     if (!customerId) {
       const customer = await stripe.customers.create({
