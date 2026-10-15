@@ -87,6 +87,7 @@ export async function POST(req: Request) {
         },
       ],
       mode: 'subscription',
+      allow_promotion_codes: true,
       success_url: `${appUrl}/dashboard/${merchant.slug}?checkout=success`,
       cancel_url: `${appUrl}/dashboard/${merchant.slug}?checkout=cancel`,
     };

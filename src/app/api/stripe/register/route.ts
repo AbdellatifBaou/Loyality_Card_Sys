@@ -58,6 +58,7 @@ export async function POST(req: Request) {
         },
       ],
       metadata: { name, company, shortName, email, phone, plan, planName, monthlyPrice: monthly.toString() },
+      allow_promotion_codes: true,
       success_url: `${appUrl}/registrierung?success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/registrierung?cancelled=true`,
     });
