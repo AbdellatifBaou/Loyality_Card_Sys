@@ -62,12 +62,13 @@ export async function GET(
       };
     }
 
-    // Determine accurate modification timestamp from latest stamp, latest broadcast message, or customer creation
+    // Determine accurate modification timestamp from latest stamp, latest broadcast message, merchant profile update, or customer creation
     const stampTime = latestStamp?.created_at ? new Date(latestStamp.created_at).getTime() : 0;
     const messageTime = latestMessage?.created_at ? new Date(latestMessage.created_at).getTime() : 0;
     const customerTime = customer.created_at ? new Date(customer.created_at).getTime() : 0;
+    const merchantTime = merchant.push_settings?.updated_at ? new Date(merchant.push_settings.updated_at).getTime() : 0;
 
-    const mostRecentMs = Math.max(stampTime, messageTime, customerTime, 0);
+    const mostRecentMs = Math.max(stampTime, messageTime, customerTime, merchantTime, 0);
     const lastModifiedSec = Math.floor((mostRecentMs || Date.now()) / 1000);
 
     if (ifModifiedSinceHeader) {

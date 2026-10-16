@@ -371,3 +371,30 @@ function sendApnsPush(pushToken: string, topic: string, cert: string, key: strin
     }
   });
 }
+
+/**
+ * Notifies all Apple Wallet devices for all customers of a given merchant
+ * (e.g. when merchant updates their logo, primary color, or reward terms)
+ */
+export async function notifyMerchantPassesUpdate(merchantId: string): Promise<number> {
+  const adminSupabase = getAdminSupabase();
+  const { data: customers } = await adminSupabase
+    .from('customers_loyality')
+    .select('id, wallet_object_id')
+    .eq('merchant_id', merchantId);
+
+  if (!customers || customers.length === 0) return 0;
+
+  let totalSent = 0;
+  for (const c of customers) {
+    try {
+      const serial = c.wallet_object_id || c.id;
+      const res = await notifyApplePassUpdate(serial);
+      totalSent += res.sent;
+    } catch (err: any) {
+      console.warn(`[Apple PassKit] Failed to notify pass for customer ${c.id}:`, err.message);
+    }
+  }
+  return totalSent;
+}
+

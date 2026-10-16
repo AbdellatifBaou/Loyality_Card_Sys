@@ -2,6 +2,7 @@ import { google } from 'googleapis';
 import path from 'path';
 import jwt from 'jsonwebtoken';
 import fs from 'fs';
+import crypto from 'crypto';
 
 // Increment this whenever the card image design changes — forces Google Wallet to re-fetch
 
@@ -179,37 +180,72 @@ export const walletClient = {
   get loyaltyobject() { return getWalletClient().loyaltyobject; },
 };
 
+// Generates revision string based on the merchant's logo_url content
+export function getLogoRevision(merchant: any): string {
+  if (!merchant || !merchant.logo_url) return 'default';
+  try {
+    const hash = crypto.createHash('md5').update(merchant.logo_url).digest('hex').substring(0, 10);
+    return `${hash}_${merchant.logo_url.length}`;
+  } catch {
+    return `${merchant.logo_url.length || 0}`;
+  }
+}
+
+export function getProgramLogoUri(merchant: any): string {
+  const rev = getLogoRevision(merchant);
+  // Use .png extension so Google Wallet's image scraper recognizes the mime type immediately
+  return `${appUrl}/api/images/logo.png?slug=${merchant.slug}&rev=${rev}`;
+}
+
 /**
  * Updates an existing LoyaltyClass on Google Wallet
  */
 export async function updateLoyaltyClass(classId: string, merchant: any) {
   const lang = merchant?.language || 'de';
   const t = DICT[lang as keyof typeof DICT] || DICT.de;
+  const logoUri = getProgramLogoUri(merchant);
+
+  const programLogoObj = {
+    sourceUri: {
+      uri: logoUri,
+      description: `${merchant.name} Logo`,
+    },
+    contentDescription: {
+      defaultValue: {
+        language: lang,
+        value: `${merchant.name} Logo`,
+      },
+    },
+  };
 
   const sharedFields: any = {
     issuerName: merchant.name,
     programName: `${merchant.name}${t.programNameSuffix}`,
     hexBackgroundColor: merchant.primary_color || '#1A3828',
+    programLogo: programLogoObj,
   };
-
-  if (merchant.logo_url) {
-    sharedFields.programLogo = {
-      sourceUri: {
-        uri: `${appUrl}/api/images/logo?slug=${merchant.slug}`
-      }
-    };
-  }
 
   if (appUrl && !appUrl.includes('localhost')) {
     sharedFields.heroImage = {
       sourceUri: {
-        uri: `${appUrl}/api/images/card/0?v=${IMAGE_VERSION}&rev=${merchant?.push_settings?.hero_image?.length || 0}&merchant=${merchant.slug}`
-      }
+        uri: `${appUrl}/api/images/card/0?v=${IMAGE_VERSION}&rev=${merchant?.push_settings?.hero_image?.length || 0}&merchant=${merchant.slug}`,
+        description: `${merchant.name} Card`,
+      },
+      contentDescription: {
+        defaultValue: {
+          language: lang,
+          value: `${merchant.name} Card`,
+        },
+      },
     };
   }
 
   if (merchant.latitude && merchant.longitude) {
-    sharedFields.locations = [{ latitude: merchant.latitude, longitude: merchant.longitude }];
+    const lat = parseFloat(merchant.latitude);
+    const lng = parseFloat(merchant.longitude);
+    if (!isNaN(lat) && !isNaN(lng) && lat !== 0 && lng !== 0) {
+      sharedFields.locations = [{ latitude: lat, longitude: lng }];
+    }
   }
 
   try {
@@ -219,21 +255,35 @@ export async function updateLoyaltyClass(classId: string, merchant: any) {
     });
     return patchResponse.data;
   } catch (error: any) {
-    console.error('[GoogleWallet] Class patch error:', error.response?.data || error.message);
+    console.error(`[GoogleWallet] Class patch error for ${classId}:`, error.response?.data || error.message);
     try {
-      // Fallback: minimal update with programName, issuerName, and hexBackgroundColor
+      // Fallback 1: minimal update with programName, issuerName, hexBackgroundColor, and programLogo
       const fallbackResponse = await walletClient.loyaltyclass.patch({
         resourceId: `${issuerId}.${classId}`,
         requestBody: {
           issuerName: merchant.name,
           programName: `${merchant.name}${t.programNameSuffix}`,
           hexBackgroundColor: merchant.primary_color || '#1A3828',
+          programLogo: programLogoObj,
         },
       });
       return fallbackResponse.data;
     } catch (fallbackError: any) {
-      console.error('[GoogleWallet] Fallback patch error:', fallbackError.response?.data || fallbackError.message);
-      return { id: `${issuerId}.${classId}` };
+      console.error(`[GoogleWallet] Fallback with logo failed for ${classId}:`, fallbackError.response?.data || fallbackError.message);
+      try {
+        const lastResort = await walletClient.loyaltyclass.patch({
+          resourceId: `${issuerId}.${classId}`,
+          requestBody: {
+            issuerName: merchant.name,
+            programName: `${merchant.name}${t.programNameSuffix}`,
+            hexBackgroundColor: merchant.primary_color || '#1A3828',
+          },
+        });
+        return lastResort.data;
+      } catch (lastErr: any) {
+        console.error(`[GoogleWallet] Last resort patch error for ${classId}:`, lastErr.response?.data || lastErr.message);
+        return { id: `${issuerId}.${classId}` };
+      }
     }
   }
 }
@@ -244,23 +294,42 @@ export async function updateLoyaltyClass(classId: string, merchant: any) {
 export async function createLoyaltyClass(classId: string, merchant: any) {
   const lang = merchant.language || 'de';
   const t = DICT[lang as keyof typeof DICT] || DICT.de;
+  const logoUri = getProgramLogoUri(merchant);
 
   const sharedFields: any = {
     issuerName: merchant.name,
     programName: `${merchant.name}${t.programNameSuffix}`,
     programLogo: {
       sourceUri: {
-        uri: merchant.logo_url 
-          ? `${appUrl}/api/images/logo?slug=${merchant.slug}`
-          : `${appUrl}/Aroma_logo.png`
+        uri: logoUri,
+        description: `${merchant.name} Logo`,
+      },
+      contentDescription: {
+        defaultValue: {
+          language: lang,
+          value: `${merchant.name} Logo`,
+        },
       },
     },
     hexBackgroundColor: merchant.primary_color || '#1A3828',
     ...(appUrl && !appUrl.includes('localhost')
-      ? { heroImage: { sourceUri: { uri: `${appUrl}/api/images/card/0?v=${IMAGE_VERSION}&rev=${merchant?.push_settings?.hero_image?.length || 0}&merchant=${merchant.slug}` } } }
+      ? {
+          heroImage: {
+            sourceUri: {
+              uri: `${appUrl}/api/images/card/0?v=${IMAGE_VERSION}&rev=${merchant?.push_settings?.hero_image?.length || 0}&merchant=${merchant.slug}`,
+              description: `${merchant.name} Card`,
+            },
+            contentDescription: {
+              defaultValue: {
+                language: lang,
+                value: `${merchant.name} Card`,
+              },
+            },
+          },
+        }
       : {}),
-    locations: merchant.latitude && merchant.longitude 
-      ? [{ latitude: merchant.latitude, longitude: merchant.longitude }]
+    locations: (merchant.latitude && merchant.longitude && !isNaN(parseFloat(merchant.latitude)) && parseFloat(merchant.latitude) !== 0)
+      ? [{ latitude: parseFloat(merchant.latitude), longitude: parseFloat(merchant.longitude) }]
       : [{ latitude: 48.3715, longitude: 10.8985 }],
   };
 
@@ -276,6 +345,7 @@ export async function createLoyaltyClass(classId: string, merchant: any) {
     return await updateLoyaltyClass(classId, merchant);
   }
 }
+
 
 /**
  * Generates the JWT link to "Add to Google Wallet"

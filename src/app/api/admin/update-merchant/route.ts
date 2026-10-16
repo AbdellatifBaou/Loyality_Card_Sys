@@ -50,6 +50,7 @@ export async function POST(req: Request) {
     const currentPush = currentMerchant?.push_settings || {};
     const updatedPush = {
       ...currentPush,
+      updated_at: new Date().toISOString(),
       contact_name: contactName !== undefined ? contactName : (currentPush.contact_name || null),
       contact_phone: contactPhone !== undefined ? contactPhone : (currentPush.contact_phone || null),
       contact_email: contactEmail !== undefined ? contactEmail : (currentPush.contact_email || null),
@@ -96,20 +97,34 @@ export async function POST(req: Request) {
       return NextResponse.json({ success: false, error: error.message }, { status: 500 });
     }
 
-    // Sync updated settings to Google Wallet class if slug exists
+    // Sync updated settings to Google Wallet class & notify Apple Wallet passes
     if (currentMerchant?.slug) {
+      const fullMerchantData = {
+        ...currentMerchant,
+        ...updatePayload,
+      };
+      const lang = fullMerchantData.language || 'de';
+      const otherLang = lang === 'de' ? 'fr' : 'de';
+
+      // 1. Update Google Wallet Classes
       try {
-        const fullMerchantData = {
-          ...currentMerchant,
-          ...updatePayload,
-        };
-        const lang = fullMerchantData.language || 'de';
         await updateLoyaltyClass(`marketif_loyalty_${currentMerchant.slug}_${lang}`, fullMerchantData);
-        try {
-          await updateLoyaltyClass(`marketif_loyalty_${currentMerchant.slug}`, fullMerchantData);
-        } catch (_) {}
       } catch (walletErr) {
-        console.error('Failed to sync to Google Wallet class:', walletErr);
+        console.error('Failed to sync to Google Wallet class (lang):', walletErr);
+      }
+      try {
+        await updateLoyaltyClass(`marketif_loyalty_${currentMerchant.slug}_${otherLang}`, fullMerchantData);
+      } catch (_) {}
+      try {
+        await updateLoyaltyClass(`marketif_loyalty_${currentMerchant.slug}`, fullMerchantData);
+      } catch (_) {}
+
+      // 2. Notify registered Apple Wallet devices
+      try {
+        const { notifyMerchantPassesUpdate } = await import('@/lib/apple-pass-registry');
+        await notifyMerchantPassesUpdate(merchantId);
+      } catch (appleErr) {
+        console.warn('Apple Wallet notify update error:', appleErr);
       }
     }
 
