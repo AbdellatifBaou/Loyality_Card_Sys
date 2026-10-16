@@ -1044,7 +1044,7 @@ export default function DashboardPage() {
                                 {m.stripe_subscription_id === 'manual_invoice' ? t.manualInvoice : (m.stripe_subscription_id ? t.stripeAbo : t.noAbo)}
                               </span>
                               <span className={`text-[10px] font-bold ${m.subscription_status === 'active' || m.subscription_status === 'cancels_at_period_end' ? 'text-green-500' : 'text-red-500'}`}>
-                                {m.subscription_status === 'active' ? t.statusActive : m.subscription_status === 'cancels_at_period_end' ? t.statusCanceledActive : (m.subscription_status || 'UNBEKANNT').toUpperCase()}
+                                {m.subscription_status === 'active' ? t.statusActive : m.subscription_status === 'cancels_at_period_end' ? t.statusCanceledActive : m.subscription_status === 'unpaid' ? (adminLang === 'fr' ? 'NON PAYÉ' : 'UNBEZAHLT') : (m.subscription_status || 'UNBEKANNT').toUpperCase()}
                                 {m.current_period_end && ` ${t.until} ${new Date(m.current_period_end).toLocaleDateString('de-DE')})`}
                               </span>
                             </div>

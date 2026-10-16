@@ -51,13 +51,24 @@ export async function POST(req: Request) {
     const currentPeriodEnd = new Date();
     currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + parseInt(months, 10));
 
-    // Update merchant status
+    // Update merchant status and mark setup fee as paid/waived
+    const { data: mData } = await adminSupabase
+      .from('merchants_loyality')
+      .select('push_settings')
+      .eq('id', merchantId)
+      .single();
+    const currentPush = mData?.push_settings || {};
+
     const { error } = await adminSupabase
       .from('merchants_loyality')
       .update({
         is_active: true,
         subscription_status: 'active',
         current_period_end: currentPeriodEnd.toISOString(),
+        push_settings: {
+          ...currentPush,
+          setup_fee_paid: true,
+        },
       })
       .eq('id', merchantId);
 

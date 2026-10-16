@@ -93,19 +93,40 @@ export async function POST(req: Request) {
 
     const appUrl = (process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000').replace(/\/$/, '');
     
-    // For existing merchants reactivating or switching to Stripe, setup fee is NEVER charged.
-    // Only the monthly recurring subscription is added.
-    const lineItems: any[] = [
-      {
+    const lineItems: any[] = [];
+
+    // Check if setup fee has already been paid or waived:
+    // If merchant paid cash (active period in future) or setup fee was marked paid, DO NOT charge setup fee.
+    // If merchant is brand new (never paid cash, no active period), charge the one-time setup fee.
+    const hasActivePaidPeriod = !!(merchant.current_period_end && new Date(merchant.current_period_end).getTime() > Date.now());
+    const isSetupFeeAlreadyPaid = hasActivePaidPeriod || merchant.push_settings?.setup_fee_paid === true || !!billingData?.stripe_subscription_id;
+
+    const rawSetupPrice = merchant.setup_price ?? merchant.push_settings?.setup_price;
+    const setupFee = rawSetupPrice !== undefined && rawSetupPrice !== null && rawSetupPrice !== '' 
+      ? parseFloat(rawSetupPrice) 
+      : 299;
+
+    if (!isSetupFeeAlreadyPaid && setupFee > 0) {
+      lineItems.push({
         price_data: {
           currency: 'eur',
-          product_data: { name: `Marketif Treue – ${planName}` },
-          unit_amount: Math.round(monthly * 100),
-          recurring: { interval: 'month' },
+          product_data: { name: 'Einmalige Einrichtungsgebühr – Marketif Treue' },
+          unit_amount: Math.round(setupFee * 100),
         },
         quantity: 1,
+      });
+    }
+
+    // Monthly recurring subscription
+    lineItems.push({
+      price_data: {
+        currency: 'eur',
+        product_data: { name: `Marketif Treue – ${planName}` },
+        unit_amount: Math.round(monthly * 100),
+        recurring: { interval: 'month' },
       },
-    ];
+      quantity: 1,
+    });
 
     const subscriptionData: any = {
       metadata: {

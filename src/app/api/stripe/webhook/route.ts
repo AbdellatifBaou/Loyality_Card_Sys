@@ -256,9 +256,20 @@ export async function POST(req: Request) {
           }
         } else if (merchantId) {
           // Existing merchant — reactivation via checkout
+          const { data: reactivatedMerchant } = await db
+            .from('merchants_loyality')
+            .select('push_settings')
+            .eq('id', merchantId)
+            .single();
+
+          const currentPush = reactivatedMerchant?.push_settings || {};
           const updateData: Record<string, unknown> = {
             is_active: true,
             subscription_status: 'active',
+            push_settings: {
+              ...currentPush,
+              setup_fee_paid: true,
+            },
           };
           if (session.metadata?.plan) {
             updateData.package_type = session.metadata.plan;
