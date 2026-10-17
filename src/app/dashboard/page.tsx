@@ -1446,74 +1446,181 @@ export default function DashboardPage() {
         {activeTab === 'finances' && (
           <div className="space-y-8 animate-fade-in">
             {/* Header mit Gesamt-MRR (Erwartet) */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <div className="p-3 bg-green-500/10 rounded-2xl border border-green-500/20"><Activity size={22} className="text-green-500" /></div>
-                    <div>
-                      <h2 className="text-white/60 font-medium text-sm">{t.currentMRRReal}</h2>
-                      <p className="text-[11px] text-white/40">{t.basedOnStripeSubscriptions}</p>
-                    </div>
-                  </div>
-                  {stripeDiscountedCount > 0 && (
-                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                      {stripeDiscountedCount} {t.withCoupon}
-                    </span>
-                  )}
-                </div>
-                {financesLoading || stripeMrrCents === null ? (
-                  <div className="h-10 flex items-center"><RefreshCw size={24} className="animate-spin text-white/30" /></div>
-                ) : (
-                  <div>
-                    <div className="flex items-baseline gap-2">
-                      <p className="text-4xl font-black text-white">{(stripeMrrCents / 100).toFixed(2)}€</p>
-                      <span className="text-xs text-white/40 font-medium">/ Monat</span>
-                    </div>
-                    <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-white/5 text-xs text-white/50">
-                      <span className="inline-flex flex-wrap items-center gap-1.5">
-                        <span className={`w-2 h-2 rounded-full ${stripeSubsCount > 0 ? 'bg-green-400' : 'bg-white/30'}`}></span>
-                        <span>{stripeSubsCount} {t.activeSubs}</span>
-                        {stripeSubsList.length > 0 && (
-                          <span className="text-white/40 text-[11px] ml-1">
-                            ({stripeSubsList.map(s => s.is_canceling ? `${s.customer_name || 'Kunde'}: Gekündigt zum ${s.cancel_date}` : `${s.customer_name || 'Kunde'}: ${(s.monthly_cents / 100).toFixed(2)}€${s.discount_desc ? ` [${s.discount_desc}]` : ''}`).join(', ')})
-                          </span>
-                        )}
-                      </span>
-                      {(() => {
-                        const activeManualCount = allMerchants.filter((m: any) => {
-                          const isStripe = m.stripe_subscription_id && m.stripe_subscription_id.startsWith('sub_');
-                          if (isStripe) return false;
-                          if (!m.manual_invoice_active_until) return false;
-                          return new Date(m.manual_invoice_active_until) > new Date();
-                        }).length;
-                        return activeManualCount > 0 ? (
-                          <>
-                            <span className="text-white/20">•</span>
-                            <span className="text-amber-400/80">{activeManualCount} Barzahler aktiv</span>
-                          </>
-                        ) : null;
-                      })()}
-                    </div>
-                  </div>
-                )}
-              </div>
+            {/* Header mit Gesamt-MRR & Jahresumsatz (Stripe + Manuell/Bar) */}
+            {(() => {
+              const getMonthlyRate = (m: any) => {
+                if (m.package_type === 'gold') return 89;
+                if (m.package_type === 'custom') return m.custom_price || 199;
+                return 49; // silber
+              };
 
-              <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="p-3 rounded-2xl" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}><DollarSign size={22} style={{ color: '#D4AF37' }} /></div>
-                  <h2 className="text-white/60 font-medium text-sm">{t.paidAnnualRevenue} ({financesYear})</h2>
+              const now = new Date();
+
+              // Aktive manuelle Händler (Barzahler/Überweisung)
+              const activeManual = allMerchants.filter((m: any) => {
+                const isStripe = m.stripe_subscription_id && m.stripe_subscription_id.startsWith('sub_');
+                if (isStripe) return false;
+                if (!m.current_period_end) return false;
+                return new Date(m.current_period_end) > now && m.is_active !== false;
+              });
+
+              // Abgelaufene / fällige manuelle Händler
+              const overdueManual = allMerchants.filter((m: any) => {
+                const isStripe = m.stripe_subscription_id && m.stripe_subscription_id.startsWith('sub_');
+                if (isStripe) return false;
+                if (!m.current_period_end) return false;
+                return new Date(m.current_period_end) <= now;
+              });
+
+              const manualMrr = activeManual.reduce((sum, m) => sum + getMonthlyRate(m), 0);
+              const stripeMrr = (stripeMrrCents || 0) / 100;
+              const totalMrr = stripeMrr + manualMrr;
+
+              // Gekündigte Stripe-Abos
+              const cancelingStripeCount = stripeSubsList.filter(s => s.is_canceling).length;
+
+              // Jahresumsatz:
+              // 1. Stripe bezahlt
+              const stripeAnnual = financesData.reduce((acc, curr) => acc + (curr.amount_paid || 0), 0) / 100;
+
+              // 2. Manuell bezahlt im Jahr financesYear
+              let manualAnnual = 0;
+              let manualPaidMerchantsCount = 0;
+
+              allMerchants.forEach((m: any) => {
+                const isStripe = m.stripe_subscription_id && m.stripe_subscription_id.startsWith('sub_');
+                if (isStripe) return; // Stripe-Kunden werden aus Stripe-Invoices gerechnet
+
+                if (!m.current_period_end) return;
+                const end = new Date(m.current_period_end);
+                const created = m.created_at ? new Date(m.created_at) : end;
+
+                const yearStart = new Date(`${financesYear}-01-01T00:00:00Z`);
+                const yearEnd = new Date(`${financesYear}-12-31T23:59:59Z`);
+
+                const effStart = created > yearStart ? created : yearStart;
+                const effEnd = end < yearEnd ? end : yearEnd;
+
+                if (effEnd > effStart) {
+                  const diffMs = effEnd.getTime() - effStart.getTime();
+                  const diffMonths = Math.max(1, Math.round(diffMs / (30.44 * 24 * 60 * 60 * 1000)));
+                  let mTotal = diffMonths * getMonthlyRate(m);
+
+                  if (m.push_settings?.setup_fee_paid && created.getFullYear() === financesYear) {
+                    mTotal += (m.setup_price ?? 299);
+                  }
+
+                  manualAnnual += mTotal;
+                  manualPaidMerchantsCount++;
+                }
+              });
+
+              const totalAnnual = stripeAnnual + manualAnnual;
+
+              return (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Card 1: Gesamt-MRR */}
+                  <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div className="flex items-center justify-between mb-4">
+                      <div className="flex items-center gap-4">
+                        <div className="p-3 bg-green-500/10 rounded-2xl border border-green-500/20">
+                          <Activity size={22} className="text-green-500" />
+                        </div>
+                        <div>
+                          <h2 className="text-white/60 font-medium text-sm">{t.totalMRRTitle}</h2>
+                          <p className="text-[11px] text-white/40">{t.totalMRRDesc}</p>
+                        </div>
+                      </div>
+                      {stripeDiscountedCount > 0 && (
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                          {stripeDiscountedCount} {t.withCoupon}
+                        </span>
+                      )}
+                    </div>
+
+                    {financesLoading || stripeMrrCents === null ? (
+                      <div className="h-10 flex items-center"><RefreshCw size={24} className="animate-spin text-white/30" /></div>
+                    ) : (
+                      <div>
+                        <div className="flex items-baseline gap-2">
+                          <p className="text-4xl font-black text-white">{totalMrr.toFixed(2)}€</p>
+                          <span className="text-xs text-white/40 font-medium">/ Monat</span>
+                        </div>
+
+                        {/* Saubere, aggregierte Übersicht — skalierbar für beliebig viele Kunden */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4 pt-3 border-t border-white/5 text-xs text-white/60">
+                          <div className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/5">
+                            <span className={`w-2 h-2 rounded-full ${stripeSubsCount > 0 ? 'bg-green-400' : 'bg-white/20'}`}></span>
+                            <div>
+                              <span className="font-semibold text-white">{t.stripeMRRLabel}:</span> {stripeMrr.toFixed(2)}€
+                              <span className="text-white/40 text-[11px] block">
+                                {stripeSubsCount} {t.activeLabel}{cancelingStripeCount > 0 ? ` · ${cancelingStripeCount} ${t.cancelingLabel}` : ''}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/5">
+                            <span className={`w-2 h-2 rounded-full ${activeManual.length > 0 ? 'bg-amber-400' : 'bg-white/20'}`}></span>
+                            <div>
+                              <span className="font-semibold text-white">{t.manualMRRLabel}:</span> {manualMrr.toFixed(2)}€
+                              <span className="text-white/40 text-[11px] block">
+                                {activeManual.length} {t.activeLabel}{overdueManual.length > 0 ? ` · ${overdueManual.length} ${t.overdueLabel}` : ''}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Card 2: Bezahlter Jahresumsatz */}
+                  <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+                    <div className="flex items-center gap-4 mb-4">
+                      <div className="p-3 rounded-2xl" style={{ background: 'rgba(212,175,55,0.1)', border: '1px solid rgba(212,175,55,0.2)' }}>
+                        <DollarSign size={22} style={{ color: '#D4AF37' }} />
+                      </div>
+                      <div>
+                        <h2 className="text-white/60 font-medium text-sm">{t.totalAnnualRevenueTitle} ({financesYear})</h2>
+                        <p className="text-[11px] text-white/40">{t.totalAnnualRevenueDesc}</p>
+                      </div>
+                    </div>
+
+                    {financesLoading ? (
+                      <div className="h-10 flex items-center"><RefreshCw size={24} className="animate-spin text-white/30" /></div>
+                    ) : (
+                      <div>
+                        <div className="flex items-baseline gap-2">
+                          <p className="text-4xl font-black text-white">{totalAnnual.toFixed(2)}€</p>
+                        </div>
+
+                        {/* Aufschlüsselung Stripe vs Manuell */}
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-4 pt-3 border-t border-white/5 text-xs text-white/60">
+                          <div className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/5">
+                            <span className="w-2 h-2 rounded-full bg-[#D4AF37]"></span>
+                            <div>
+                              <span className="font-semibold text-white">{t.stripeMRRLabel}:</span> {stripeAnnual.toFixed(2)}€
+                              <span className="text-white/40 text-[11px] block">
+                                {financesData.length} {t.invoicesCountLabel}
+                              </span>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2 p-2 rounded-xl bg-white/[0.02] border border-white/5">
+                            <span className="w-2 h-2 rounded-full bg-white/40"></span>
+                            <div>
+                              <span className="font-semibold text-white">{t.manualMRRLabel}:</span> {manualAnnual.toFixed(2)}€
+                              <span className="text-white/40 text-[11px] block">
+                                {manualPaidMerchantsCount} {t.merchantsCountLabel}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                {financesLoading ? (
-                  <div className="h-10 flex items-center"><RefreshCw size={24} className="animate-spin text-white/30" /></div>
-                ) : (
-                  <p className="text-4xl font-black text-white">
-                    {(financesData.reduce((acc, curr) => acc + curr.amount_paid, 0) / 100).toFixed(2)}€
-                  </p>
-                )}
-                <p className="text-xs text-white/40 mt-2">{t.basedOnStripeInvoices}</p>
-              </div>
-            </div>
+              );
+            })()}
 
             {/* Manual Invoices & Cash Payments Card */}
             <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
