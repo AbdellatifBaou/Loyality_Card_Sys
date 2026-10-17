@@ -248,10 +248,20 @@ function buildInvoiceEmailHtml({
                   ${isFr ? 'Instructions de règlement :' : 'Zahlungsinformationen :'}
                 </div>
                 <div style="font-size: 12px; line-height: 1.6; color: #a3a3a3;">
-                  ${company.rib}<br/>
-                  ${isFr 
-                    ? `Veuillez mentionner le numéro de facture <strong>${invoice.invoiceNumber}</strong> lors de votre virement.`
-                    : `Bitte geben Sie bei Überweisungen die Rechnungsnummer <strong>${invoice.invoiceNumber}</strong> als Verwendungszweck an.`}
+                  ${company.rib}
+                  <div style="margin-top: 10px; padding: 12px 14px; background: rgba(255,255,255,0.04); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                    <div style="font-size: 11px; text-transform: uppercase; color: #D4AF37; font-weight: 700; margin-bottom: 3px;">
+                      ${isFr ? 'Référence à indiquer :' : 'Verwendungszweck :'}
+                    </div>
+                    <div style="font-size: 14px; font-weight: 800; color: #ffffff; font-family: monospace;">
+                      ${invoice.invoiceNumber}
+                    </div>
+                    <div style="font-size: 11px; color: #a3a3a3; margin-top: 4px;">
+                      ${isFr 
+                        ? `Veuillez mentionner la référence "${invoice.invoiceNumber}" lors de votre virement.`
+                        : `Bitte geben Sie bei Überweisungen den Verwendungszweck "${invoice.invoiceNumber}" an.`}
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -322,8 +332,7 @@ export async function POST(req: Request) {
           name: 'Marketif',
           sub: 'Einzelunternehmen',
           address: 'Weinligstraße 24, 21073 Hamburg',
-          legal: 'Inhaber: Abdellatif Baoud · Deutschland',
-          phone: '+49 176 00000000',
+          legal: 'Inhaber: Abdellatif Baouddi · Deutschland',
           email: 'Kontakt@marketif.de',
           web: 'marketif.de',
           title: 'RECHNUNG',

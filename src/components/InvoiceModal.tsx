@@ -172,8 +172,7 @@ export default function InvoiceModal({ merchant, onClose, adminLang, initialInvo
         name: 'Marketif',
         sub: 'Einzelunternehmen',
         address: 'Weinligstraße 24, 21073 Hamburg',
-        legal: 'Inhaber: Abdellatif Baoud · Deutschland',
-        phone: '+49 176 00000000',
+        legal: 'Inhaber: Abdellatif Baouddi · Deutschland',
         email: 'Kontakt@marketif.de',
         web: 'marketif.de',
         title: 'RECHNUNG',
@@ -914,7 +913,7 @@ export default function InvoiceModal({ merchant, onClose, adminLang, initialInvo
                     {company.legal && <p className="text-[11px] font-mono text-gray-500 mt-1.5">{company.legal}</p>}
                     <div className="mt-2 text-xs text-gray-500 space-y-0.5">
                       <p>Email: <span className="font-medium text-gray-800">{company.email}</span></p>
-                      {company.phone && <p>Tél: <span className="font-medium text-gray-800">{company.phone}</span></p>}
+                      {company.phone && <p>{invoiceLang === 'fr' ? 'Tél:' : 'Tel:'} <span className="font-medium text-gray-800">{company.phone}</span></p>}
                       <p>Web: <span className="font-medium text-gray-800">{company.web}</span></p>
                     </div>
                   </div>
@@ -930,6 +929,11 @@ export default function InvoiceModal({ merchant, onClose, adminLang, initialInvo
                       <p>
                         <span className="font-bold text-gray-900">{invoiceLang === 'fr' ? 'Date:' : 'Datum:'}</span> {new Date(invoiceDate).toLocaleDateString(invoiceLang === 'fr' ? 'fr-FR' : 'de-DE')}
                       </p>
+                      {dueDate && (
+                        <p>
+                          <span className="font-bold text-gray-900">{invoiceLang === 'fr' ? 'Échéance:' : 'Fällig bis:'}</span> {new Date(dueDate).toLocaleDateString(invoiceLang === 'fr' ? 'fr-FR' : 'de-DE')}
+                        </p>
+                      )}
                       {period && (
                         <p>
                           <span className="font-bold text-gray-900">{invoiceLang === 'fr' ? 'Période:' : 'Leistungszeitraum:'}</span> {period}
@@ -978,6 +982,22 @@ export default function InvoiceModal({ merchant, onClose, adminLang, initialInvo
                           : invoiceLang === 'fr' ? 'Carte Bancaire / En ligne' : 'Kartenzahlung'}
                       </p>
                       <p className="text-[11px] text-gray-500 mt-1">{company.rib}</p>
+
+                      {paymentMethod === 'transfer' && (
+                        <div className="mt-2.5 p-2.5 bg-white rounded-lg border border-gray-200 text-xs">
+                          <p className="text-[10px] font-bold text-gray-700 uppercase tracking-wider">
+                            {invoiceLang === 'fr' ? 'Référence à indiquer :' : 'Verwendungszweck :'}
+                          </p>
+                          <p className="font-mono font-bold text-gray-900 text-xs mt-0.5 select-all">
+                            {invoiceNumber}
+                          </p>
+                          <p className="text-[10px] text-gray-500 mt-1 leading-snug">
+                            {invoiceLang === 'fr'
+                              ? `Veuillez mentionner la référence "${invoiceNumber}" lors de votre virement.`
+                              : `Bitte geben Sie bei Überweisung den Verwendungszweck "${invoiceNumber}" an.`}
+                          </p>
+                        </div>
+                      )}
                     </div>
 
                     <div className="mt-3 pt-2 border-t border-gray-200/60 flex items-center justify-between text-xs text-gray-600">
