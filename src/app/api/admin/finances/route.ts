@@ -76,7 +76,7 @@ export async function POST(req: Request) {
       const subsList = await stripe.subscriptions.list({
         status: 'active',
         limit: 100,
-        expand: ['data.discount.coupon', 'data.discounts', 'data.customer']
+        expand: ['data.discount.coupon', 'data.discounts', 'data.customer', 'data.customer.discount.coupon']
       });
 
       for (const sub of subsList.data) {
@@ -98,13 +98,32 @@ export async function POST(req: Request) {
           subMonthlyCents += unitAmount * quantity;
         }
 
-        // Coupon-Prüfung (unterstützt legacy sub.discount sowie modernes sub.discounts Array)
+        // Coupon-Prüfung:
+        // 1. Auf Subskriptionsebene (legacy discount oder discounts Array)
         let discountDesc: string | null = null;
         let coupon: any = sub.discount?.coupon || null;
 
         if (!coupon && Array.isArray((sub as any).discounts) && (sub as any).discounts.length > 0) {
           const firstDisc = (sub as any).discounts[0];
           coupon = firstDisc?.coupon || (typeof firstDisc === 'object' && firstDisc?.percent_off ? firstDisc : null);
+        }
+
+        // 2. Auf Kundenebene (Customer Discount - wenn der Gutschein an den Kunden geheftet ist)
+        const custObj = typeof sub.customer === 'object' && sub.customer ? (sub.customer as any) : null;
+        if (!coupon && custObj?.discount) {
+          coupon = custObj.discount.coupon || (typeof custObj.discount === 'object' && custObj.discount.percent_off ? custObj.discount : null);
+        }
+
+        // 3. Fallback: Falls auf Kundenebene nicht expandiert, Kunde direkt mit discount prüfen
+        if (!coupon && custObj?.id && custObj.discount === undefined) {
+          try {
+            const fullCust = await stripe.customers.retrieve(custObj.id, { expand: ['discount.coupon'] }) as any;
+            if (fullCust?.discount?.coupon) {
+              coupon = fullCust.discount.coupon;
+            }
+          } catch (e) {
+            // Ignorieren falls nicht abrufbar
+          }
         }
 
         if (coupon) {
