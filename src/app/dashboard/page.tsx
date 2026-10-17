@@ -2167,6 +2167,42 @@ export default function DashboardPage() {
                                   <Mail size={14} />
                                 </button>
                                 <button
+                                  onClick={async () => {
+                                    try {
+                                      showToast(adminLang === 'fr' ? 'Téléchargement du PDF...' : 'Lade PDF herunter...', 'success');
+                                      const token = typeof window !== 'undefined' ? (localStorage.getItem('admin_auth') || '2025') : '2025';
+                                      const res = await fetch('/api/admin/invoice-pdf', {
+                                        method: 'POST',
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                          'Authorization': `Bearer ${token}`,
+                                        },
+                                        body: JSON.stringify({
+                                          invoice: inv,
+                                          password: '2025',
+                                        }),
+                                      });
+                                      if (!res.ok) throw new Error('PDF failed');
+                                      const blob = await res.blob();
+                                      const url = window.URL.createObjectURL(blob);
+                                      const a = document.createElement('a');
+                                      a.href = url;
+                                      const safeInvNum = (inv.invoiceNumber || 'Rechnung').replace(/[^a-zA-Z0-9_-]/g, '_');
+                                      a.download = `${inv.invoiceLang === 'fr' ? 'Facture' : 'Rechnung'}_${safeInvNum}.pdf`;
+                                      document.body.appendChild(a);
+                                      a.click();
+                                      window.URL.revokeObjectURL(url);
+                                      document.body.removeChild(a);
+                                    } catch {
+                                      showToast('Fehler beim Herunterladen des PDFs', 'error');
+                                    }
+                                  }}
+                                  className="p-1.5 bg-emerald-500/15 hover:bg-emerald-500 text-emerald-400 hover:text-white rounded-lg transition-all"
+                                  title={adminLang === 'fr' ? 'Télécharger la facture PDF' : 'PDF-Rechnung herunterladen'}
+                                >
+                                  <Download size={14} />
+                                </button>
+                                <button
                                   onClick={() => handleDeleteArchivedInvoice(inv.merchantId, inv.id)}
                                   className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-all"
                                   title={t.delete || 'Löschen'}

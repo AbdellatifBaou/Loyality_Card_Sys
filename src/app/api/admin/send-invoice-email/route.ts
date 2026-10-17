@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { validateAuth } from '@/lib/auth';
 import { sendEmail } from '@/lib/email';
+import { generateInvoicePdf } from '@/lib/invoice-pdf';
 
 function getAdminSupabase() {
   return createClient(
@@ -115,11 +116,26 @@ function buildInvoiceEmailHtml({
               <p style="margin: 0 0 16px 0; font-size: 16px; font-weight: 700; color: #ffffff;">
                 ${greeting}
               </p>
-              <p style="margin: 0 0 24px 0; font-size: 14px; line-height: 1.6; color: #a3a3a3;">
+              <p style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.6; color: #a3a3a3;">
                 ${isFr 
                   ? `Veuillez trouver ci-dessous le récapitulatif détaillé de votre facture pour <strong>${invoice.period || 'Marketif Loyalty'}</strong>.`
                   : `anbei erhalten Sie die Abrechnung für <strong>${invoice.period || 'Marketif Loyalty'}</strong>.`}
               </p>
+
+              <!-- Attached PDF Notice Banner -->
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 24px; background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.28); border-radius: 12px;">
+                <tr>
+                  <td style="padding: 12px 16px; font-size: 13px; color: #f5f5f5; line-height: 1.5;">
+                    <span style="font-size: 15px; margin-right: 6px;">📎</span>
+                    <strong style="color: #D4AF37;">${isFr ? 'Facture officielle PDF en pièce jointe' : 'Offizielle PDF-Rechnung im Anhang'}:</strong>
+                    <span style="color: #cccccc;">
+                      ${isFr 
+                        ? `Le document PDF imprimable pour votre déclaration fiscale et comptabilité est joint à cet e-mail.`
+                        : `Das druckfähige PDF-Dokument für Ihre Buchhaltung und Steuerunterlagen ist dieser E-Mail als Anhang beigefügt.`}
+                    </span>
+                  </td>
+                </tr>
+              </table>
 
               <!-- Two Column Meta Box (Recipient & Invoice Details) -->
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 24px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); border-radius: 12px;">
@@ -320,11 +336,23 @@ export async function POST(req: Request) {
 
     const html = buildInvoiceEmailHtml({ invoice, company, lang });
 
-    // Send email via Resend
+    // Generate PDF invoice attachment
+    let attachments: Array<{ filename: string; content: Buffer }> = [];
+    try {
+      const pdfBuffer = generateInvoicePdf(invoice, company);
+      const safeInvNum = (invoice.invoiceNumber || 'Rechnung').replace(/[^a-zA-Z0-9_-]/g, '_');
+      const filename = `${lang === 'fr' ? 'Facture' : 'Rechnung'}_${safeInvNum}.pdf`;
+      attachments = [{ filename, content: pdfBuffer }];
+    } catch (pdfErr) {
+      console.error('Error generating invoice PDF attachment:', pdfErr);
+    }
+
+    // Send email via Resend with PDF attachment
     const emailResult = await sendEmail({
       to: targetEmail,
       subject,
       html,
+      attachments,
     });
 
     if (!emailResult.success) {

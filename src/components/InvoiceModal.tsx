@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Printer, Plus, Trash2, Globe, Building2, Check, FileText, MessageCircle, Mail } from 'lucide-react';
+import { X, Printer, Plus, Trash2, Globe, Building2, Check, FileText, MessageCircle, Mail, Download } from 'lucide-react';
 
 interface InvoiceItem {
   id: string;
@@ -58,6 +58,7 @@ export default function InvoiceModal({ merchant, onClose, adminLang, initialInvo
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [emailSentSuccess, setEmailSentSuccess] = useState(false);
+  const [isDownloadingPdf, setIsDownloadingPdf] = useState(false);
 
   // Default Items based on package
   const getPackagePrice = () => {
@@ -318,6 +319,65 @@ export default function InvoiceModal({ merchant, onClose, adminLang, initialInvo
     window.print();
   };
 
+  const handleDownloadPdf = async () => {
+    handleSaveInvoice(true);
+    setIsDownloadingPdf(true);
+    try {
+      const invoicePayload = {
+        invoiceNumber,
+        invoiceDate,
+        dueDate,
+        period,
+        paymentMethod,
+        currency,
+        items,
+        subtotal,
+        taxRate,
+        taxAmount,
+        total,
+        customerName,
+        customerContactName,
+        customerPhone,
+        customerEmail,
+        customerAddress,
+        customerTaxId,
+        customTaxNote,
+        invoiceLang,
+      };
+
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('admin_auth') || '2025') : '2025';
+      const res = await fetch('/api/admin/invoice-pdf', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          invoice: invoicePayload,
+          password: '2025',
+        }),
+      });
+
+      if (!res.ok) throw new Error('PDF Generation failed');
+
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      const safeInvNum = (invoiceNumber || 'Rechnung').replace(/[^a-zA-Z0-9_-]/g, '_');
+      a.download = `${invoiceLang === 'fr' ? 'Facture' : 'Rechnung'}_${safeInvNum}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      window.URL.revokeObjectURL(url);
+      document.body.removeChild(a);
+    } catch (e: any) {
+      console.error('Download PDF error:', e);
+      alert(invoiceLang === 'fr' ? 'Erreur lors du téléchargement du PDF' : 'Fehler beim Herunterladen des PDFs');
+    } finally {
+      setIsDownloadingPdf(false);
+    }
+  };
+
   const handleSendWhatsApp = () => {
     let phone = (customerPhone || '').replace(/[^0-9+]/g, '');
     if (phone.startsWith('+')) {
@@ -538,13 +598,25 @@ export default function InvoiceModal({ merchant, onClose, adminLang, initialInvo
               )}
             </button>
 
+            {/* Download PDF Button */}
+            <button
+              type="button"
+              onClick={handleDownloadPdf}
+              disabled={isDownloadingPdf}
+              className="flex items-center gap-2 px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm rounded-xl transition-all shadow-lg hover:shadow-emerald-600/20 disabled:opacity-50"
+              title={invoiceLang === 'fr' ? 'Télécharger la facture PDF officielle' : 'Offizielle PDF-Rechnung herunterladen'}
+            >
+              <Download size={16} className={isDownloadingPdf ? 'animate-bounce' : ''} />
+              <span>{isDownloadingPdf ? (invoiceLang === 'fr' ? 'Génération...' : 'Generiere...') : 'PDF'}</span>
+            </button>
+
             {/* Print / PDF Button */}
             <button
               onClick={handlePrint}
               className="flex items-center gap-2 px-5 py-2.5 bg-[#D4AF37] hover:bg-[#b5952f] text-black font-bold text-sm rounded-xl transition-all shadow-lg hover:shadow-[#D4AF37]/20"
             >
               <Printer size={16} />
-              {invoiceLang === 'fr' ? 'Imprimer / PDF' : 'Drucken / PDF'}
+              {invoiceLang === 'fr' ? 'Imprimer' : 'Drucken'}
             </button>
 
             {/* Close Button */}

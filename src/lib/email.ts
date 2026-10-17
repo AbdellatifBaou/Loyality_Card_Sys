@@ -4,10 +4,15 @@ export async function sendEmail({
   to,
   subject,
   html,
+  attachments,
 }: {
   to: string | string[];
   subject: string;
   html: string;
+  attachments?: Array<{
+    filename: string;
+    content: Buffer | string;
+  }>;
 }) {
   try {
     if (!process.env.RESEND_API_KEY) {
@@ -21,6 +26,7 @@ export async function sendEmail({
       to,
       subject,
       html,
+      ...(attachments && attachments.length > 0 ? { attachments } : {}),
     });
     return { success: true, data };
   } catch (error) {
