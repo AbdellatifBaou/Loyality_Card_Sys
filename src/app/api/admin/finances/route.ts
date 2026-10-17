@@ -98,8 +98,10 @@ export async function POST(req: Request) {
           subMonthlyCents += unitAmount * quantity;
         }
 
+        const regularMonthly = subMonthlyCents;
+
         // Coupon-Prüfung:
-        // 1. Auf Subskriptionsebene (legacy discount oder discounts Array)
+        // 1. Auf Subskriptionsebene (sub.discount oder sub.discounts Array)
         let discountDesc: string | null = null;
         let coupon: any = sub.discount?.coupon || null;
 
@@ -108,33 +110,55 @@ export async function POST(req: Request) {
           coupon = firstDisc?.coupon || (typeof firstDisc === 'object' && firstDisc?.percent_off ? firstDisc : null);
         }
 
-        // 2. Auf Kundenebene (Customer Discount - wenn der Gutschein an den Kunden geheftet ist)
+        // 2. Auf Kundenebene (Customer Discount - direkt oder via Stripe API retrieve)
+        const custId = typeof sub.customer === 'string' ? sub.customer : (sub.customer as any)?.id;
         const custObj = typeof sub.customer === 'object' && sub.customer ? (sub.customer as any) : null;
         if (!coupon && custObj?.discount) {
           coupon = custObj.discount.coupon || (typeof custObj.discount === 'object' && custObj.discount.percent_off ? custObj.discount : null);
         }
 
-        // 3. Fallback: Falls auf Kundenebene nicht expandiert, Kunde direkt mit discount prüfen
-        if (!coupon && custObj?.id && custObj.discount === undefined) {
+        if (!coupon && custId) {
           try {
-            const fullCust = await stripe.customers.retrieve(custObj.id, { expand: ['discount.coupon'] }) as any;
+            const fullCust = await stripe.customers.retrieve(custId, { expand: ['discount.coupon'] }) as any;
             if (fullCust?.discount?.coupon) {
               coupon = fullCust.discount.coupon;
+            } else if (fullCust?.discount && typeof fullCust.discount === 'object') {
+              coupon = fullCust.discount;
             }
           } catch (e) {
-            // Ignorieren falls nicht abrufbar
+            console.error('Failed to retrieve customer discount:', e);
           }
+        }
+
+        // 3. Echte nächste Rechnung via Stripe CreatePreview ermitteln
+        let previewAmountDue: number | null = null;
+        try {
+          if (typeof (stripe.invoices as any).createPreview === 'function') {
+            const preview = await (stripe.invoices as any).createPreview({ subscription: sub.id });
+            if (preview && typeof preview.amount_due === 'number') {
+              previewAmountDue = preview.amount_due;
+              if (!coupon && preview.discount?.coupon) {
+                coupon = preview.discount.coupon;
+              }
+            }
+          }
+        } catch (prevErr) {
+          // Ignorieren falls createPreview nicht verfügbar ist
         }
 
         if (coupon) {
           discountedSubscriptionsCount++;
           if (coupon.percent_off) {
             discountDesc = `${coupon.percent_off}% Rabatt`;
-            subMonthlyCents = Math.round(subMonthlyCents * (1 - coupon.percent_off / 100));
+            subMonthlyCents = Math.round(regularMonthly * (1 - coupon.percent_off / 100));
           } else if (coupon.amount_off) {
             discountDesc = `${(coupon.amount_off / 100).toFixed(2)}€ Rabatt`;
-            subMonthlyCents = Math.max(0, subMonthlyCents - coupon.amount_off);
+            subMonthlyCents = Math.max(0, regularMonthly - coupon.amount_off);
           }
+        } else if (previewAmountDue !== null && previewAmountDue < regularMonthly) {
+          discountedSubscriptionsCount++;
+          subMonthlyCents = previewAmountDue;
+          discountDesc = 'Rabatt';
         }
 
         stripeMrrCents += subMonthlyCents;
