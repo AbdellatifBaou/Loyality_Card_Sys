@@ -979,9 +979,16 @@ export default function InvoiceModal({ merchant, onClose, adminLang, initialInvo
               <div>
                 <div className="flex justify-between items-start border-b border-gray-200 pb-8 gap-6">
                   <div>
-                    <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 mb-1">
-                      {company.name}
-                    </h1>
+                    <div className="flex items-center gap-3 mb-2">
+                      <img
+                        src="/Marketif_LOGO_Symbol.png"
+                        alt="Marketif"
+                        className="h-10 w-auto object-contain"
+                      />
+                      <h1 className="text-3xl font-extrabold tracking-tight text-gray-900 leading-none">
+                        {company.name}
+                      </h1>
+                    </div>
                     {company.sub && <p className="text-xs text-gray-500 font-medium mb-1">{company.sub}</p>}
                     <p className="text-xs text-gray-600 max-w-sm leading-relaxed">{company.address}</p>
                     {company.legal && <p className="text-[11px] font-mono text-gray-500 mt-1.5">{company.legal}</p>}

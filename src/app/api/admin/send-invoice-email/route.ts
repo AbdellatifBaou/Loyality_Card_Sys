@@ -94,11 +94,14 @@ function buildInvoiceEmailHtml({
               <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
                 <tr>
                   <td>
+                    <div style="margin-bottom: 12px;">
+                      <img src="https://treue.marketif.de/Marketif_LOGO_Symbol.png" width="42" height="25" alt="Marketif" style="display: block; border: 0; outline: none; text-decoration: none;" />
+                    </div>
                     <span style="font-size: 22px; font-weight: 800; letter-spacing: -0.5px; color: #ffffff;">
                       MARKETIF <span style="color: #D4AF37;">LOYALTY</span>
                     </span>
                     <div style="margin-top: 4px; font-size: 12px; color: #a3a3a3; text-transform: uppercase; letter-spacing: 1px;">
-                      ${isFr ? 'Facture Officielle' : 'Offizielle Rechnung'}
+                      ${isFr ? (isPaid ? 'Reçu de Paiement' : 'Facture Officielle') : (isPaid ? 'Zahlungsbeleg' : 'Offizielle Rechnung')}
                     </div>
                   </td>
                   <td align="right">

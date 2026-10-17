@@ -1,4 +1,28 @@
 import { jsPDF } from 'jspdf';
+import fs from 'fs';
+import path from 'path';
+
+let cachedLogoBase64: string | null = null;
+
+function getMarketifLogoBase64(): string | null {
+  if (cachedLogoBase64) return cachedLogoBase64;
+  try {
+    const publicDir = path.join(process.cwd(), 'public');
+    const optPath = path.join(publicDir, 'marketif-logo-pdf.png');
+    if (fs.existsSync(optPath)) {
+      cachedLogoBase64 = fs.readFileSync(optPath).toString('base64');
+      return cachedLogoBase64;
+    }
+    const symbolPath = path.join(publicDir, 'Marketif_LOGO_Symbol.png');
+    if (fs.existsSync(symbolPath)) {
+      cachedLogoBase64 = fs.readFileSync(symbolPath).toString('base64');
+      return cachedLogoBase64;
+    }
+  } catch (err) {
+    console.error('Error loading logo for invoice PDF:', err);
+  }
+  return null;
+}
 
 export interface InvoicePdfData {
   invoiceNumber: string;
@@ -77,11 +101,30 @@ export function generateInvoicePdf(invoice: InvoicePdfData, company: CompanyDeta
   // --- 1. TOP HEADER (CLEAN WHITE PREVIEW MATCH) ---
   let leftY = 18;
 
-  // Company Name
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(20);
-  doc.setTextColor(...blackColor);
-  doc.text(company.name, margin, leftY);
+  // Company Logo & Name
+  const logoBase64 = getMarketifLogoBase64();
+  const logoWidth = 11;
+  const logoHeight = logoWidth * (2131 / 3630); // ~6.45mm
+
+  if (logoBase64) {
+    try {
+      doc.addImage(logoBase64, 'PNG', margin, leftY - 5.8, logoWidth, logoHeight, undefined, 'FAST');
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(20);
+      doc.setTextColor(...blackColor);
+      doc.text(company.name, margin + logoWidth + 2.5, leftY);
+    } catch {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(20);
+      doc.setTextColor(...blackColor);
+      doc.text(company.name, margin, leftY);
+    }
+  } else {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(20);
+    doc.setTextColor(...blackColor);
+    doc.text(company.name, margin, leftY);
+  }
   leftY += 5.5;
 
   // Subtitle / Legal type
