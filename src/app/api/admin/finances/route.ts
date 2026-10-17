@@ -76,7 +76,7 @@ export async function POST(req: Request) {
       const subsList = await stripe.subscriptions.list({
         status: 'active',
         limit: 100,
-        expand: ['data.discount.coupon', 'data.customer']
+        expand: ['data.discount.coupon', 'data.discounts', 'data.customer']
       });
 
       for (const sub of subsList.data) {
@@ -98,10 +98,17 @@ export async function POST(req: Request) {
           subMonthlyCents += unitAmount * quantity;
         }
 
+        // Coupon-Prüfung (unterstützt legacy sub.discount sowie modernes sub.discounts Array)
         let discountDesc: string | null = null;
-        if (sub.discount?.coupon) {
+        let coupon: any = sub.discount?.coupon || null;
+
+        if (!coupon && Array.isArray((sub as any).discounts) && (sub as any).discounts.length > 0) {
+          const firstDisc = (sub as any).discounts[0];
+          coupon = firstDisc?.coupon || (typeof firstDisc === 'object' && firstDisc?.percent_off ? firstDisc : null);
+        }
+
+        if (coupon) {
           discountedSubscriptionsCount++;
-          const coupon = sub.discount.coupon;
           if (coupon.percent_off) {
             discountDesc = `${coupon.percent_off}% Rabatt`;
             subMonthlyCents = Math.round(subMonthlyCents * (1 - coupon.percent_off / 100));

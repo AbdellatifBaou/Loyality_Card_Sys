@@ -62,6 +62,7 @@ export default function DashboardPage() {
   const [stripeMrrCents, setStripeMrrCents] = useState<number | null>(null);
   const [stripeSubsCount, setStripeSubsCount] = useState<number>(0);
   const [stripeDiscountedCount, setStripeDiscountedCount] = useState<number>(0);
+  const [stripeSubsList, setStripeSubsList] = useState<any[]>([]);
   const [financesLoading, setFinancesLoading] = useState(false);
   const [invoiceMerchant, setInvoiceMerchant] = useState<any>(null);
   const [reportMerchant, setReportMerchant] = useState<any>(null);
@@ -208,6 +209,7 @@ export default function DashboardPage() {
         setStripeMrrCents(data.stripeMrrCents !== undefined ? data.stripeMrrCents : 0);
         setStripeSubsCount(data.activeSubscriptionsCount || 0);
         setStripeDiscountedCount(data.discountedSubscriptionsCount || 0);
+        setStripeSubsList(data.subscriptions || []);
       }
     } catch (e: any) {
       console.error(e);
@@ -1469,9 +1471,14 @@ export default function DashboardPage() {
                       <span className="text-xs text-white/40 font-medium">/ Monat</span>
                     </div>
                     <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-white/5 text-xs text-white/50">
-                      <span className="inline-flex items-center gap-1.5">
+                      <span className="inline-flex flex-wrap items-center gap-1.5">
                         <span className="w-2 h-2 rounded-full bg-green-400"></span>
-                        {stripeSubsCount} {t.activeSubs}
+                        <span>{stripeSubsCount} {t.activeSubs}</span>
+                        {stripeSubsList.length > 0 && (
+                          <span className="text-white/40 text-[11px] ml-1">
+                            ({stripeSubsList.map(s => `${s.customer_name || 'Kunde'}: ${(s.monthly_cents / 100).toFixed(2)}€${s.discount_desc ? ` [${s.discount_desc}]` : ''}`).join(', ')})
+                          </span>
+                        )}
                       </span>
                       {(() => {
                         const activeManualCount = allMerchants.filter((m: any) => {
