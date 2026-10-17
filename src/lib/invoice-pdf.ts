@@ -6,6 +6,8 @@ export interface InvoicePdfData {
   dueDate: string;
   period: string;
   paymentMethod: string;
+  paymentStatus?: 'pending' | 'paid';
+  paidAt?: string;
   currency: 'EUR' | 'MAD';
   items: Array<{
     description: string;
@@ -254,31 +256,61 @@ export function generateInvoicePdf(invoice: InvoicePdfData, company: CompanyDeta
   doc.text(company.rib, rightCardX + 5, payY);
   payY += 5;
 
-  // Verwendungszweck Box inside Payment Card
-  const vzBoxWidth = cardWidth - 10;
-  const vzBoxHeight = 15;
-  doc.setFillColor(255, 255, 255);
-  doc.roundedRect(rightCardX + 5, payY, vzBoxWidth, vzBoxHeight, 2, 2, 'F');
-  doc.setDrawColor(...borderColor);
-  doc.roundedRect(rightCardX + 5, payY, vzBoxWidth, vzBoxHeight, 2, 2, 'S');
+  const isPaid = invoice.paymentStatus === 'paid';
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7.5);
-  doc.setTextColor(...darkGray);
-  doc.text(isFr ? 'Référence à indiquer :' : 'Verwendungszweck :', rightCardX + 8, payY + 4.5);
+  if (isPaid) {
+    // Payment confirmed box
+    const vzBoxWidth = cardWidth - 10;
+    const vzBoxHeight = 15;
+    doc.setFillColor(240, 253, 244); // #F0FDF4
+    doc.roundedRect(rightCardX + 5, payY, vzBoxWidth, vzBoxHeight, 2, 2, 'F');
+    doc.setDrawColor(187, 247, 208); // #BBF7D0
+    doc.roundedRect(rightCardX + 5, payY, vzBoxWidth, vzBoxHeight, 2, 2, 'S');
 
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8.5);
-  doc.setTextColor(...blackColor);
-  doc.text(invoice.invoiceNumber, rightCardX + 8, payY + 8.8);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(22, 101, 52); // #166534
+    doc.text(isFr ? 'Paiement confirme' : 'Zahlungseingang bestaetigt', rightCardX + 8, payY + 4.5);
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(6.8);
-  doc.setTextColor(...midGray);
-  const vzNote = isFr
-    ? `Veuillez indiquer "${invoice.invoiceNumber}" lors de votre virement.`
-    : `Bitte bei Überweisung angeben (Zeitraum: ${invoice.period || '-'}).`;
-  doc.text(vzNote, rightCardX + 8, payY + 12.8);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...blackColor);
+    doc.text(isFr ? 'Facture acquittee' : 'Betrag vollstaendig erhalten', rightCardX + 8, payY + 8.8);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    doc.setTextColor(22, 101, 52);
+    const paidMsg = isFr
+      ? `Reglement effectue${invoice.paidAt ? ` le ${formatDate(invoice.paidAt)}` : ''}. Quittance / Justificatif.`
+      : `Zahlung verbucht${invoice.paidAt ? ` am ${formatDate(invoice.paidAt)}` : ''}. Dieser Beleg gilt als Quittung.`;
+    doc.text(paidMsg, rightCardX + 8, payY + 12.8);
+  } else {
+    // Verwendungszweck Box for pending payment
+    const vzBoxWidth = cardWidth - 10;
+    const vzBoxHeight = 15;
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(rightCardX + 5, payY, vzBoxWidth, vzBoxHeight, 2, 2, 'F');
+    doc.setDrawColor(...borderColor);
+    doc.roundedRect(rightCardX + 5, payY, vzBoxWidth, vzBoxHeight, 2, 2, 'S');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...darkGray);
+    doc.text(isFr ? 'Reference a indiquer :' : 'Verwendungszweck :', rightCardX + 8, payY + 4.5);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.5);
+    doc.setTextColor(...blackColor);
+    doc.text(invoice.invoiceNumber, rightCardX + 8, payY + 8.8);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    doc.setTextColor(...midGray);
+    const vzNote = isFr
+      ? `Veuillez indiquer "${invoice.invoiceNumber}" lors de votre virement.`
+      : `Bitte bei Ueberweisung angeben (Zeitraum: ${invoice.period || '-'}).`;
+    doc.text(vzNote, rightCardX + 8, payY + 12.8);
+  }
 
   // Status Badge at bottom of Right Card
   const statusBadgeY = cardsY + cardHeight - 8.5;
@@ -287,13 +319,23 @@ export function generateInvoicePdf(invoice: InvoicePdfData, company: CompanyDeta
   doc.setTextColor(...midGray);
   doc.text('Status:', rightCardX + 5, statusBadgeY + 4);
 
-  // Amber status badge
-  doc.setFillColor(254, 243, 199); // #FEF3C7
-  doc.roundedRect(rightCardX + 20, statusBadgeY, 32, 5.5, 1.5, 1.5, 'F');
-  doc.setFont('helvetica', 'bold');
-  doc.setFontSize(7);
-  doc.setTextColor(146, 64, 14); // #92400E
-  doc.text(isFr ? 'Paiement Manuel' : 'Manuelle Zahlung', rightCardX + 36, statusBadgeY + 3.8, { align: 'center' });
+  if (isPaid) {
+    // Green badge: Bezahlt
+    doc.setFillColor(220, 252, 231); // #DCFCE7
+    doc.roundedRect(rightCardX + 18, statusBadgeY, 26, 5.5, 1.5, 1.5, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(22, 101, 52); // #166534
+    doc.text(isFr ? 'Payee' : 'Bezahlt', rightCardX + 31, statusBadgeY + 3.8, { align: 'center' });
+  } else {
+    // Amber badge: Offen
+    doc.setFillColor(254, 243, 199); // #FEF3C7
+    doc.roundedRect(rightCardX + 18, statusBadgeY, 26, 5.5, 1.5, 1.5, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7);
+    doc.setTextColor(146, 64, 14); // #92400E
+    doc.text(isFr ? 'En attente' : 'Offen', rightCardX + 31, statusBadgeY + 3.8, { align: 'center' });
+  }
 
   // --- 3. ITEMS TABLE ---
   let tableY = cardsY + cardHeight + 8;

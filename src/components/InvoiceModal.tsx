@@ -41,6 +41,10 @@ export default function InvoiceModal({ merchant, onClose, adminLang, initialInvo
   const [period, setPeriod] = useState(initialInvoice?.period || `${currentMonthName} ${currentYear}`);
   const [paymentMethod, setPaymentMethod] = useState<'transfer' | 'cash' | 'card'>(initialInvoice?.paymentMethod || 'transfer');
   const [currency, setCurrency] = useState<'EUR' | 'MAD'>(initialInvoice?.currency || 'EUR');
+  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'paid'>(
+    initialInvoice?.paymentStatus || (initialInvoice?.paymentMethod === 'cash' ? 'paid' : 'pending')
+  );
+  const [paidAt, setPaidAt] = useState<string>(initialInvoice?.paidAt || (initialInvoice?.paymentStatus === 'paid' ? dateStr : ''));
 
   // Customer info
   const [customerName, setCustomerName] = useState(initialInvoice?.customerName || merchant?.name || '');
@@ -207,6 +211,8 @@ export default function InvoiceModal({ merchant, onClose, adminLang, initialInvo
         customerTaxId,
         customTaxNote,
         invoiceLang,
+        paymentStatus,
+        paidAt: paymentStatus === 'paid' ? (paidAt || dateStr) : null,
         createdAt: initialInvoice?.createdAt || new Date().toISOString(),
       };
 
@@ -279,6 +285,8 @@ export default function InvoiceModal({ merchant, onClose, adminLang, initialInvo
         customerTaxId,
         customTaxNote,
         invoiceLang,
+        paymentStatus,
+        paidAt: paymentStatus === 'paid' ? (paidAt || dateStr) : null,
         createdAt: initialInvoice?.createdAt || new Date().toISOString(),
       };
 
@@ -342,6 +350,8 @@ export default function InvoiceModal({ merchant, onClose, adminLang, initialInvo
         customerTaxId,
         customTaxNote,
         invoiceLang,
+        paymentStatus,
+        paidAt: paymentStatus === 'paid' ? (paidAt || dateStr) : null,
       };
 
       const token = typeof window !== 'undefined' ? (localStorage.getItem('admin_auth') || '2025') : '2025';
@@ -675,7 +685,14 @@ export default function InvoiceModal({ merchant, onClose, adminLang, initialInvo
                   <label className="block text-white/50 mb-1">{invoiceLang === 'fr' ? 'Mode de paiement' : 'Zahlungsart'}</label>
                   <select
                     value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value as any)}
+                    onChange={(e) => {
+                      const newMethod = e.target.value as any;
+                      setPaymentMethod(newMethod);
+                      if (newMethod === 'cash') {
+                        setPaymentStatus('paid');
+                        if (!paidAt) setPaidAt(dateStr);
+                      }
+                    }}
                     className="w-full bg-[#111111] border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-[#D4AF37]"
                   >
                     <option className="bg-[#111111] text-white" value="transfer">{invoiceLang === 'fr' ? 'Virement bancaire' : 'Überweisung'}</option>
@@ -694,6 +711,53 @@ export default function InvoiceModal({ merchant, onClose, adminLang, initialInvo
                     <option className="bg-[#111111] text-white" value="MAD">MAD (Dirham)</option>
                   </select>
                 </div>
+              </div>
+
+              {/* Payment Status Selector (Offen / Vor Zahlung vs Bezahlt / Quittiert) */}
+              <div className="pt-2 border-t border-white/10">
+                <label className="block text-white/60 mb-1.5 font-bold">
+                  {invoiceLang === 'fr' ? 'Statut du Paiement' : 'Zahlungsstatus'}
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setPaymentStatus('pending')}
+                    className={`py-2 px-2.5 rounded-xl border text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 ${
+                      paymentStatus === 'pending'
+                        ? 'bg-amber-500/20 border-amber-500 text-amber-300 shadow-md'
+                        : 'bg-black/40 border-white/10 text-white/50 hover:text-white'
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-amber-400"></span>
+                    <span>{invoiceLang === 'fr' ? 'En attente (Avant)' : 'Offen (Vor Zahlung)'}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPaymentStatus('paid');
+                      if (!paidAt) setPaidAt(dateStr);
+                    }}
+                    className={`py-2 px-2.5 rounded-xl border text-[11px] font-bold transition-all flex items-center justify-center gap-1.5 ${
+                      paymentStatus === 'paid'
+                        ? 'bg-emerald-500/20 border-emerald-500 text-emerald-300 shadow-md'
+                        : 'bg-black/40 border-white/10 text-white/50 hover:text-white'
+                    }`}
+                  >
+                    <span className="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    <span>{invoiceLang === 'fr' ? 'Payée (Après)' : 'Bezahlt (Quittiert)'}</span>
+                  </button>
+                </div>
+                {paymentStatus === 'paid' && (
+                  <div className="mt-2 flex items-center gap-2">
+                    <span className="text-[11px] text-white/50">{invoiceLang === 'fr' ? 'Payée le :' : 'Bezahlt am :'}</span>
+                    <input
+                      type="date"
+                      value={paidAt}
+                      onChange={(e) => setPaidAt(e.target.value)}
+                      className="bg-black/40 border border-white/10 rounded-lg px-2 py-1 text-white text-xs outline-none focus:border-emerald-500"
+                    />
+                  </div>
+                )}
               </div>
             </div>
 
@@ -983,28 +1047,51 @@ export default function InvoiceModal({ merchant, onClose, adminLang, initialInvo
                       </p>
                       <p className="text-[11px] text-gray-500 mt-1">{company.rib}</p>
 
-                      {paymentMethod === 'transfer' && (
-                        <div className="mt-2.5 p-2.5 bg-white rounded-lg border border-gray-200 text-xs">
-                          <p className="text-[10px] font-bold text-gray-700 uppercase tracking-wider">
-                            {invoiceLang === 'fr' ? 'Référence à indiquer :' : 'Verwendungszweck :'}
+                      {paymentStatus === 'paid' ? (
+                        <div className="mt-2.5 p-2.5 bg-emerald-50 rounded-lg border border-emerald-200 text-xs">
+                          <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
+                            <Check size={12} className="text-emerald-600" />
+                            {invoiceLang === 'fr' ? 'Paiement confirmé' : 'Zahlungseingang bestätigt'}
                           </p>
-                          <p className="font-mono font-bold text-gray-900 text-xs mt-0.5 select-all">
-                            {invoiceNumber}
+                          <p className="font-semibold text-emerald-900 text-xs mt-0.5">
+                            {invoiceLang === 'fr' ? 'Facture acquittée' : 'Betrag vollständig erhalten'}
                           </p>
-                          <p className="text-[10px] text-gray-500 mt-1 leading-snug">
+                          <p className="text-[10px] text-emerald-700 mt-1 leading-snug">
                             {invoiceLang === 'fr'
-                              ? `Veuillez mentionner la référence "${invoiceNumber}" lors de votre virement.`
-                              : `Bitte geben Sie bei Überweisung den Verwendungszweck "${invoiceNumber}" an.`}
+                              ? `Règlement effectué${paidAt ? ` le ${new Date(paidAt).toLocaleDateString('fr-FR')}` : ''}. Quittance / Justificatif de paiement.`
+                              : `Zahlung verbucht${paidAt ? ` am ${new Date(paidAt).toLocaleDateString('de-DE')}` : ''}. Dieser Beleg gilt als Quittung.`}
                           </p>
                         </div>
+                      ) : (
+                        paymentMethod === 'transfer' && (
+                          <div className="mt-2.5 p-2.5 bg-white rounded-lg border border-gray-200 text-xs">
+                            <p className="text-[10px] font-bold text-gray-700 uppercase tracking-wider">
+                              {invoiceLang === 'fr' ? 'Référence à indiquer :' : 'Verwendungszweck :'}
+                            </p>
+                            <p className="font-mono font-bold text-gray-900 text-xs mt-0.5 select-all">
+                              {invoiceNumber}
+                            </p>
+                            <p className="text-[10px] text-gray-500 mt-1 leading-snug">
+                              {invoiceLang === 'fr'
+                                ? `Veuillez mentionner la référence "${invoiceNumber}" lors de votre virement.`
+                                : `Bitte geben Sie bei Überweisung den Verwendungszweck "${invoiceNumber}" an.`}
+                            </p>
+                          </div>
+                        )
                       )}
                     </div>
 
                     <div className="mt-3 pt-2 border-t border-gray-200/60 flex items-center justify-between text-xs text-gray-600">
                       <span>Status:</span>
-                      <span className="px-2 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800">
-                        {invoiceLang === 'fr' ? 'Paiement Manuel' : 'Manuelle Zahlung'}
-                      </span>
+                      {paymentStatus === 'paid' ? (
+                        <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-emerald-100 text-emerald-800 flex items-center gap-1">
+                          <Check size={12} /> {invoiceLang === 'fr' ? 'Payée' : 'Bezahlt'}
+                        </span>
+                      ) : (
+                        <span className="px-2.5 py-0.5 rounded text-[11px] font-bold bg-amber-100 text-amber-800">
+                          {invoiceLang === 'fr' ? 'En attente' : 'Offen'}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>

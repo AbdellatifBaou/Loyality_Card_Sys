@@ -22,6 +22,7 @@ function buildInvoiceEmailHtml({
 }) {
   const isFr = lang === 'fr';
   const curr = invoice.currency === 'MAD' ? 'MAD' : '€';
+  const isPaid = invoice.paymentStatus === 'paid';
 
   const paymentMethodLabel = invoice.paymentMethod === 'transfer' 
     ? (isFr ? 'Virement Bancaire' : 'Banküberweisung') 
@@ -117,21 +118,33 @@ function buildInvoiceEmailHtml({
                 ${greeting}
               </p>
               <p style="margin: 0 0 20px 0; font-size: 14px; line-height: 1.6; color: #a3a3a3;">
-                ${isFr 
-                  ? `Veuillez trouver ci-dessous le récapitulatif détaillé de votre facture pour <strong>${invoice.period || 'Marketif Loyalty'}</strong>.`
-                  : `anbei erhalten Sie die Abrechnung für <strong>${invoice.period || 'Marketif Loyalty'}</strong>.`}
+                ${isPaid
+                  ? (isFr 
+                      ? `Nous confirmons avec remerciements la bonne réception de votre règlement pour <strong>${invoice.period || 'Marketif Loyalty'}</strong>. Veuillez trouver ci-dessous votre reçu et facture acquittée.`
+                      : `wir bestätigen dankend den Zahlungseingang für <strong>${invoice.period || 'Marketif Loyalty'}</strong>. Anbei erhalten Sie Ihre quittierte Rechnung / Zahlungsbestätigung.`)
+                  : (isFr 
+                      ? `Veuillez trouver ci-dessous le récapitulatif détaillé de votre facture pour <strong>${invoice.period || 'Marketif Loyalty'}</strong>.`
+                      : `anbei erhalten Sie die Abrechnung zur Begleichung für <strong>${invoice.period || 'Marketif Loyalty'}</strong>.`)}
               </p>
 
               <!-- Attached PDF Notice Banner -->
-              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 24px; background: rgba(212,175,55,0.08); border: 1px solid rgba(212,175,55,0.28); border-radius: 12px;">
+              <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="margin-bottom: 24px; background: ${isPaid ? 'rgba(34,197,94,0.08)' : 'rgba(212,175,55,0.08)'}; border: 1px solid ${isPaid ? 'rgba(34,197,94,0.28)' : 'rgba(212,175,55,0.28)'}; border-radius: 12px;">
                 <tr>
                   <td style="padding: 12px 16px; font-size: 13px; color: #f5f5f5; line-height: 1.5;">
                     <span style="font-size: 15px; margin-right: 6px;">📎</span>
-                    <strong style="color: #D4AF37;">${isFr ? 'Facture officielle PDF en pièce jointe' : 'Offizielle PDF-Rechnung im Anhang'}:</strong>
+                    <strong style="color: ${isPaid ? '#4ade80' : '#D4AF37'};">
+                      ${isPaid 
+                        ? (isFr ? 'Facture acquittée (PDF) en pièce jointe' : 'Quittierte PDF-Rechnung im Anhang')
+                        : (isFr ? 'Facture officielle PDF en pièce jointe' : 'Offizielle PDF-Rechnung im Anhang')}:
+                    </strong>
                     <span style="color: #cccccc;">
-                      ${isFr 
-                        ? `Le document PDF imprimable pour votre déclaration fiscale et comptabilité est joint à cet e-mail.`
-                        : `Das druckfähige PDF-Dokument für Ihre Buchhaltung und Steuerunterlagen ist dieser E-Mail als Anhang beigefügt.`}
+                      ${isPaid
+                        ? (isFr 
+                            ? `Le document PDF imprimable (Quittance & Reçu) pour votre comptabilité est joint à cet e-mail.`
+                            : `Das druckfähige PDF-Dokument (Quittung & Beleg) für Ihre Buchhaltung und Steuerunterlagen ist beigefügt.`)
+                        : (isFr 
+                            ? `Le document PDF imprimable pour votre déclaration fiscale et comptabilité est joint à cet e-mail.`
+                            : `Das druckfähige PDF-Dokument für Ihre Buchhaltung und Steuerunterlagen ist dieser E-Mail als Anhang beigefügt.`)}
                     </span>
                   </td>
                 </tr>
@@ -172,8 +185,16 @@ function buildInvoiceEmailHtml({
                         <td align="right" style="color: #ffffff; font-weight: 600; padding-bottom: 5px;">${invoice.period || '-'}</td>
                       </tr>
                       <tr>
-                        <td style="color: #a3a3a3;">${isFr ? 'Paiement :' : 'Zahlungsart :'}</td>
-                        <td align="right" style="color: #D4AF37; font-weight: 700;">${paymentMethodLabel}</td>
+                        <td style="color: #a3a3a3; padding-bottom: 5px;">${isFr ? 'Paiement :' : 'Zahlungsart :'}</td>
+                        <td align="right" style="color: #D4AF37; font-weight: 700; padding-bottom: 5px;">${paymentMethodLabel}</td>
+                      </tr>
+                      <tr>
+                        <td style="color: #a3a3a3;">Status :</td>
+                        <td align="right">
+                          ${isPaid 
+                            ? `<span style="display: inline-block; padding: 2px 8px; background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); border-radius: 6px; font-size: 11px; font-weight: 700; color: #4ade80;">${isFr ? 'Payée' : 'Bezahlt'}</span>`
+                            : `<span style="display: inline-block; padding: 2px 8px; background: rgba(245,158,11,0.15); border: 1px solid rgba(245,158,11,0.3); border-radius: 6px; font-size: 11px; font-weight: 700; color: #fbbf24;">${isFr ? 'En attente' : 'Offen'}</span>`}
+                        </td>
                       </tr>
                     </table>
                   </td>
@@ -242,28 +263,41 @@ function buildInvoiceEmailHtml({
                 </tr>
               </table>
 
-              <!-- Payment instructions -->
-              <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.06);">
-                <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">
-                  ${isFr ? 'Instructions de règlement :' : 'Zahlungsinformationen :'}
+              <!-- Payment instructions / Receipt confirmation -->
+              ${isPaid ? `
+                <div style="background: rgba(34,197,94,0.06); border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; border: 1px solid rgba(34,197,94,0.25);">
+                  <div style="font-size: 13px; font-weight: 700; color: #4ade80; margin-bottom: 4px;">
+                    ✓ ${isFr ? 'Paiement confirmé / Facture acquittée' : 'Zahlungseingang bestätigt / Quittung'}
+                  </div>
+                  <div style="font-size: 12px; line-height: 1.6; color: #d4d4d4;">
+                    ${isFr 
+                      ? `Le montant a été intégralement réglé${invoice.paidAt ? ` le ${new Date(invoice.paidAt).toLocaleDateString('fr-FR')}` : ''}. Ce document ainsi que le PDF joint attestent de votre règlement.`
+                      : `Der Betrag wurde vollständig beglichen${invoice.paidAt ? ` am ${new Date(invoice.paidAt).toLocaleDateString('de-DE')}` : ''}. Dieses Dokument und die beigefügte PDF gelten als Zahlungsnachweis.`}
+                  </div>
                 </div>
-                <div style="font-size: 12px; line-height: 1.6; color: #a3a3a3;">
-                  ${company.rib}
-                  <div style="margin-top: 10px; padding: 12px 14px; background: rgba(255,255,255,0.04); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
-                    <div style="font-size: 11px; text-transform: uppercase; color: #D4AF37; font-weight: 700; margin-bottom: 3px;">
-                      ${isFr ? 'Référence à indiquer :' : 'Verwendungszweck :'}
-                    </div>
-                    <div style="font-size: 14px; font-weight: 800; color: #ffffff; font-family: monospace;">
-                      ${invoice.invoiceNumber}
-                    </div>
-                    <div style="font-size: 11px; color: #a3a3a3; margin-top: 4px;">
-                      ${isFr 
-                        ? `Veuillez mentionner la référence "${invoice.invoiceNumber}" lors de votre virement.`
-                        : `Bitte geben Sie bei Überweisungen den Verwendungszweck "${invoice.invoiceNumber}" an.`}
+              ` : `
+                <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.06);">
+                  <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">
+                    ${isFr ? 'Instructions de règlement :' : 'Zahlungsinformationen :'}
+                  </div>
+                  <div style="font-size: 12px; line-height: 1.6; color: #a3a3a3;">
+                    ${company.rib}
+                    <div style="margin-top: 10px; padding: 12px 14px; background: rgba(255,255,255,0.04); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                      <div style="font-size: 11px; text-transform: uppercase; color: #D4AF37; font-weight: 700; margin-bottom: 3px;">
+                        ${isFr ? 'Référence à indiquer :' : 'Verwendungszweck :'}
+                      </div>
+                      <div style="font-size: 14px; font-weight: 800; color: #ffffff; font-family: monospace;">
+                        ${invoice.invoiceNumber}
+                      </div>
+                      <div style="font-size: 11px; color: #a3a3a3; margin-top: 4px;">
+                        ${isFr 
+                          ? `Veuillez mentionner la référence "${invoice.invoiceNumber}" lors de votre virement.`
+                          : `Bitte geben Sie bei Überweisungen den Verwendungszweck "${invoice.invoiceNumber}" an.`}
+                      </div>
                     </div>
                   </div>
                 </div>
-              </div>
+              `}
 
               <!-- Footer Sign-off -->
               <div style="border-top: 1px solid #2a2a2a; padding-top: 20px; font-size: 12px; color: #737373; line-height: 1.6;">

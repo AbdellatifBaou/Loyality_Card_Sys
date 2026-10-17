@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Unlock, Lock, LogOut, BarChart2, BarChart3, Store, DollarSign, Download, FileText, X, Edit3, Search, Filter, RotateCcw, MessageCircle, Mail } from 'lucide-react';
+import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Unlock, Lock, LogOut, BarChart2, BarChart3, Store, DollarSign, Download, FileText, X, Edit3, Search, Filter, RotateCcw, MessageCircle, Mail, Check } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { ADMIN_DICT } from '@/locales/admin';
 import InvoiceModal from '@/components/InvoiceModal';
@@ -2043,6 +2043,7 @@ export default function DashboardPage() {
                         <th className="py-3 px-4">{t.invoiceMerchantCol || 'Händler'}</th>
                         <th className="py-3 px-4">{t.invoiceAmountCol || 'Betrag'}</th>
                         <th className="py-3 px-4">{t.invoicePaymentCol || 'Zahlungsart'}</th>
+                        <th className="py-3 px-4">Status</th>
                         <th className="py-3 px-4 text-right">{t.invoiceActionsCol || 'Aktionen'}</th>
                       </tr>
                     </thead>
@@ -2111,8 +2112,70 @@ export default function DashboardPage() {
                                 {paymentLabel}
                               </span>
                             </td>
+                            <td className="py-3 px-4">
+                              {inv.paymentStatus === 'paid' ? (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 font-bold text-[11px]">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                  {adminLang === 'fr' ? 'Payée' : 'Bezahlt'}
+                                </span>
+                              ) : (
+                                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 font-bold text-[11px]">
+                                  <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                                  {adminLang === 'fr' ? 'En attente' : 'Offen'}
+                                </span>
+                              )}
+                            </td>
                             <td className="py-3 px-4 text-right">
                               <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={async () => {
+                                    const isCurrentlyPaid = inv.paymentStatus === 'paid';
+                                    const newStatus = isCurrentlyPaid ? 'pending' : 'paid';
+                                    const updatedInvoice = {
+                                      ...inv,
+                                      paymentStatus: newStatus,
+                                      paidAt: newStatus === 'paid' ? new Date().toISOString().split('T')[0] : null,
+                                    };
+                                    try {
+                                      const token = typeof window !== 'undefined' ? (localStorage.getItem('admin_auth') || '2025') : '2025';
+                                      const res = await fetch('/api/admin/manual-invoice', {
+                                        method: 'POST',
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                          'Authorization': `Bearer ${token}`,
+                                        },
+                                        body: JSON.stringify({
+                                          merchantId: inv.merchantId,
+                                          invoice: updatedInvoice,
+                                          password: '2025',
+                                        }),
+                                      });
+                                      if (res.ok) {
+                                        setArchivedInvoices(prev => prev.map(item => item.id === inv.id ? updatedInvoice : item));
+                                        showToast(
+                                          newStatus === 'paid'
+                                            ? (adminLang === 'fr' ? 'Facture marquée comme payée !' : 'Rechnung als bezahlt markiert!')
+                                            : (adminLang === 'fr' ? 'Facture marquée comme en attente' : 'Rechnung als offen markiert'),
+                                          'success'
+                                        );
+                                      } else {
+                                        showToast('Fehler beim Aktualisieren', 'error');
+                                      }
+                                    } catch {
+                                      showToast('Fehler beim Aktualisieren des Status', 'error');
+                                    }
+                                  }}
+                                  className={`p-1.5 rounded-lg transition-all ${
+                                    inv.paymentStatus === 'paid'
+                                      ? 'bg-emerald-500/20 text-emerald-400 hover:bg-emerald-500 hover:text-white'
+                                      : 'bg-white/5 text-white/40 hover:bg-emerald-500/20 hover:text-emerald-400'
+                                  }`}
+                                  title={inv.paymentStatus === 'paid'
+                                    ? (adminLang === 'fr' ? 'Déjà payée (Cliquer pour repasser en attente)' : 'Bereits bezahlt (Klicken für Status Offen)')
+                                    : (adminLang === 'fr' ? 'Marquer comme payée' : 'Als bezahlt markieren')}
+                                >
+                                  <Check size={14} />
+                                </button>
                                 <button
                                   onClick={() => setEditingArchivedInvoice({ merchant: matchingMerchant, invoice: inv })}
                                   className="px-3 py-1.5 bg-[#D4AF37]/10 hover:bg-[#D4AF37] text-[#D4AF37] hover:text-black font-semibold text-xs rounded-lg transition-all flex items-center gap-1 border border-[#D4AF37]/20"
