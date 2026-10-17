@@ -55,7 +55,11 @@ export default function InvoiceModal({ merchant, onClose, adminLang }: InvoiceMo
   // Default Items based on package
   const getPackagePrice = () => {
     if (merchant?.package_type === 'gold') return 89;
-    if (merchant?.package_type === 'custom') return merchant?.custom_price || 199;
+    if (merchant?.package_type === 'custom') {
+      return merchant?.custom_price !== null && merchant?.custom_price !== undefined && !isNaN(Number(merchant.custom_price))
+        ? Number(merchant.custom_price)
+        : 199;
+    }
     return 49; // silber
   };
 

@@ -1450,7 +1450,11 @@ export default function DashboardPage() {
             {(() => {
               const getMonthlyRate = (m: any) => {
                 if (m.package_type === 'gold') return 89;
-                if (m.package_type === 'custom') return m.custom_price || 199;
+                if (m.package_type === 'custom') {
+                  return m.custom_price !== null && m.custom_price !== undefined && !isNaN(Number(m.custom_price))
+                    ? Number(m.custom_price)
+                    : 199;
+                }
                 return 49; // silber
               };
 
