@@ -47,17 +47,21 @@ export async function POST(req: Request) {
       }
     }
 
-    // Calculate new end date based on current date + months
-    const currentPeriodEnd = new Date();
-    currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + parseInt(months, 10));
-
-    // Update merchant status and mark setup fee as paid/waived
+    // Fetch merchant data to check existing period and push_settings
     const { data: mData } = await adminSupabase
       .from('merchants_loyality')
-      .select('push_settings')
+      .select('push_settings, current_period_end')
       .eq('id', merchantId)
       .single();
     const currentPush = mData?.push_settings || {};
+
+    // Calculate new end date: extend from future end date if still active, otherwise from now
+    const now = new Date();
+    const existingEnd = mData?.current_period_end ? new Date(mData.current_period_end) : null;
+    const baseDate = (existingEnd && existingEnd > now) ? new Date(existingEnd) : new Date(now);
+    baseDate.setMonth(baseDate.getMonth() + parseInt(months, 10));
+    const currentPeriodEnd = baseDate;
+
 
     const { error } = await adminSupabase
       .from('merchants_loyality')

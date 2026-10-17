@@ -67,8 +67,8 @@ export default function DashboardPage() {
   // Table Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
   const [filterCountry, setFilterCountry] = useState<'all' | 'de' | 'fr'>('all');
-  const [filterPayment, setFilterPayment] = useState<'all' | 'stripe' | 'manual' | 'none'>('all');
-  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
+  const [filterPayment, setFilterPayment] = useState<'all' | 'stripe' | 'manual' | 'manual_expired' | 'none'>('all');
+  const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'expired' | 'unpaid' | 'inactive'>('all');
   const [filterPackage, setFilterPackage] = useState<'all' | 'silber' | 'gold' | 'custom'>('all');
 
 
@@ -786,9 +786,105 @@ export default function DashboardPage() {
                 </button>
               </div>
 
+              {/* KPI Summary Cards: Auf einen Blick Übersicht */}
+              {(() => {
+                const now = Date.now();
+                let countActivePaid = 0;
+                let countOverdue = 0;
+                let countNoAbo = 0;
+
+                allMerchants.forEach((m: any) => {
+                  const isManual = m.stripe_subscription_id === 'manual_invoice';
+                  const isStripe = !!m.stripe_subscription_id && !isManual;
+                  const periodEndMs = m.current_period_end ? new Date(m.current_period_end).getTime() : null;
+                  const isExpired = periodEndMs !== null ? periodEndMs < now : false;
+
+                  if (isStripe && (m.subscription_status === 'active' || m.subscription_status === 'trialing')) {
+                    countActivePaid++;
+                  } else if (isManual && !isExpired && m.subscription_status === 'active') {
+                    countActivePaid++;
+                  } else if ((isManual && isExpired) || (isStripe && (m.subscription_status === 'past_due' || isExpired))) {
+                    countOverdue++;
+                  } else {
+                    countNoAbo++;
+                  }
+                });
+
+                return (
+                  <div className="p-4 sm:p-5 border-b border-white/5 bg-white/[0.015] grid grid-cols-2 lg:grid-cols-4 gap-3">
+                    {/* 1. Alle Partner */}
+                    <button
+                      onClick={() => { setFilterStatus('all'); setFilterPayment('all'); }}
+                      className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${filterStatus === 'all' && filterPayment === 'all' ? 'bg-white/10 border-[#D4AF37] ring-1 ring-[#D4AF37]' : 'bg-black/30 border-white/10 hover:border-white/20'}`}
+                    >
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-white/50 block mb-1">
+                        👥 {t.kpiAllMerchants || 'Alle Partner'}
+                      </span>
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-2xl font-black text-white">{allMerchants.length}</span>
+                        <span className="text-[11px] text-white/40">Gesamt</span>
+                      </div>
+                    </button>
+
+                    {/* 2. Aktiv bezahlt */}
+                    <button
+                      onClick={() => { setFilterStatus('active'); setFilterPayment('all'); }}
+                      className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${filterStatus === 'active' ? 'bg-green-500/20 border-green-500 ring-1 ring-green-500' : 'bg-green-500/5 border-green-500/20 hover:border-green-500/40'}`}
+                    >
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-green-400 block mb-1">
+                        🟢 {t.kpiActivePaid || 'Aktiv bezahlt'}
+                      </span>
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-2xl font-black text-green-400">{countActivePaid}</span>
+                        <span className="text-[11px] text-green-400/60 font-semibold">Bezahlt</span>
+                      </div>
+                    </button>
+
+                    {/* 3. Überfällig / Abgelaufen */}
+                    <button
+                      onClick={() => { setFilterStatus('expired'); setFilterPayment('all'); }}
+                      className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${filterStatus === 'expired' ? 'bg-red-500/25 border-red-500 ring-2 ring-red-500 shadow-lg shadow-red-500/20' : countOverdue > 0 ? 'bg-red-500/10 border-red-500/30 hover:border-red-500/50' : 'bg-white/[0.02] border-white/5 hover:border-white/20'}`}
+                    >
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-red-400 block mb-1">
+                        ⚠️ {t.kpiOverdue || 'Überfällig / Abgelaufen'}
+                      </span>
+                      <div className="flex items-baseline justify-between">
+                        <span className={`text-2xl font-black ${countOverdue > 0 ? 'text-red-400 animate-pulse' : 'text-white/40'}`}>{countOverdue}</span>
+                        <span className={`text-[11px] font-bold ${countOverdue > 0 ? 'text-red-400' : 'text-white/40'}`}>
+                          {countOverdue > 0 ? 'Zahlung fällig!' : 'Alles bezahlt'}
+                        </span>
+                      </div>
+                    </button>
+
+                    {/* 4. Ohne Abo */}
+                    <button
+                      onClick={() => { setFilterStatus('unpaid'); setFilterPayment('all'); }}
+                      className={`p-3.5 rounded-2xl border text-left transition-all cursor-pointer ${filterStatus === 'unpaid' ? 'bg-white/15 border-white/40 ring-1 ring-white/40' : 'bg-white/[0.02] border-white/5 hover:border-white/20'}`}
+                    >
+                      <span className="text-[10px] uppercase font-bold tracking-wider text-white/50 block mb-1">
+                        ⚪ {t.kpiNoAbo || 'Ohne Abo / Unbezahlt'}
+                      </span>
+                      <div className="flex items-baseline justify-between">
+                        <span className="text-2xl font-black text-white/70">{countNoAbo}</span>
+                        <span className="text-[11px] text-white/40">Kein Abo</span>
+                      </div>
+                    </button>
+                  </div>
+                );
+              })()}
+
               {/* Filter & Search Bar */}
               {(() => {
+                const now = Date.now();
                 const filteredList = allMerchants.filter((m: any) => {
+                  const isManual = m.stripe_subscription_id === 'manual_invoice';
+                  const isStripe = !!m.stripe_subscription_id && !isManual;
+                  const periodEndMs = m.current_period_end ? new Date(m.current_period_end).getTime() : null;
+                  const isExpired = periodEndMs !== null ? periodEndMs < now : false;
+                  const isActivePaid = (isStripe && (m.subscription_status === 'active' || m.subscription_status === 'trialing')) ||
+                                       (isManual && !isExpired && m.subscription_status === 'active');
+                  const isOverdue = (isManual && isExpired) || (isStripe && (m.subscription_status === 'past_due' || isExpired));
+
                   if (searchQuery) {
                     const q = searchQuery.toLowerCase();
                     const matchName = m.name?.toLowerCase().includes(q);
@@ -801,12 +897,15 @@ export default function DashboardPage() {
                     if (filterCountry === 'de' && isFr) return false;
                   }
                   if (filterPayment !== 'all') {
-                    if (filterPayment === 'manual' && m.stripe_subscription_id !== 'manual_invoice') return false;
-                    if (filterPayment === 'stripe' && (!m.stripe_subscription_id || m.stripe_subscription_id === 'manual_invoice')) return false;
+                    if (filterPayment === 'manual' && (!isManual || isExpired)) return false;
+                    if (filterPayment === 'manual_expired' && (!isManual || !isExpired)) return false;
+                    if (filterPayment === 'stripe' && (!m.stripe_subscription_id || isManual)) return false;
                     if (filterPayment === 'none' && m.stripe_subscription_id) return false;
                   }
                   if (filterStatus !== 'all') {
-                    if (filterStatus === 'active' && m.is_active === false) return false;
+                    if (filterStatus === 'active' && !isActivePaid) return false;
+                    if (filterStatus === 'expired' && !isOverdue) return false;
+                    if (filterStatus === 'unpaid' && (isActivePaid || isOverdue)) return false;
                     if (filterStatus === 'inactive' && m.is_active !== false) return false;
                   }
                   if (filterPackage !== 'all') {
@@ -870,7 +969,8 @@ export default function DashboardPage() {
                         >
                           <option className="bg-[#111111] text-white" value="all">{t.filterAllPayments || 'Alle Zahlungen'}</option>
                           <option className="bg-[#111111] text-white" value="stripe">{t.filterStripe || '💳 Stripe Abo'}</option>
-                          <option className="bg-[#111111] text-white" value="manual">{t.filterManual || '📄 Manuelle Rechnung'}</option>
+                          <option className="bg-[#111111] text-white" value="manual">{t.filterManual || '📄 Manuelle Rechnung (Aktiv)'}</option>
+                          <option className="bg-[#111111] text-white" value="manual_expired">{t.filterManualExpired || '⚠️ Manuell Abgelaufen'}</option>
                           <option className="bg-[#111111] text-white" value="none">{t.filterNoPayment || '❌ Kein Abo'}</option>
                         </select>
 
@@ -881,7 +981,9 @@ export default function DashboardPage() {
                           className="bg-[#111111] border border-white/10 rounded-xl px-3 py-2 text-white outline-none focus:border-[#D4AF37] text-xs font-medium"
                         >
                           <option className="bg-[#111111] text-white" value="all">{t.filterAllStatus || 'Alle Status'}</option>
-                          <option className="bg-[#111111] text-white" value="active">{t.filterActive || '🟢 Aktiv'}</option>
+                          <option className="bg-[#111111] text-white" value="active">{t.filterActive || '🟢 Aktiv (Bezahlt)'}</option>
+                          <option className="bg-[#111111] text-white" value="expired">{t.filterExpired || '⚠️ Überfällig / Abgelaufen'}</option>
+                          <option className="bg-[#111111] text-white" value="unpaid">{t.filterUnpaid || '❌ Ohne Abo / Unbezahlt'}</option>
                           <option className="bg-[#111111] text-white" value="inactive">{t.filterInactive || '🔴 Deaktiviert'}</option>
                         </select>
 
@@ -897,6 +999,7 @@ export default function DashboardPage() {
                           <option className="bg-[#111111] text-white" value="custom">Custom</option>
                         </select>
                       </div>
+
 
                       {/* Counter & Reset */}
                       <div className="flex items-center gap-3 text-xs text-white/50 shrink-0">
@@ -1011,103 +1114,176 @@ export default function DashboardPage() {
                             <span className="text-white font-bold">{merchantStats.get(m.id) || 0}</span>
                             <span className="text-white/40 text-xs"> {t.customers}</span>
                           </td>
-                          <td className="p-4">
-                            <div className="flex flex-col gap-1.5 items-start">
-                              {m.is_active === false ? (
-                                <button onClick={() => toggleMerchant(m.id, false)} className="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 transition-all cursor-pointer">
-                                  {adminLang === 'fr' ? 'Désactivé' : 'Deaktiviert'}
-                                </button>
-                              ) : (
-                                <button onClick={() => toggleMerchant(m.id, true)} className="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-green-500/10 text-green-500 border border-green-500/20 hover:bg-green-500/20 transition-all cursor-pointer">
-                                  {adminLang === 'fr' ? 'Actif' : 'Aktiv'}
-                                </button>
-                              )}
-                              {((m.failed_login_attempts >= 5) || (m.lockout_until && new Date(m.lockout_until) > new Date())) && (
-                                <div className="flex items-center gap-1.5">
-                                  <span className="px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wide bg-red-500 text-white animate-pulse">
-                                    🔒 {adminLang === 'fr' ? 'VERROUILLÉ (5x)' : 'GESPERRT (5x)'}
-                                  </span>
-                                  <button
-                                    onClick={() => handleUnlockMerchant(m.id)}
-                                    className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border border-yellow-500/30 transition-all"
-                                    title={adminLang === 'fr' ? 'Déverrouiller le compte' : 'Account entsperren'}
-                                  >
-                                    {adminLang === 'fr' ? 'Débloquer' : 'Entsperren'}
-                                  </button>
-                                </div>
-                              )}
-                            </div>
-                          </td>
-                          <td className="p-4">
-                            <div className="flex flex-col gap-1">
-                              <span className="text-xs font-bold text-white">
-                                {m.stripe_subscription_id === 'manual_invoice' ? t.manualInvoice : (m.stripe_subscription_id ? t.stripeAbo : t.noAbo)}
-                              </span>
-                              <span className={`text-[10px] font-bold ${m.subscription_status === 'active' || m.subscription_status === 'cancels_at_period_end' ? 'text-green-500' : 'text-red-500'}`}>
-                                {m.subscription_status === 'active' ? t.statusActive : m.subscription_status === 'cancels_at_period_end' ? t.statusCanceledActive : m.subscription_status === 'unpaid' ? (adminLang === 'fr' ? 'NON PAYÉ' : 'UNBEZAHLT') : (m.subscription_status || 'UNBEKANNT').toUpperCase()}
-                                {m.current_period_end && ` ${t.until} ${new Date(m.current_period_end).toLocaleDateString('de-DE')})`}
-                              </span>
-                            </div>
-                          </td>
-                          <td className="p-4 text-white/50 text-xs">
-                            {new Date(m.created_at).toLocaleDateString('de-DE')}
-                          </td>
-                          <td className="p-4 pr-6 text-right whitespace-nowrap min-w-[190px]">
-                            <div className="flex items-center justify-end gap-2">
-                              {m.contact_phone && (
-                                <a
-                                  href={`https://wa.me/${(() => {
-                                    let p = m.contact_phone.replace(/[^0-9+]/g, '');
-                                    if (p.startsWith('+')) return p.substring(1);
-                                    if (p.startsWith('00')) return p.substring(2);
-                                    if (p.startsWith('0')) return (m.language === 'fr' ? '212' : '49') + p.substring(1);
-                                    return p;
-                                  })()}`}
-                                  target="_blank"
-                                  rel="noreferrer"
-                                  title={adminLang === 'fr' ? `Contacter ${m.contact_name || m.name} par WhatsApp` : `${m.contact_name || m.name} per WhatsApp kontaktieren`}
-                                  className="p-2 bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 rounded-lg transition-colors border border-[#25D366]/20 shrink-0"
-                                >
-                                  <MessageCircle size={14} />
-                                </a>
-                              )}
-                              <button 
-                                onClick={() => setReportMerchant(m)}
-                                title={adminLang === 'fr' ? "Rapport de performance" : "Leistungsbericht / Rapport erstellen"}
-                                className="p-2 bg-[#8097ff]/10 text-[#8097ff] hover:bg-[#8097ff]/20 rounded-lg transition-colors border border-[#8097ff]/20 shrink-0"
-                              >
-                                <BarChart3 size={14} />
-                              </button>
-                              <button 
-                                onClick={() => setInvoiceMerchant(m)}
-                                title={t.createInvoiceTooltip || "Rechnung erstellen"}
-                                className="p-2 bg-[#D4AF37]/10 text-[#D4AF37] hover:bg-[#D4AF37]/20 rounded-lg transition-colors border border-[#D4AF37]/20 shrink-0"
-                              >
-                                <FileText size={14} />
-                              </button>
-                              <button 
-                                onClick={() => setEditMerchant(m)}
-                                title="Bearbeiten"
-                                className="p-2 bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 rounded-lg transition-colors border border-yellow-500/20 shrink-0"
-                              >
-                                <Edit3 size={14} />
-                              </button>
-                              <button 
-                                onClick={() => setManualActivationMerchant(m)}
-                                title={t.manualActivationTooltip}
-                                className="p-2 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors border border-blue-500/20 shrink-0"
-                              >
-                                <Unlock size={14} />
-                              </button>
-                              <button
-                                onClick={() => setConfirmDeleteMerchant(m)}
-                                title={t.deleteMerchantTooltip}
-                                className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors border border-red-500/20 shrink-0"
-                              >
-                                <Trash2 size={14} />
-                              </button>
-                            </div>
-                          </td>
+                          {(() => {
+                            const isManual = m.stripe_subscription_id === 'manual_invoice';
+                            const isStripe = !!m.stripe_subscription_id && !isManual;
+                            const now = Date.now();
+                            const periodEndMs = m.current_period_end ? new Date(m.current_period_end).getTime() : null;
+                            const isExpired = periodEndMs !== null ? periodEndMs < now : false;
+                            const daysDiff = periodEndMs !== null ? Math.round(Math.abs(now - periodEndMs) / (1000 * 60 * 60 * 24)) : 0;
+                            const dateFormatted = m.current_period_end ? new Date(m.current_period_end).toLocaleDateString('de-DE') : '';
+
+                            return (
+                              <>
+                                <td className="p-4">
+                                  <div className="flex flex-col gap-1.5 items-start">
+                                    {m.is_active === false ? (
+                                      <button onClick={() => toggleMerchant(m.id, false)} className="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-red-500/10 text-red-500 border border-red-500/20 hover:bg-red-500/20 transition-all cursor-pointer">
+                                        {adminLang === 'fr' ? 'Désactivé' : 'Deaktiviert'}
+                                      </button>
+                                    ) : (
+                                      <button onClick={() => toggleMerchant(m.id, true)} className="px-2 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest bg-green-500/10 text-green-500 border border-green-500/20 hover:bg-green-500/20 transition-all cursor-pointer">
+                                        {adminLang === 'fr' ? 'Actif' : 'Aktiv'}
+                                      </button>
+                                    )}
+                                    {isExpired && m.is_active !== false && (
+                                      <span className="px-2 py-0.5 rounded text-[9px] font-extrabold bg-red-500/20 text-red-400 border border-red-500/30 flex items-center gap-1 animate-pulse">
+                                        ⚠️ {t.paymentDue || 'Zahlung fällig'}
+                                      </span>
+                                    )}
+                                    {((m.failed_login_attempts >= 5) || (m.lockout_until && new Date(m.lockout_until) > new Date())) && (
+                                      <div className="flex items-center gap-1.5">
+                                        <span className="px-2 py-0.5 rounded-md text-[9px] font-extrabold uppercase tracking-wide bg-red-500 text-white animate-pulse">
+                                          🔒 {adminLang === 'fr' ? 'VERROUILLÉ (5x)' : 'GESPERRT (5x)'}
+                                        </span>
+                                        <button
+                                          onClick={() => handleUnlockMerchant(m.id)}
+                                          className="px-2 py-0.5 rounded-md text-[9px] font-bold bg-yellow-500/20 text-yellow-400 hover:bg-yellow-500/30 border border-yellow-500/30 transition-all"
+                                          title={adminLang === 'fr' ? 'Déverrouiller le compte' : 'Account entsperren'}
+                                        >
+                                          {adminLang === 'fr' ? 'Débloquer' : 'Entsperren'}
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="p-4">
+                                  <div className="flex flex-col gap-1">
+                                    {isStripe ? (
+                                      <>
+                                        <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                                          <CreditCard size={12} className="text-green-400" /> {t.stripeAbo || 'Stripe Abo'}
+                                        </span>
+                                        <span className="text-[10px] font-bold text-green-400 flex items-center gap-1">
+                                          🟢 {t.statusActive || 'AKTIV'} (Automatisch)
+                                        </span>
+                                      </>
+                                    ) : isManual ? (
+                                      isExpired ? (
+                                        <div className="flex flex-col gap-1">
+                                          <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                                            <FileText size={12} className="text-yellow-400" /> {t.manualInvoice || 'Manuelle Rechnung'}
+                                          </span>
+                                          <span className="px-2 py-0.5 rounded-md text-[10px] font-black bg-red-500/25 text-red-400 border border-red-500/40 inline-flex items-center gap-1 w-fit">
+                                            ⚠️ {t.statusExpired || 'ABGELAUFEN'} ({dateFormatted})
+                                          </span>
+                                          <span className="text-[10px] text-red-400 font-bold">
+                                            fällig seit {daysDiff} Tagen
+                                          </span>
+                                          <button
+                                            onClick={() => setManualActivationMerchant(m)}
+                                            className="mt-0.5 px-2.5 py-1 rounded-lg text-[10px] font-bold bg-[#D4AF37]/20 text-[#D4AF37] hover:bg-[#D4AF37]/30 border border-[#D4AF37]/40 flex items-center gap-1 w-fit transition-all cursor-pointer"
+                                          >
+                                            <RefreshCw size={10} /> {t.renewNow || 'Verlängern'}
+                                          </button>
+                                        </div>
+                                      ) : (
+                                        <div className="flex flex-col gap-0.5">
+                                          <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                                            <FileText size={12} className="text-green-400" /> {t.manualInvoice || 'Manuelle Rechnung'}
+                                          </span>
+                                          <span className="text-[10px] font-bold text-green-400">
+                                            🟢 {t.statusActive || 'AKTIV'} (bis {dateFormatted})
+                                          </span>
+                                          <span className="text-[10px] text-white/40">
+                                            noch {daysDiff} Tage
+                                          </span>
+                                        </div>
+                                      )
+                                    ) : (
+                                      <div className="flex flex-col gap-1">
+                                        <span className="text-xs font-bold text-white/50">{t.noAbo || 'Kein Abo'}</span>
+                                        <span className="text-[10px] font-bold text-white/30">⚪ Noch nie bezahlt</span>
+                                        <button
+                                          onClick={() => setManualActivationMerchant(m)}
+                                          className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 border border-blue-500/30 flex items-center gap-1 w-fit transition-all cursor-pointer mt-0.5"
+                                        >
+                                          <Unlock size={10} /> Freischalten
+                                        </button>
+                                      </div>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="p-4 text-white/50 text-xs">
+                                  {new Date(m.created_at).toLocaleDateString('de-DE')}
+                                </td>
+                                <td className="p-4 pr-6 text-right whitespace-nowrap min-w-[190px]">
+                                  <div className="flex items-center justify-end gap-2">
+                                    {m.contact_phone && (
+                                      <a
+                                        href={`https://wa.me/${(() => {
+                                          let p = m.contact_phone.replace(/[^0-9+]/g, '');
+                                          if (p.startsWith('+')) return p.substring(1);
+                                          if (p.startsWith('00')) return p.substring(2);
+                                          if (p.startsWith('0')) return (m.language === 'fr' ? '212' : '49') + p.substring(1);
+                                          return p;
+                                        })()}?text=${encodeURIComponent(
+                                          isExpired
+                                            ? (adminLang === 'fr'
+                                                ? `Bonjour ${m.contact_name || m.name}, votre abonnement Marketif pour la carte ${m.name} est arrivé à échéance le ${dateFormatted}. Merci de nous contacter pour le renouvellement.`
+                                                : `Hallo ${m.contact_name || m.name}, deine Treuekarten-Lizenz für ${m.name} bei Marketif ist am ${dateFormatted} abgelaufen. Bitte gib uns kurz Bescheid bezüglich der Verlängerung. Viele Grüße!`)
+                                            : (adminLang === 'fr'
+                                                ? `Bonjour ${m.contact_name || m.name}, comment pouvons-nous vous aider aujourd'hui ?`
+                                                : `Hallo ${m.contact_name || m.name}, wie kann ich dir heute weiterhelfen?`)
+                                        )}`}
+                                        target="_blank"
+                                        rel="noreferrer"
+                                        title={isExpired ? (adminLang === 'fr' ? 'Envoyer un rappel de paiement WhatsApp' : 'Zahlungserinnerung per WhatsApp senden') : (adminLang === 'fr' ? `Contacter ${m.contact_name || m.name} par WhatsApp` : `${m.contact_name || m.name} per WhatsApp kontaktieren`)}
+                                        className={`p-2 rounded-lg transition-colors border shrink-0 ${isExpired ? 'bg-amber-500/20 text-amber-400 hover:bg-amber-500/30 border-amber-500/40 animate-pulse' : 'bg-[#25D366]/10 text-[#25D366] hover:bg-[#25D366]/20 border-[#25D366]/20'}`}
+                                      >
+                                        <MessageCircle size={14} />
+                                      </a>
+                                    )}
+                                    <button 
+                                      onClick={() => setReportMerchant(m)}
+                                      title={adminLang === 'fr' ? "Rapport de performance" : "Leistungsbericht / Rapport erstellen"}
+                                      className="p-2 bg-[#8097ff]/10 text-[#8097ff] hover:bg-[#8097ff]/20 rounded-lg transition-colors border border-[#8097ff]/20 shrink-0"
+                                    >
+                                      <BarChart3 size={14} />
+                                    </button>
+                                    <button 
+                                      onClick={() => setInvoiceMerchant(m)}
+                                      title={t.createInvoiceTooltip || "Rechnung erstellen"}
+                                      className="p-2 bg-[#D4AF37]/10 text-[#D4AF37] hover:bg-[#D4AF37]/20 rounded-lg transition-colors border border-[#D4AF37]/20 shrink-0"
+                                    >
+                                      <FileText size={14} />
+                                    </button>
+                                    <button 
+                                      onClick={() => setEditMerchant(m)}
+                                      title="Bearbeiten"
+                                      className="p-2 bg-yellow-500/10 text-yellow-500 hover:bg-yellow-500/20 rounded-lg transition-colors border border-yellow-500/20 shrink-0"
+                                    >
+                                      <Edit3 size={14} />
+                                    </button>
+                                    <button 
+                                      onClick={() => setManualActivationMerchant(m)}
+                                      title={t.manualActivationTooltip}
+                                      className="p-2 bg-blue-500/10 text-blue-400 hover:bg-blue-500/20 rounded-lg transition-colors border border-blue-500/20 shrink-0"
+                                    >
+                                      <Unlock size={14} />
+                                    </button>
+                                    <button
+                                      onClick={() => setConfirmDeleteMerchant(m)}
+                                      title={t.deleteMerchantTooltip}
+                                      className="p-2 bg-red-500/10 text-red-500 hover:bg-red-500/20 rounded-lg transition-colors border border-red-500/20 shrink-0"
+                                    >
+                                      <Trash2 size={14} />
+                                    </button>
+                                  </div>
+                                </td>
+                              </>
+                            );
+                          })()}
                         </tr>
                       ));
                     })()}

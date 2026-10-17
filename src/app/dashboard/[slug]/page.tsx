@@ -1508,9 +1508,23 @@ export default function MerchantDashboardPage({ params }: { params: Promise<{ sl
                       {t.subscriptionIs} <span className="text-yellow-500 font-bold">{t.cancelled}</span>{t.activeUntil} <span className="font-bold text-white">{merchant.current_period_end ? new Date(merchant.current_period_end).toLocaleDateString('de-DE') : t.endOfBillingPeriod}</span>{t.reactivateAnytime}
                     </p>
                   ) : merchant?.stripe_subscription_id === 'manual_invoice' ? (
-                    <p className="text-sm text-white/70 mb-6">
-                      {t.subscriptionIs} <span className="text-green-500 font-bold">{t.active}</span> bis zum <span className="font-bold text-white">{merchant.current_period_end ? new Date(merchant.current_period_end).toLocaleDateString('de-DE') : t.endOfBillingPeriod}</span>{t.manualInvoiceBilling}
-                    </p>
+                    merchant?.current_period_end && new Date(merchant.current_period_end).getTime() < Date.now() ? (
+                      <div className="p-4 rounded-xl bg-red-500/10 border border-red-500/20 mb-6">
+                        <p className="text-sm text-red-400 font-bold mb-1">
+                          ⚠️ {merchant.language === 'fr' ? 'Abonnement expiré depuis le ' : 'Abonnement abgelaufen seit dem '}
+                          <span className="text-white underline">{new Date(merchant.current_period_end).toLocaleDateString('de-DE')}</span>
+                        </p>
+                        <p className="text-xs text-white/60">
+                          {merchant.language === 'fr'
+                            ? 'Veuillez renouveler votre facture manuelle ou passer au paiement automatique Stripe pour continuer à utiliser votre programme de fidélité.'
+                            : 'Bitte verlängere deine manuelle Rechnung oder wechsle zur automatischen Stripe-Zahlung, um deine Kundenkarte weiterhin uneingeschränkt zu nutzen.'}
+                        </p>
+                      </div>
+                    ) : (
+                      <p className="text-sm text-white/70 mb-6">
+                        {t.subscriptionIs} <span className="text-green-500 font-bold">{t.active}</span> bis zum <span className="font-bold text-white">{merchant.current_period_end ? new Date(merchant.current_period_end).toLocaleDateString('de-DE') : t.endOfBillingPeriod}</span>{t.manualInvoiceBilling}
+                      </p>
+                    )
                   ) : (
                     <p className="text-sm text-white/70 mb-6">
                       {t.subscriptionIs} <span className="text-green-500 font-bold">{t.active}</span>{t.manageInPortal}
