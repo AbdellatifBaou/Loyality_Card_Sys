@@ -134,8 +134,20 @@ export default function DashboardPage() {
       setEditMerchantContactEmail(editMerchant.contact_email || '');
       setEditMerchantAddress(editMerchant.address || '');
       setEditMerchantPackage(editMerchant.package_type || 'silber');
-      setEditMerchantCustomPrice(editMerchant.custom_price ? editMerchant.custom_price.toString() : '49');
-      setEditMerchantSetupPrice(editMerchant.setup_price !== undefined && editMerchant.setup_price !== null ? editMerchant.setup_price.toString() : '299');
+      setEditMerchantCustomPrice(
+        editMerchant.custom_price !== undefined && editMerchant.custom_price !== null && !isNaN(Number(editMerchant.custom_price))
+          ? editMerchant.custom_price.toString()
+          : (editMerchant.push_settings?.custom_price !== undefined && editMerchant.push_settings?.custom_price !== null && !isNaN(Number(editMerchant.push_settings?.custom_price))
+            ? editMerchant.push_settings.custom_price.toString()
+            : '49')
+      );
+      setEditMerchantSetupPrice(
+        editMerchant.setup_price !== undefined && editMerchant.setup_price !== null && !isNaN(Number(editMerchant.setup_price))
+          ? editMerchant.setup_price.toString()
+          : (editMerchant.push_settings?.setup_price !== undefined && editMerchant.push_settings?.setup_price !== null && !isNaN(Number(editMerchant.push_settings?.setup_price))
+            ? editMerchant.push_settings.setup_price.toString()
+            : '0')
+      );
     }
   }, [editMerchant]);
 
@@ -180,12 +192,50 @@ export default function DashboardPage() {
           contactEmail: editMerchantContactEmail,
           address: editMerchantAddress,
           packageType: editMerchantPackage,
-          customPrice: editMerchantPackage === 'custom' && editMerchantCustomPrice ? parseFloat(editMerchantCustomPrice) : null,
-          setupPrice: parseFloat(editMerchantSetupPrice) || 0
+          customPrice: editMerchantPackage === 'custom' && editMerchantCustomPrice !== '' && editMerchantCustomPrice !== undefined && !isNaN(Number(editMerchantCustomPrice))
+            ? parseFloat(editMerchantCustomPrice)
+            : (editMerchantPackage === 'custom' ? 0 : null),
+          setupPrice: editMerchantSetupPrice !== '' && editMerchantSetupPrice !== undefined && !isNaN(Number(editMerchantSetupPrice))
+            ? parseFloat(editMerchantSetupPrice)
+            : 0
         })
       });
       const data = await res.json();
       if (data.success) {
+        const savedCustomPrice = editMerchantPackage === 'custom' && editMerchantCustomPrice !== '' && !isNaN(Number(editMerchantCustomPrice))
+          ? parseFloat(editMerchantCustomPrice)
+          : (editMerchantPackage === 'custom' ? 0 : null);
+        const savedSetupPrice = editMerchantSetupPrice !== '' && !isNaN(Number(editMerchantSetupPrice))
+          ? parseFloat(editMerchantSetupPrice)
+          : 0;
+
+        setAllMerchants(prev => prev.map(m => {
+          if (m.id === editMerchant.id) {
+            return {
+              ...m,
+              name: editMerchantName,
+              primary_color: editMerchantColor,
+              logo_url: editMerchantLogo,
+              reward_text: editMerchantRewardText,
+              stamp_goal: editMerchantStampGoal,
+              language: editMerchantLanguage,
+              contact_name: editMerchantContactName,
+              contact_phone: editMerchantContactPhone,
+              contact_email: editMerchantContactEmail,
+              address: editMerchantAddress,
+              package_type: editMerchantPackage,
+              custom_price: savedCustomPrice,
+              setup_price: savedSetupPrice,
+              push_settings: {
+                ...m.push_settings,
+                custom_price: savedCustomPrice,
+                setup_price: savedSetupPrice,
+              }
+            };
+          }
+          return m;
+        }));
+
         showToast('Händler erfolgreich aktualisiert', 'success');
         setEditMerchant(null);
         fetchData();
@@ -380,7 +430,7 @@ export default function DashboardPage() {
       if (isStripe) paymentText = 'Stripe Abo';
       else if (isManual) paymentText = isFr ? 'Facture manuelle / Espèces' : 'Manuelle Rechnung / Bar';
 
-      const pkgPrice = m.package_type === 'gold' ? '89' : (m.package_type === 'custom' ? (m.custom_price || '199') : '49');
+      const pkgPrice = m.package_type === 'gold' ? '89' : (m.package_type === 'custom' ? (m.custom_price !== null && m.custom_price !== undefined ? String(m.custom_price) : '199') : '49');
       const countryText = m.language === 'fr' ? 'Maroc' : 'Deutschland';
       const setupPaidText = m.push_settings?.setup_fee_paid ? (isFr ? 'Oui' : 'Ja') : (isFr ? 'Non' : 'Nein');
       const expiryText = m.current_period_end ? new Date(m.current_period_end).toLocaleDateString(isFr ? 'fr-FR' : 'de-DE') : '-';

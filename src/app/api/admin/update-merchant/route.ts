@@ -48,13 +48,22 @@ export async function POST(req: Request) {
       .maybeSingle();
 
     const currentPush = currentMerchant?.push_settings || {};
+    const parsedCustomPrice = (packageType === 'custom' && customPrice !== undefined && customPrice !== null && customPrice !== '' && !isNaN(Number(customPrice)))
+      ? parseFloat(customPrice)
+      : (packageType === 'custom' ? 0 : null);
+
+    const parsedSetupPrice = (setupPrice !== undefined && setupPrice !== null && setupPrice !== '' && !isNaN(Number(setupPrice)))
+      ? parseFloat(setupPrice)
+      : 0;
+
     const updatedPush = {
       ...currentPush,
       updated_at: new Date().toISOString(),
       contact_name: contactName !== undefined ? contactName : (currentPush.contact_name || null),
       contact_phone: contactPhone !== undefined ? contactPhone : (currentPush.contact_phone || null),
       contact_email: contactEmail !== undefined ? contactEmail : (currentPush.contact_email || null),
-      setup_price: setupPrice !== undefined && setupPrice !== '' ? parseFloat(setupPrice) : (currentPush.setup_price || null),
+      setup_price: parsedSetupPrice,
+      custom_price: parsedCustomPrice,
     };
 
     const updatePayload: any = {
@@ -70,8 +79,8 @@ export async function POST(req: Request) {
       contact_phone: contactPhone !== undefined ? contactPhone : null,
       contact_email: contactEmail !== undefined ? contactEmail : null,
       ...(packageType ? { package_type: packageType } : {}),
-      custom_price: packageType === 'custom' && customPrice !== undefined && customPrice !== '' ? parseFloat(customPrice) : null,
-      ...(setupPrice !== undefined && setupPrice !== '' ? { setup_price: parseFloat(setupPrice) } : {}),
+      custom_price: parsedCustomPrice,
+      setup_price: parsedSetupPrice,
     };
 
     let { error } = await adminSupabase
@@ -85,6 +94,7 @@ export async function POST(req: Request) {
       delete updatePayload.contact_phone;
       delete updatePayload.contact_email;
       delete updatePayload.setup_price;
+      delete updatePayload.custom_price;
       const retry = await adminSupabase
         .from('merchants_loyality')
         .update(updatePayload)

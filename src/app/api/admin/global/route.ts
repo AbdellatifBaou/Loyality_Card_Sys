@@ -45,7 +45,8 @@ export async function POST(req: Request) {
         contact_name: m.contact_name || pushSettings.contact_name || '',
         contact_phone: m.contact_phone || pushSettings.contact_phone || '',
         contact_email: m.contact_email || pushSettings.contact_email || '',
-        setup_price: m.setup_price !== undefined && m.setup_price !== null ? m.setup_price : (pushSettings.setup_price !== undefined && pushSettings.setup_price !== null ? pushSettings.setup_price : 299),
+        setup_price: m.setup_price !== undefined && m.setup_price !== null && !isNaN(Number(m.setup_price)) ? Number(m.setup_price) : (pushSettings.setup_price !== undefined && pushSettings.setup_price !== null && !isNaN(Number(pushSettings.setup_price)) ? Number(pushSettings.setup_price) : 0),
+        custom_price: m.custom_price !== undefined && m.custom_price !== null && !isNaN(Number(m.custom_price)) ? Number(m.custom_price) : (pushSettings.custom_price !== undefined && pushSettings.custom_price !== null && !isNaN(Number(pushSettings.custom_price)) ? Number(pushSettings.custom_price) : null),
         stripe_subscription_id: m.merchant_billing?.[0]?.stripe_subscription_id || m.merchant_billing?.stripe_subscription_id || null
       }; 
     });
