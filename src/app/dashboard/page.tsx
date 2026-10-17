@@ -2080,9 +2080,19 @@ export default function DashboardPage() {
                             ? (inv.invoiceLang === 'fr' ? `Bonjour ${inv.customerContactName}` : `Hallo ${inv.customerContactName}`)
                             : (inv.invoiceLang === 'fr' ? `Bonjour` : `Hallo`);
 
+                          const statusLine = inv.paymentStatus === 'paid'
+                            ? (inv.paymentMethod === 'cash' 
+                                ? (adminLang === 'fr' ? '✅ *Statut :* Payée en espèces (Quittance)' : '✅ *Status :* Bezahlt (Barquittung)')
+                                : (adminLang === 'fr' ? '✅ *Statut :* Payée' : '✅ *Status :* Bezahlt'))
+                            : (adminLang === 'fr' ? `⏳ *Statut :* En attente (Échéance: ${formattedDueDate})` : `⏳ *Status :* Offen (Fällig bis: ${formattedDueDate})`);
+
+                          const vzLine = inv.paymentStatus !== 'paid' && inv.paymentMethod === 'transfer'
+                            ? (adminLang === 'fr' ? `\n📌 *Référence virement :* ${inv.invoiceNumber}` : `\n📌 *Verwendungszweck :* ${inv.invoiceNumber}`)
+                            : '';
+
                           const text = inv.invoiceLang === 'fr'
-                            ? `${greeting},\n\nVoici le récapitulatif de votre facture pour ${inv.period || 'Marketif Loyalty'} :\n\n📄 *N° Facture :* ${inv.invoiceNumber}\n💰 *Montant Total :* ${totalFormatted}\n📅 *Date :* ${formattedDate}\n💳 *Mode de paiement :* ${paymentLabel}\n\nMerci pour votre confiance !\n_Marketif Support_`
-                            : `${greeting},\n\nhier ist die Abrechnung für ${inv.period || 'Marketif Loyalty'} von Marketif:\n\n📄 *Rechnungs-Nr.:* ${inv.invoiceNumber}\n💰 *Gesamtbetrag:* ${totalFormatted}\n📅 *Rechnungsdatum:* ${formattedDate}\n💳 *Zahlungsart:* ${paymentLabel}\n\nVielen Dank für die partnerschaftliche Zusammenarbeit!\n_Marketif Support_`;
+                            ? `${greeting},\n\nVoici le récapitulatif de votre facture pour ${inv.period || 'Marketif Loyalty'} :\n\n📄 *N° Facture :* ${inv.invoiceNumber}\n💰 *Montant Total :* ${totalFormatted}\n📅 *Date :* ${formattedDate}\n💳 *Mode de paiement :* ${paymentLabel}\n${statusLine}${vzLine}\n\nMerci pour votre confiance !\n_Marketif Support_`
+                            : `${greeting},\n\nhier ist die Abrechnung für ${inv.period || 'Marketif Loyalty'} von Marketif:\n\n📄 *Rechnungs-Nr.:* ${inv.invoiceNumber}\n💰 *Gesamtbetrag:* ${totalFormatted}\n📅 *Rechnungsdatum:* ${formattedDate}\n💳 *Zahlungsart:* ${paymentLabel}\n${statusLine}${vzLine}\n\nVielen Dank für die partnerschaftliche Zusammenarbeit!\n_Marketif Support_`;
 
                           if (!phone) {
                             showToast(adminLang === 'fr' ? 'Aucun numéro de téléphone' : 'Keine Telefonnummer vorhanden', 'error');

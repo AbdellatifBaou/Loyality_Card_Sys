@@ -250,10 +250,20 @@ export function generateInvoicePdf(invoice: InvoicePdfData, company: CompanyDeta
   doc.text(paymentLabel, rightCardX + 5, payY);
   payY += 4.5;
 
+  const isCash = invoice.paymentMethod === 'cash';
+  const isCard = invoice.paymentMethod === 'card';
+  const isTransfer = invoice.paymentMethod === 'transfer';
+
+  const methodSubtitle = isCash
+    ? (isFr ? 'Reglement en especes / Recu de caisse' : 'Barzahlung / Quittung ueber Barbetrag')
+    : isCard
+    ? (isFr ? 'Transaction par carte bancaire' : 'Kartenzahlung / Elektronisch')
+    : company.rib;
+
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(7.5);
   doc.setTextColor(...darkGray);
-  doc.text(company.rib, rightCardX + 5, payY);
+  doc.text(methodSubtitle, rightCardX + 5, payY);
   payY += 5;
 
   const isPaid = invoice.paymentStatus === 'paid';
@@ -270,22 +280,58 @@ export function generateInvoicePdf(invoice: InvoicePdfData, company: CompanyDeta
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(7.5);
     doc.setTextColor(22, 101, 52); // #166534
-    doc.text(isFr ? 'Paiement confirme' : 'Zahlungseingang bestaetigt', rightCardX + 8, payY + 4.5);
+    const boxTitle = isCash
+      ? (isFr ? 'Especes recues avec remerciements' : 'Barzahlung dankend erhalten')
+      : (isFr ? 'Paiement confirme' : 'Zahlungseingang bestaetigt');
+    doc.text(boxTitle, rightCardX + 8, payY + 4.5);
 
     doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.5);
+    doc.setFontSize(8);
     doc.setTextColor(...blackColor);
-    doc.text(isFr ? 'Facture acquittee' : 'Betrag vollstaendig erhalten', rightCardX + 8, payY + 8.8);
+    const boxSubtitle = isCash
+      ? (isFr ? 'Recu officiel de paiement' : 'Offizielle Barquittung')
+      : (isFr ? 'Facture acquittee' : 'Betrag vollstaendig erhalten');
+    doc.text(boxSubtitle, rightCardX + 8, payY + 8.8);
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(6.8);
     doc.setTextColor(22, 101, 52);
-    const paidMsg = isFr
-      ? `Reglement effectue${invoice.paidAt ? ` le ${formatDate(invoice.paidAt)}` : ''}. Quittance / Justificatif.`
-      : `Zahlung verbucht${invoice.paidAt ? ` am ${formatDate(invoice.paidAt)}` : ''}. Dieser Beleg gilt als Quittung.`;
+    const paidMsg = isCash
+      ? (isFr
+          ? `Reglement de ${Number(invoice.total || 0).toFixed(2)} ${currSymbol} en especes${invoice.paidAt ? ` le ${formatDate(invoice.paidAt)}` : ''}. Justificatif.`
+          : `Betrag von ${Number(invoice.total || 0).toFixed(2)} ${currSymbol} bar beglichen${invoice.paidAt ? ` am ${formatDate(invoice.paidAt)}` : ''}. Offizielle Quittung.`)
+      : (isFr
+          ? `Reglement effectue${invoice.paidAt ? ` le ${formatDate(invoice.paidAt)}` : ''}. Quittance / Justificatif.`
+          : `Zahlung verbucht${invoice.paidAt ? ` am ${formatDate(invoice.paidAt)}` : ''}. Dieser Beleg gilt als Quittung.`);
     doc.text(paidMsg, rightCardX + 8, payY + 12.8);
+  } else if (isCash) {
+    // Pending cash box
+    const vzBoxWidth = cardWidth - 10;
+    const vzBoxHeight = 15;
+    doc.setFillColor(255, 255, 255);
+    doc.roundedRect(rightCardX + 5, payY, vzBoxWidth, vzBoxHeight, 2, 2, 'F');
+    doc.setDrawColor(...borderColor);
+    doc.roundedRect(rightCardX + 5, payY, vzBoxWidth, vzBoxHeight, 2, 2, 'S');
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(7.5);
+    doc.setTextColor(...darkGray);
+    doc.text(isFr ? 'Modalite :' : 'Zahlungshinweis :', rightCardX + 8, payY + 4.5);
+
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.setTextColor(...blackColor);
+    doc.text(isFr ? 'Montant a regler en mains propres' : 'Betrag bar faellig bei Uebergabe', rightCardX + 8, payY + 8.8);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.8);
+    doc.setTextColor(...midGray);
+    const pendingCashNote = isFr
+      ? `A regler en especes avant le ${formatDate(invoice.dueDate)}.`
+      : `Bitte bis spaetestens ${formatDate(invoice.dueDate)} bar bereithalten.`;
+    doc.text(pendingCashNote, rightCardX + 8, payY + 12.8);
   } else {
-    // Verwendungszweck Box for pending payment
+    // Verwendungszweck Box for pending transfer
     const vzBoxWidth = cardWidth - 10;
     const vzBoxHeight = 15;
     doc.setFillColor(255, 255, 255);

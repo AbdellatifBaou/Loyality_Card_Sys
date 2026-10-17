@@ -264,40 +264,66 @@ function buildInvoiceEmailHtml({
               </table>
 
               <!-- Payment instructions / Receipt confirmation -->
-              ${isPaid ? `
-                <div style="background: rgba(34,197,94,0.06); border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; border: 1px solid rgba(34,197,94,0.25);">
-                  <div style="font-size: 13px; font-weight: 700; color: #4ade80; margin-bottom: 4px;">
-                    ✓ ${isFr ? 'Paiement confirmé / Facture acquittée' : 'Zahlungseingang bestätigt / Quittung'}
+              ${isPaid ? (
+                invoice.paymentMethod === 'cash' ? `
+                  <div style="background: rgba(34,197,94,0.06); border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; border: 1px solid rgba(34,197,94,0.25);">
+                    <div style="font-size: 13px; font-weight: 700; color: #4ade80; margin-bottom: 4px;">
+                      ✓ ${isFr ? 'Paiement en espèces reçu / Quittance' : 'Barzahlung dankend erhalten / Offizielle Barquittung'}
+                    </div>
+                    <div style="font-size: 12px; line-height: 1.6; color: #d4d4d4;">
+                      ${isFr 
+                        ? `Le montant de <strong>${total.toFixed(2)} ${curr}</strong> a été intégralement réglé en mains propres${invoice.paidAt ? ` le ${new Date(invoice.paidAt).toLocaleDateString('fr-FR')}` : ''}. Ce document ainsi que le PDF joint attestent de la bonne réception des fonds.`
+                        : `Der Gesamtbetrag von <strong>${total.toFixed(2)} ${curr}</strong> wurde vollständig in bar beglichen${invoice.paidAt ? ` am ${new Date(invoice.paidAt).toLocaleDateString('de-DE')}` : ''}. Dieses Dokument und die beigefügte PDF gelten als Barquittung für Ihre Buchhaltung.`}
+                    </div>
                   </div>
-                  <div style="font-size: 12px; line-height: 1.6; color: #d4d4d4;">
-                    ${isFr 
-                      ? `Le montant a été intégralement réglé${invoice.paidAt ? ` le ${new Date(invoice.paidAt).toLocaleDateString('fr-FR')}` : ''}. Ce document ainsi que le PDF joint attestent de votre règlement.`
-                      : `Der Betrag wurde vollständig beglichen${invoice.paidAt ? ` am ${new Date(invoice.paidAt).toLocaleDateString('de-DE')}` : ''}. Dieses Dokument und die beigefügte PDF gelten als Zahlungsnachweis.`}
+                ` : `
+                  <div style="background: rgba(34,197,94,0.06); border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; border: 1px solid rgba(34,197,94,0.25);">
+                    <div style="font-size: 13px; font-weight: 700; color: #4ade80; margin-bottom: 4px;">
+                      ✓ ${isFr ? 'Paiement confirmé / Facture acquittée' : 'Zahlungseingang bestätigt / Quittung'}
+                    </div>
+                    <div style="font-size: 12px; line-height: 1.6; color: #d4d4d4;">
+                      ${isFr 
+                        ? `Le montant a été intégralement réglé${invoice.paidAt ? ` le ${new Date(invoice.paidAt).toLocaleDateString('fr-FR')}` : ''}. Ce document ainsi que le PDF joint attestent de votre règlement.`
+                        : `Der Betrag wurde vollständig beglichen${invoice.paidAt ? ` am ${new Date(invoice.paidAt).toLocaleDateString('de-DE')}` : ''}. Dieses Dokument und die beigefügte PDF gelten als Zahlungsnachweis.`}
+                    </div>
                   </div>
-                </div>
-              ` : `
-                <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.06);">
-                  <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">
-                    ${isFr ? 'Instructions de règlement :' : 'Zahlungsinformationen :'}
+                `
+              ) : (
+                invoice.paymentMethod === 'cash' ? `
+                  <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.06);">
+                    <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">
+                      ${isFr ? 'Modalité de paiement :' : 'Zahlungshinweis :'}
+                    </div>
+                    <div style="font-size: 12px; line-height: 1.6; color: #a3a3a3;">
+                      ${isFr 
+                        ? `Le règlement est prévu en espèces en mains propres au plus tard le <strong>${formattedDueDate}</strong>.`
+                        : `Der Betrag von <strong>${total.toFixed(2)} ${curr}</strong> ist spätestens bis zum <strong>${formattedDueDate}</strong> in bar fällig.`}
+                    </div>
                   </div>
-                  <div style="font-size: 12px; line-height: 1.6; color: #a3a3a3;">
-                    ${company.rib}
-                    <div style="margin-top: 10px; padding: 12px 14px; background: rgba(255,255,255,0.04); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
-                      <div style="font-size: 11px; text-transform: uppercase; color: #D4AF37; font-weight: 700; margin-bottom: 3px;">
-                        ${isFr ? 'Référence à indiquer :' : 'Verwendungszweck :'}
-                      </div>
-                      <div style="font-size: 14px; font-weight: 800; color: #ffffff; font-family: monospace;">
-                        ${invoice.invoiceNumber}
-                      </div>
-                      <div style="font-size: 11px; color: #a3a3a3; margin-top: 4px;">
-                        ${isFr 
-                          ? `Veuillez mentionner la référence "${invoice.invoiceNumber}" lors de votre virement.`
-                          : `Bitte geben Sie bei Überweisungen den Verwendungszweck "${invoice.invoiceNumber}" an.`}
+                ` : `
+                  <div style="background: rgba(255,255,255,0.03); border-radius: 12px; padding: 16px 20px; margin-bottom: 24px; border: 1px solid rgba(255,255,255,0.06);">
+                    <div style="font-size: 13px; font-weight: 700; color: #ffffff; margin-bottom: 6px;">
+                      ${isFr ? 'Instructions de règlement :' : 'Zahlungsinformationen :'}
+                    </div>
+                    <div style="font-size: 12px; line-height: 1.6; color: #a3a3a3;">
+                      ${company.rib}
+                      <div style="margin-top: 10px; padding: 12px 14px; background: rgba(255,255,255,0.04); border-radius: 8px; border: 1px solid rgba(255,255,255,0.1);">
+                        <div style="font-size: 11px; text-transform: uppercase; color: #D4AF37; font-weight: 700; margin-bottom: 3px;">
+                          ${isFr ? 'Référence à indiquer :' : 'Verwendungszweck :'}
+                        </div>
+                        <div style="font-size: 14px; font-weight: 800; color: #ffffff; font-family: monospace;">
+                          ${invoice.invoiceNumber}
+                        </div>
+                        <div style="font-size: 11px; color: #a3a3a3; margin-top: 4px;">
+                          ${isFr 
+                            ? `Veuillez mentionner la référence "${invoice.invoiceNumber}" lors de votre virement.`
+                            : `Bitte geben Sie bei Überweisungen den Verwendungszweck "${invoice.invoiceNumber}" an.`}
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              `}
+                `
+              )}
 
               <!-- Footer Sign-off -->
               <div style="border-top: 1px solid #2a2a2a; padding-top: 20px; font-size: 12px; color: #737373; line-height: 1.6;">

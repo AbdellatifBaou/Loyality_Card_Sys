@@ -412,9 +412,19 @@ export default function InvoiceModal({ merchant, onClose, adminLang, initialInvo
     const formattedDate = new Date(invoiceDate).toLocaleDateString(invoiceLang === 'fr' ? 'fr-FR' : 'de-DE');
     const formattedDueDate = new Date(dueDate).toLocaleDateString(invoiceLang === 'fr' ? 'fr-FR' : 'de-DE');
 
+    const statusLine = paymentStatus === 'paid'
+      ? (paymentMethod === 'cash' 
+          ? (invoiceLang === 'fr' ? '✅ *Statut :* Payée en espèces (Quittance)' : '✅ *Status :* Bezahlt (Barquittung)')
+          : (invoiceLang === 'fr' ? '✅ *Statut :* Payée' : '✅ *Status :* Bezahlt'))
+      : (invoiceLang === 'fr' ? `⏳ *Statut :* En attente (Échéance: ${formattedDueDate})` : `⏳ *Status :* Offen (Fällig bis: ${formattedDueDate})`);
+
+    const vzLine = paymentStatus !== 'paid' && paymentMethod === 'transfer'
+      ? (invoiceLang === 'fr' ? `\n📌 *Référence virement :* ${invoiceNumber}` : `\n📌 *Verwendungszweck :* ${invoiceNumber}`)
+      : '';
+
     const text = invoiceLang === 'fr' 
-      ? `${greeting},\n\nVoici le récapitulatif de votre facture pour ${period} de la part de Marketif :\n\n📄 *N° Facture :* ${invoiceNumber}\n💰 *Montant Total :* ${total.toFixed(2)} ${curr}\n📅 *Date :* ${formattedDate}\n💳 *Mode de paiement :* ${paymentMethodLabel}\n\nMerci pour votre confiance !\n_Marketif Support_`
-      : `${greeting},\n\nhier ist die Abrechnung für ${period} von Marketif:\n\n📄 *Rechnungs-Nr.:* ${invoiceNumber}\n💰 *Gesamtbetrag:* ${total.toFixed(2)} ${curr}\n📅 *Rechnungsdatum:* ${formattedDate}\n💳 *Zahlungsart:* ${paymentMethodLabel}\n\nVielen Dank für die partnerschaftliche Zusammenarbeit!\n_Marketif Support_`;
+      ? `${greeting},\n\nVoici le récapitulatif de votre facture pour ${period} de la part de Marketif :\n\n📄 *N° Facture :* ${invoiceNumber}\n💰 *Montant Total :* ${total.toFixed(2)} ${curr}\n📅 *Date :* ${formattedDate}\n💳 *Mode de paiement :* ${paymentMethodLabel}\n${statusLine}${vzLine}\n\nMerci pour votre confiance !\n_Marketif Support_`
+      : `${greeting},\n\nhier ist die Abrechnung für ${period} von Marketif:\n\n📄 *Rechnungs-Nr.:* ${invoiceNumber}\n💰 *Gesamtbetrag:* ${total.toFixed(2)} ${curr}\n📅 *Rechnungsdatum:* ${formattedDate}\n💳 *Zahlungsart:* ${paymentMethodLabel}\n${statusLine}${vzLine}\n\nVielen Dank für die partnerschaftliche Zusammenarbeit!\n_Marketif Support_`;
 
     if (!phone) {
       alert(invoiceLang === 'fr' ? 'Veuillez saisir un numéro de téléphone' : 'Bitte gib eine Telefonnummer ein');
@@ -1045,25 +1055,39 @@ export default function InvoiceModal({ merchant, onClose, adminLang, initialInvo
                           ? invoiceLang === 'fr' ? 'Espèces / En mains propres' : 'Barzahlung'
                           : invoiceLang === 'fr' ? 'Carte Bancaire / En ligne' : 'Kartenzahlung'}
                       </p>
-                      <p className="text-[11px] text-gray-500 mt-1">{company.rib}</p>
+                      <p className="text-[11px] text-gray-500 mt-1">
+                        {paymentMethod === 'cash'
+                          ? (invoiceLang === 'fr' ? 'Règlement en espèces / Reçu de caisse' : 'Barzahlung / Quittung über Barbetrag')
+                          : paymentMethod === 'card'
+                          ? (invoiceLang === 'fr' ? 'Transaction par carte bancaire' : 'Kartenzahlung / Elektronisch')
+                          : company.rib}
+                      </p>
 
                       {paymentStatus === 'paid' ? (
                         <div className="mt-2.5 p-2.5 bg-emerald-50 rounded-lg border border-emerald-200 text-xs">
                           <p className="text-[10px] font-bold text-emerald-800 uppercase tracking-wider flex items-center gap-1">
                             <Check size={12} className="text-emerald-600" />
-                            {invoiceLang === 'fr' ? 'Paiement confirmé' : 'Zahlungseingang bestätigt'}
+                            {paymentMethod === 'cash'
+                              ? (invoiceLang === 'fr' ? 'Espèces reçues' : 'Barzahlung dankend erhalten')
+                              : (invoiceLang === 'fr' ? 'Paiement confirmé' : 'Zahlungseingang bestätigt')}
                           </p>
                           <p className="font-semibold text-emerald-900 text-xs mt-0.5">
-                            {invoiceLang === 'fr' ? 'Facture acquittée' : 'Betrag vollständig erhalten'}
+                            {paymentMethod === 'cash'
+                              ? (invoiceLang === 'fr' ? 'Reçu de paiement en espèces' : 'Offizielle Barquittung')
+                              : (invoiceLang === 'fr' ? 'Facture acquittée' : 'Betrag vollständig erhalten')}
                           </p>
                           <p className="text-[10px] text-emerald-700 mt-1 leading-snug">
-                            {invoiceLang === 'fr'
-                              ? `Règlement effectué${paidAt ? ` le ${new Date(paidAt).toLocaleDateString('fr-FR')}` : ''}. Quittance / Justificatif de paiement.`
-                              : `Zahlung verbucht${paidAt ? ` am ${new Date(paidAt).toLocaleDateString('de-DE')}` : ''}. Dieser Beleg gilt als Quittung.`}
+                            {paymentMethod === 'cash'
+                              ? (invoiceLang === 'fr'
+                                  ? `Le montant de ${total.toFixed(2)} ${currency === 'EUR' ? '€' : 'MAD'} a été réglé intégralement en mains propres${paidAt ? ` le ${new Date(paidAt).toLocaleDateString('fr-FR')}` : ''}. Ce document certifie la bonne réception des fonds.`
+                                  : `Der Gesamtbetrag von ${total.toFixed(2)} ${currency === 'EUR' ? '€' : 'MAD'} wurde vollständig in bar beglichen${paidAt ? ` am ${new Date(paidAt).toLocaleDateString('de-DE')}` : ''}. Dieser Beleg gilt als offizielle Barquittung.`)
+                              : (invoiceLang === 'fr'
+                                  ? `Règlement effectué${paidAt ? ` le ${new Date(paidAt).toLocaleDateString('fr-FR')}` : ''}. Quittance / Justificatif de paiement.`
+                                  : `Zahlung verbucht${paidAt ? ` am ${new Date(paidAt).toLocaleDateString('de-DE')}` : ''}. Dieser Beleg gilt als Quittung.`)}
                           </p>
                         </div>
                       ) : (
-                        paymentMethod === 'transfer' && (
+                        paymentMethod === 'transfer' ? (
                           <div className="mt-2.5 p-2.5 bg-white rounded-lg border border-gray-200 text-xs">
                             <p className="text-[10px] font-bold text-gray-700 uppercase tracking-wider">
                               {invoiceLang === 'fr' ? 'Référence à indiquer :' : 'Verwendungszweck :'}
@@ -1077,7 +1101,21 @@ export default function InvoiceModal({ merchant, onClose, adminLang, initialInvo
                                 : `Bitte geben Sie bei Überweisung den Verwendungszweck "${invoiceNumber}" an.`}
                             </p>
                           </div>
-                        )
+                        ) : paymentMethod === 'cash' ? (
+                          <div className="mt-2.5 p-2.5 bg-white rounded-lg border border-gray-200 text-xs">
+                            <p className="text-[10px] font-bold text-gray-700 uppercase tracking-wider">
+                              {invoiceLang === 'fr' ? 'Modalité :' : 'Zahlungshinweis :'}
+                            </p>
+                            <p className="text-gray-800 text-xs mt-0.5 font-medium">
+                              {invoiceLang === 'fr' ? 'Montant à régler en mains propres' : 'Betrag bar fällig bei Übergabe'}
+                            </p>
+                            <p className="text-[10px] text-gray-500 mt-1 leading-snug">
+                              {invoiceLang === 'fr'
+                                ? `Veuillez régler le montant en espèces au plus tard le ${dueDate ? new Date(dueDate).toLocaleDateString('fr-FR') : '-'}.`
+                                : `Bitte halten Sie den Betrag bis spätestens ${dueDate ? new Date(dueDate).toLocaleDateString('de-DE') : '-'} in bar bereit.`}
+                            </p>
+                          </div>
+                        ) : null
                       )}
                     </div>
 
