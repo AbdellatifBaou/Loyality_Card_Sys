@@ -1975,23 +1975,100 @@ export default function DashboardPage() {
               {t.manualActivationDesc1} <strong className="text-white">{manualActivationMerchant.name}</strong> {t.manualActivationDesc2}
             </p>
 
-            <div className="space-y-4 mb-8">
-              <div>
-                <label className="block text-xs font-medium text-white/50 mb-2">{t.activationDuration}</label>
-                <select 
-                  value={manualMonths}
-                  onChange={(e) => setManualMonths(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
-                >
-                  <option className="bg-[#111111] text-white" value="1">{t.month1}</option>
-                  <option className="bg-[#111111] text-white" value="3">{t.month3}</option>
-                  <option className="bg-[#111111] text-white" value="6">{t.month6}</option>
-                  <option className="bg-[#111111] text-white" value="12">{t.year1}</option>
-                  <option className="bg-[#111111] text-white" value="24">{t.year2}</option>
-                  <option className="bg-[#111111] text-white" value="120">{t.lifetime}</option>
-                </select>
-              </div>
-            </div>
+            {(() => {
+              const now = new Date();
+              const existingEnd = manualActivationMerchant.current_period_end ? new Date(manualActivationMerchant.current_period_end) : null;
+              const addMonths = parseInt(manualMonths || '1', 10);
+              
+              let newEnd = new Date(now);
+              let statusType: 'overdue' | 'early' | 'fresh' = 'fresh';
+              let diffDays = 0;
+
+              if (existingEnd) {
+                const candidate = new Date(existingEnd);
+                candidate.setMonth(candidate.getMonth() + addMonths);
+
+                if (candidate > now) {
+                  newEnd = candidate;
+                  if (existingEnd <= now) {
+                    statusType = 'overdue';
+                    diffDays = Math.max(1, Math.floor((now.getTime() - existingEnd.getTime()) / (24 * 60 * 60 * 1000)));
+                  } else {
+                    statusType = 'early';
+                    diffDays = Math.max(1, Math.ceil((existingEnd.getTime() - now.getTime()) / (24 * 60 * 60 * 1000)));
+                  }
+                } else {
+                  newEnd.setMonth(newEnd.getMonth() + addMonths);
+                  statusType = 'fresh';
+                }
+              } else {
+                newEnd.setMonth(newEnd.getMonth() + addMonths);
+                statusType = 'fresh';
+              }
+
+              return (
+                <div className="space-y-4 mb-8">
+                  <div>
+                    <label className="block text-xs font-medium text-white/50 mb-2">{t.activationDuration}</label>
+                    <select 
+                      value={manualMonths}
+                      onChange={(e) => setManualMonths(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white focus:outline-none focus:border-[#D4AF37]"
+                    >
+                      <option className="bg-[#111111] text-white" value="1">{t.month1}</option>
+                      <option className="bg-[#111111] text-white" value="3">{t.month3}</option>
+                      <option className="bg-[#111111] text-white" value="6">{t.month6}</option>
+                      <option className="bg-[#111111] text-white" value="12">{t.year1}</option>
+                      <option className="bg-[#111111] text-white" value="24">{t.year2}</option>
+                      <option className="bg-[#111111] text-white" value="120">{t.lifetime}</option>
+                    </select>
+                  </div>
+
+                  {/* Live Date Preview Box */}
+                  <div className="p-4 rounded-2xl bg-white/[0.03] border border-white/10 space-y-2 text-xs">
+                    {existingEnd && (
+                      <div className="flex justify-between items-center text-white/50">
+                        <span>{t.currentDueDate}</span>
+                        <span className="font-mono font-medium text-white">
+                          {existingEnd.toLocaleDateString('de-DE')}
+                          {statusType === 'overdue' && (
+                            <span className="ml-1.5 text-red-400 font-sans">({t.overdueSince} {diffDays} Tagen)</span>
+                          )}
+                          {statusType === 'early' && (
+                            <span className="ml-1.5 text-green-400 font-sans">({t.activeRemaining} {diffDays} Tagen)</span>
+                          )}
+                        </span>
+                      </div>
+                    )}
+
+                    <div className="flex justify-between items-center pt-2 border-t border-white/5">
+                      <span className="font-bold text-white/80">{t.newCalculatedDueDate}</span>
+                      <span className="font-mono font-bold text-[#D4AF37] text-sm">
+                        {newEnd.toLocaleDateString('de-DE')}
+                      </span>
+                    </div>
+
+                    <p className="text-[11px] pt-1 text-white/40 leading-relaxed">
+                      {statusType === 'overdue' && (
+                        <span className="text-amber-400/90 font-medium flex items-center gap-1">
+                          ✓ {t.noFreeDaysOverdue}
+                        </span>
+                      )}
+                      {statusType === 'early' && (
+                        <span className="text-green-400/90 font-medium flex items-center gap-1">
+                          ✓ {t.noLostDaysEarly}
+                        </span>
+                      )}
+                      {statusType === 'fresh' && (
+                        <span className="text-white/50">
+                          {t.startsFromToday}
+                        </span>
+                      )}
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
 
             <div className="flex gap-4">
               <button

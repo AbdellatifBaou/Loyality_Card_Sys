@@ -13,14 +13,14 @@ function getAdminSupabase() {
 
 export async function POST(req: Request) {
   try {
-    const { merchantId, months } = await req.json();
+    const { merchantId, months, customEndDate } = await req.json();
 
     const authValidation = await validateAuth(req);
     if (!authValidation.authorized) {
       return NextResponse.json({ error: authValidation.error }, { status: 401 });
     }
 
-    if (!merchantId || !months) {
+    if (!merchantId || (!months && !customEndDate)) {
       return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
     }
 
@@ -55,12 +55,37 @@ export async function POST(req: Request) {
       .single();
     const currentPush = mData?.push_settings || {};
 
-    // Calculate new end date: extend from future end date if still active, otherwise from now
+    // Nahtlose Verlängerung:
+    // - Wenn überfällig (z. B. seit 7 Tagen): Ab dem originalen Fälligkeitsdatum verlängern (keine geschenkten Tage!)
+    // - Wenn vorab bezahlt (Resttage vorhanden): Resttage bleiben erhalten, neuer Zeitraum wird angehängt
     const now = new Date();
     const existingEnd = mData?.current_period_end ? new Date(mData.current_period_end) : null;
-    const baseDate = (existingEnd && existingEnd > now) ? new Date(existingEnd) : new Date(now);
-    baseDate.setMonth(baseDate.getMonth() + parseInt(months, 10));
-    const currentPeriodEnd = baseDate;
+    const addMonths = parseInt(months || '1', 10);
+
+    let newEndDate: Date;
+
+    if (customEndDate) {
+      newEndDate = new Date(customEndDate);
+    } else if (existingEnd) {
+      const candidateDate = new Date(existingEnd);
+      candidateDate.setMonth(candidateDate.getMonth() + addMonths);
+
+      // Falls das candidateDate in der Zukunft liegt, nahtlos ab dem bisherigen Fälligkeitsdatum verlängern!
+      if (candidateDate > now) {
+        newEndDate = candidateDate;
+      } else {
+        // Falls das bisherige Datum uralt ist (viele Monate abgelaufen), ab heute für die gewählten Monate starten
+        const freshDate = new Date(now);
+        freshDate.setMonth(freshDate.getMonth() + addMonths);
+        newEndDate = freshDate;
+      }
+    } else {
+      const freshDate = new Date(now);
+      freshDate.setMonth(freshDate.getMonth() + addMonths);
+      newEndDate = freshDate;
+    }
+
+    const currentPeriodEnd = newEndDate;
 
 
     const { error } = await adminSupabase
