@@ -59,6 +59,9 @@ export default function DashboardPage() {
   const [financesYear, setFinancesYear] = useState(2026);
   const [financesData, setFinancesData] = useState<any[]>([]);
   const [failedFinancesData, setFailedFinancesData] = useState<any[]>([]);
+  const [stripeMrrCents, setStripeMrrCents] = useState<number | null>(null);
+  const [stripeSubsCount, setStripeSubsCount] = useState<number>(0);
+  const [stripeDiscountedCount, setStripeDiscountedCount] = useState<number>(0);
   const [financesLoading, setFinancesLoading] = useState(false);
   const [invoiceMerchant, setInvoiceMerchant] = useState<any>(null);
   const [reportMerchant, setReportMerchant] = useState<any>(null);
@@ -202,6 +205,9 @@ export default function DashboardPage() {
       if (data.success) {
         setFinancesData(data.invoices || []);
         setFailedFinancesData(data.failedInvoices || []);
+        setStripeMrrCents(data.stripeMrrCents !== undefined ? data.stripeMrrCents : 0);
+        setStripeSubsCount(data.activeSubscriptionsCount || 0);
+        setStripeDiscountedCount(data.discountedSubscriptionsCount || 0);
       }
     } catch (e: any) {
       console.error(e);
@@ -1440,22 +1446,50 @@ export default function DashboardPage() {
             {/* Header mit Gesamt-MRR (Erwartet) */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
-                <div className="flex items-center gap-4 mb-4">
-                  <div className="p-3 bg-green-500/10 rounded-2xl border border-green-500/20"><Activity size={22} className="text-green-500" /></div>
-                  <h2 className="text-white/60 font-medium text-sm">{t.currentMRRExpected}</h2>
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-4">
+                    <div className="p-3 bg-green-500/10 rounded-2xl border border-green-500/20"><Activity size={22} className="text-green-500" /></div>
+                    <div>
+                      <h2 className="text-white/60 font-medium text-sm">{t.currentMRRReal}</h2>
+                      <p className="text-[11px] text-white/40">{t.basedOnStripeSubscriptions}</p>
+                    </div>
+                  </div>
+                  {stripeDiscountedCount > 0 && (
+                    <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                      {stripeDiscountedCount} {t.withCoupon}
+                    </span>
+                  )}
                 </div>
-                {(() => {
-                  let mrr = 0;
-                  topMerchants.forEach((m: any) => {
-                    if (m.is_active !== false) {
-                      if (m.package_type === 'gold') mrr += 89;
-                      else if (m.package_type === 'custom') mrr += 199;
-                      else mrr += 49; // default silber
-                    }
-                  });
-                  return <p className="text-4xl font-black text-white">{mrr}€</p>;
-                })()}
-                <p className="text-xs text-white/40 mt-2">{t.basedOnActivePackages}</p>
+                {financesLoading || stripeMrrCents === null ? (
+                  <div className="h-10 flex items-center"><RefreshCw size={24} className="animate-spin text-white/30" /></div>
+                ) : (
+                  <div>
+                    <div className="flex items-baseline gap-2">
+                      <p className="text-4xl font-black text-white">{(stripeMrrCents / 100).toFixed(2)}€</p>
+                      <span className="text-xs text-white/40 font-medium">/ Monat</span>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-white/5 text-xs text-white/50">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-green-400"></span>
+                        {stripeSubsCount} {t.activeSubs}
+                      </span>
+                      {(() => {
+                        const activeManualCount = allMerchants.filter((m: any) => {
+                          const isStripe = m.stripe_subscription_id && m.stripe_subscription_id.startsWith('sub_');
+                          if (isStripe) return false;
+                          if (!m.manual_invoice_active_until) return false;
+                          return new Date(m.manual_invoice_active_until) > new Date();
+                        }).length;
+                        return activeManualCount > 0 ? (
+                          <>
+                            <span className="text-white/20">•</span>
+                            <span className="text-amber-400/80">{activeManualCount} Barzahler aktiv</span>
+                          </>
+                        ) : null;
+                      })()}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>

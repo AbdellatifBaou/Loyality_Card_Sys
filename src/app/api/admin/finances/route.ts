@@ -67,7 +67,74 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json({ success: true, invoices, failedInvoices });
+    // Echte aktive Stripe-Abonnements & MRR nach Rabatten / Coupons ermitteln
+    let stripeMrrCents = 0;
+    const subscriptions = [];
+    let discountedSubscriptionsCount = 0;
+
+    try {
+      const subsList = await stripe.subscriptions.list({
+        status: 'active',
+        limit: 100,
+        expand: ['data.discount.coupon', 'data.customer']
+      });
+
+      for (const sub of subsList.data) {
+        let subMonthlyCents = 0;
+        for (const item of sub.items.data) {
+          let unitAmount = item.price.unit_amount || 0;
+          const interval = item.price.recurring?.interval || 'month';
+          const intervalCount = item.price.recurring?.interval_count || 1;
+
+          if (interval === 'year') {
+            unitAmount = Math.round(unitAmount / 12);
+          } else if (interval === 'week') {
+            unitAmount = Math.round(unitAmount * 4.33);
+          } else if (intervalCount > 1) {
+            unitAmount = Math.round(unitAmount / intervalCount);
+          }
+
+          const quantity = item.quantity || 1;
+          subMonthlyCents += unitAmount * quantity;
+        }
+
+        let discountDesc: string | null = null;
+        if (sub.discount?.coupon) {
+          discountedSubscriptionsCount++;
+          const coupon = sub.discount.coupon;
+          if (coupon.percent_off) {
+            discountDesc = `${coupon.percent_off}% Rabatt`;
+            subMonthlyCents = Math.round(subMonthlyCents * (1 - coupon.percent_off / 100));
+          } else if (coupon.amount_off) {
+            discountDesc = `${(coupon.amount_off / 100).toFixed(2)}€ Rabatt`;
+            subMonthlyCents = Math.max(0, subMonthlyCents - coupon.amount_off);
+          }
+        }
+
+        stripeMrrCents += subMonthlyCents;
+
+        const cust = sub.customer as Stripe.Customer | null;
+        subscriptions.push({
+          id: sub.id,
+          customer_name: cust && typeof cust === 'object' && 'name' in cust ? cust.name : null,
+          customer_email: cust && typeof cust === 'object' && 'email' in cust ? cust.email : null,
+          monthly_cents: subMonthlyCents,
+          discount_desc: discountDesc
+        });
+      }
+    } catch (subErr) {
+      console.error('Error fetching Stripe subscriptions in finances:', subErr);
+    }
+
+    return NextResponse.json({
+      success: true,
+      invoices,
+      failedInvoices,
+      stripeMrrCents,
+      subscriptions,
+      activeSubscriptionsCount: subscriptions.length,
+      discountedSubscriptionsCount
+    });
   } catch (error: any) {
     console.error('Admin Finances API Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
