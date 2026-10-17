@@ -1472,11 +1472,11 @@ export default function DashboardPage() {
                     </div>
                     <div className="flex flex-wrap items-center gap-2 mt-3 pt-3 border-t border-white/5 text-xs text-white/50">
                       <span className="inline-flex flex-wrap items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-green-400"></span>
+                        <span className={`w-2 h-2 rounded-full ${stripeSubsCount > 0 ? 'bg-green-400' : 'bg-white/30'}`}></span>
                         <span>{stripeSubsCount} {t.activeSubs}</span>
                         {stripeSubsList.length > 0 && (
                           <span className="text-white/40 text-[11px] ml-1">
-                            ({stripeSubsList.map(s => `${s.customer_name || 'Kunde'}: ${(s.monthly_cents / 100).toFixed(2)}€${s.discount_desc ? ` [${s.discount_desc}]` : ''}`).join(', ')})
+                            ({stripeSubsList.map(s => s.is_canceling ? `${s.customer_name || 'Kunde'}: Gekündigt zum ${s.cancel_date}` : `${s.customer_name || 'Kunde'}: ${(s.monthly_cents / 100).toFixed(2)}€${s.discount_desc ? ` [${s.discount_desc}]` : ''}`).join(', ')})
                           </span>
                         )}
                       </span>

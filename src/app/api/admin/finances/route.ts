@@ -99,8 +99,27 @@ export async function POST(req: Request) {
         }
 
         const regularMonthly = subMonthlyCents;
+        const isCanceling = sub.cancel_at_period_end === true || !!sub.cancel_at;
 
-        // Coupon-Prüfung:
+        const cust = sub.customer as Stripe.Customer | null;
+
+        // Wenn das Abo gekündigt ist (läuft zum Periodenende aus), bringt es 0 € wiederkehrenden MRR!
+        if (isCanceling) {
+          const endTs = sub.cancel_at || sub.current_period_end;
+          const formattedEnd = endTs ? new Date(endTs * 1000).toLocaleDateString('de-DE') : 'Demnächst';
+          subscriptions.push({
+            id: sub.id,
+            customer_name: cust && typeof cust === 'object' && 'name' in cust ? cust.name : null,
+            customer_email: cust && typeof cust === 'object' && 'email' in cust ? cust.email : null,
+            monthly_cents: 0,
+            is_canceling: true,
+            cancel_date: formattedEnd,
+            discount_desc: `Gekündigt zum ${formattedEnd}`
+          });
+          continue; // Nicht zum wiederkehrenden MRR addieren!
+        }
+
+        // Coupon-Prüfung für aktive Abonnements:
         // 1. Auf Subskriptionsebene (sub.discount oder sub.discounts Array)
         let discountDesc: string | null = null;
         let coupon: any = sub.discount?.coupon || null;
@@ -110,7 +129,7 @@ export async function POST(req: Request) {
           coupon = firstDisc?.coupon || (typeof firstDisc === 'object' && firstDisc?.percent_off ? firstDisc : null);
         }
 
-        // 2. Auf Kundenebene (Customer Discount - direkt oder via Stripe API retrieve)
+        // 2. Auf Kundenebene (Customer Discount)
         const custId = typeof sub.customer === 'string' ? sub.customer : (sub.customer as any)?.id;
         const custObj = typeof sub.customer === 'object' && sub.customer ? (sub.customer as any) : null;
         if (!coupon && custObj?.discount) {
@@ -143,7 +162,7 @@ export async function POST(req: Request) {
             }
           }
         } catch (prevErr) {
-          // Ignorieren falls createPreview nicht verfügbar ist
+          // Ignorieren falls keine Vorschau vorhanden
         }
 
         if (coupon) {
@@ -163,12 +182,12 @@ export async function POST(req: Request) {
 
         stripeMrrCents += subMonthlyCents;
 
-        const cust = sub.customer as Stripe.Customer | null;
         subscriptions.push({
           id: sub.id,
           customer_name: cust && typeof cust === 'object' && 'name' in cust ? cust.name : null,
           customer_email: cust && typeof cust === 'object' && 'email' in cust ? cust.email : null,
           monthly_cents: subMonthlyCents,
+          is_canceling: false,
           discount_desc: discountDesc
         });
       }
@@ -182,7 +201,8 @@ export async function POST(req: Request) {
       failedInvoices,
       stripeMrrCents,
       subscriptions,
-      activeSubscriptionsCount: subscriptions.length,
+      activeSubscriptionsCount: subscriptions.filter(s => !s.is_canceling).length,
+      cancelingSubscriptionsCount: subscriptions.filter(s => s.is_canceling).length,
       discountedSubscriptionsCount
     });
   } catch (error: any) {
