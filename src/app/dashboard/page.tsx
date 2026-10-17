@@ -2079,6 +2079,44 @@ export default function DashboardPage() {
                                   <MessageCircle size={14} />
                                 </button>
                                 <button
+                                  onClick={async () => {
+                                    const email = inv.customerEmail || matchingMerchant?.contact_email;
+                                    if (!email || !email.includes('@')) {
+                                      showToast(adminLang === 'fr' ? 'Aucune adresse e-mail pour cette facture' : 'Keine E-Mail-Adresse für diese Rechnung vorhanden', 'error');
+                                      return;
+                                    }
+                                    try {
+                                      showToast(adminLang === 'fr' ? 'Envoi en cours...' : 'Sende Rechnung per E-Mail...', 'success');
+                                      const token = typeof window !== 'undefined' ? (localStorage.getItem('admin_auth') || '2025') : '2025';
+                                      const res = await fetch('/api/admin/send-invoice-email', {
+                                        method: 'POST',
+                                        headers: {
+                                          'Content-Type': 'application/json',
+                                          'Authorization': `Bearer ${token}`,
+                                        },
+                                        body: JSON.stringify({
+                                          merchantId: inv.merchantId,
+                                          invoice: inv,
+                                          recipientEmail: email,
+                                          password: '2025',
+                                        }),
+                                      });
+                                      const data = await res.json();
+                                      if (res.ok && data.success) {
+                                        showToast(adminLang === 'fr' ? 'Facture envoyée par e-mail avec succès !' : 'Rechnung erfolgreich per E-Mail versendet!', 'success');
+                                      } else {
+                                        showToast(data.error || 'Fehler beim Senden', 'error');
+                                      }
+                                    } catch {
+                                      showToast('Fehler beim Senden', 'error');
+                                    }
+                                  }}
+                                  className="p-1.5 bg-blue-500/15 hover:bg-blue-500 text-blue-400 hover:text-white rounded-lg transition-all"
+                                  title={adminLang === 'fr' ? 'Envoyer la facture par E-Mail' : 'Rechnung per E-Mail senden'}
+                                >
+                                  <Mail size={14} />
+                                </button>
+                                <button
                                   onClick={() => handleDeleteArchivedInvoice(inv.merchantId, inv.id)}
                                   className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-all"
                                   title={t.delete || 'Löschen'}

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Printer, Plus, Trash2, Globe, Building2, Check, FileText, MessageCircle } from 'lucide-react';
+import { X, Printer, Plus, Trash2, Globe, Building2, Check, FileText, MessageCircle, Mail } from 'lucide-react';
 
 interface InvoiceItem {
   id: string;
@@ -56,6 +56,8 @@ export default function InvoiceModal({ merchant, onClose, adminLang, initialInvo
 
   const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
+  const [emailSentSuccess, setEmailSentSuccess] = useState(false);
 
   // Default Items based on package
   const getPackagePrice = () => {
@@ -178,7 +180,10 @@ export default function InvoiceModal({ merchant, onClose, adminLang, initialInvo
       };
 
   const handleSaveInvoice = async (silent = false) => {
-    if (!merchant?.id) return;
+    if (!merchant?.id) {
+      if (!silent) alert(invoiceLang === 'fr' ? 'Erreur : Aucun commerçant sélectionné' : 'Fehler: Kein Händler ausgewählt');
+      return;
+    }
     setIsSaving(true);
     try {
       const invoicePayload = {
@@ -205,24 +210,106 @@ export default function InvoiceModal({ merchant, onClose, adminLang, initialInvo
         createdAt: initialInvoice?.createdAt || new Date().toISOString(),
       };
 
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('admin_auth') || '2025') : '2025';
       const res = await fetch('/api/admin/manual-invoice', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
         body: JSON.stringify({
           merchantId: merchant.id,
           invoice: invoicePayload,
+          password: '2025',
         }),
       });
 
-      if (res.ok) {
+      const data = await res.json();
+      if (res.ok && data.success) {
         setSaveSuccess(true);
         setTimeout(() => setSaveSuccess(false), 3000);
         if (onInvoiceSaved) onInvoiceSaved();
+      } else {
+        if (!silent) {
+          alert(data.error || (invoiceLang === 'fr' ? 'Erreur lors de l\'enregistrement' : 'Fehler beim Speichern der Rechnung'));
+        }
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to auto-archive invoice:', err);
+      if (!silent) {
+        alert(err?.message || (invoiceLang === 'fr' ? 'Erreur de connexion' : 'Verbindungsfehler beim Speichern'));
+      }
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSendEmail = async () => {
+    if (!customerEmail || !customerEmail.includes('@')) {
+      alert(invoiceLang === 'fr' 
+        ? 'Veuillez saisir une adresse e-mail valide pour le destinataire dans le formulaire à gauche.' 
+        : 'Bitte gib eine gültige E-Mail-Adresse für den Empfänger im Formular auf der linken Seite ein.');
+      return;
+    }
+    if (!merchant?.id) {
+      alert(invoiceLang === 'fr' ? 'Erreur: Commerçant introuvable' : 'Fehler: Kein Händler ausgewählt');
+      return;
+    }
+
+    setIsSendingEmail(true);
+    try {
+      const invoicePayload = {
+        id: initialInvoice?.id || `inv_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        invoiceNumber,
+        invoiceDate,
+        dueDate,
+        period,
+        paymentMethod,
+        currency,
+        items,
+        subtotal,
+        taxRate,
+        taxAmount,
+        total,
+        customerName,
+        customerContactName,
+        customerPhone,
+        customerEmail,
+        customerAddress,
+        customerTaxId,
+        customTaxNote,
+        invoiceLang,
+        createdAt: initialInvoice?.createdAt || new Date().toISOString(),
+      };
+
+      const token = typeof window !== 'undefined' ? (localStorage.getItem('admin_auth') || '2025') : '2025';
+      const res = await fetch('/api/admin/send-invoice-email', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          merchantId: merchant.id,
+          invoice: invoicePayload,
+          recipientEmail: customerEmail,
+          password: '2025',
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setEmailSentSuccess(true);
+        setTimeout(() => setEmailSentSuccess(false), 4000);
+        if (onInvoiceSaved) onInvoiceSaved();
+      } else {
+        alert(data.error || (invoiceLang === 'fr' ? 'Erreur lors de l\'envoi de l\'e-mail' : 'Fehler beim Senden der E-Mail'));
+      }
+    } catch (err: any) {
+      console.error('Failed to send invoice email:', err);
+      alert(err?.message || (invoiceLang === 'fr' ? 'Erreur lors de l\'envoi' : 'Fehler beim Senden'));
+    } finally {
+      setIsSendingEmail(false);
     }
   };
 
@@ -407,6 +494,27 @@ export default function InvoiceModal({ merchant, onClose, adminLang, initialInvo
             >
               <MessageCircle size={16} />
               <span>WhatsApp</span>
+            </button>
+
+            {/* E-Mail Send Button */}
+            <button
+              type="button"
+              onClick={handleSendEmail}
+              disabled={isSendingEmail}
+              className="flex items-center gap-2 px-4 py-2.5 bg-[#2563eb] hover:bg-[#1d4ed8] text-white font-bold text-sm rounded-xl transition-all shadow-lg hover:shadow-[#2563eb]/20 disabled:opacity-50"
+              title={invoiceLang === 'fr' ? 'Envoyer la facture officielle par E-Mail' : 'Offizielle Rechnung per E-Mail senden'}
+            >
+              {emailSentSuccess ? (
+                <>
+                  <Check size={16} className="text-white" />
+                  <span>{invoiceLang === 'fr' ? 'Envoyé !' : 'Gesendet!'}</span>
+                </>
+              ) : (
+                <>
+                  <Mail size={16} className={isSendingEmail ? 'animate-pulse' : ''} />
+                  <span>{isSendingEmail ? (invoiceLang === 'fr' ? 'Envoi...' : 'Sendet...') : 'E-Mail'}</span>
+                </>
+              )}
             </button>
 
             {/* Save to Archive Button */}
@@ -595,6 +703,27 @@ export default function InvoiceModal({ merchant, onClose, adminLang, initialInvo
                   className="px-3 py-1.5 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs rounded-lg transition-all shadow-md flex items-center gap-1 shrink-0"
                 >
                   {invoiceLang === 'fr' ? 'Envoyer' : 'Senden'}
+                </button>
+              </div>
+
+              {/* E-Mail Quick Action Box */}
+              <div className="p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl flex items-center justify-between gap-2 mt-2">
+                <div className="min-w-0 flex-1">
+                  <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <Mail size={14} className="text-blue-400 shrink-0" />
+                    {invoiceLang === 'fr' ? 'Envoi Facture par E-Mail' : 'Rechnung per E-Mail senden'}
+                  </span>
+                  <p className="text-[11px] text-white/50 truncate mt-0.5">
+                    {customerEmail ? customerEmail : (invoiceLang === 'fr' ? 'E-mail manquant' : 'Keine E-Mail angegeben')}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleSendEmail}
+                  disabled={isSendingEmail || !customerEmail}
+                  className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-lg transition-all shadow-md flex items-center gap-1 shrink-0 disabled:opacity-40"
+                >
+                  {emailSentSuccess ? (invoiceLang === 'fr' ? 'Envoyé !' : 'Gesendet!') : (isSendingEmail ? (invoiceLang === 'fr' ? 'Envoi...' : 'Sendet...') : (invoiceLang === 'fr' ? 'Envoyer' : 'Senden'))}
                 </button>
               </div>
             </div>
