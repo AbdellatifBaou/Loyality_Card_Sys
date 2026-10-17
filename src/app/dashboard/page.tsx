@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Unlock, Lock, LogOut, BarChart2, BarChart3, Store, DollarSign, Download, FileText, X, Edit3, Search, Filter, RotateCcw, MessageCircle } from 'lucide-react';
+import { Users, Coffee, Gift, Activity, CreditCard, RefreshCw, Trash2, AlertTriangle, Unlock, Lock, LogOut, BarChart2, BarChart3, Store, DollarSign, Download, FileText, X, Edit3, Search, Filter, RotateCcw, MessageCircle, Mail } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
 import { ADMIN_DICT } from '@/locales/admin';
 import InvoiceModal from '@/components/InvoiceModal';
@@ -67,6 +67,10 @@ export default function DashboardPage() {
   const [invoiceMerchant, setInvoiceMerchant] = useState<any>(null);
   const [reportMerchant, setReportMerchant] = useState<any>(null);
   const [manualInvoiceMerchantId, setManualInvoiceMerchantId] = useState<string>('');
+  const [archivedInvoices, setArchivedInvoices] = useState<any[]>([]);
+  const [archivedInvoicesLoading, setArchivedInvoicesLoading] = useState(false);
+  const [editingArchivedInvoice, setEditingArchivedInvoice] = useState<{ merchant: any, invoice: any } | null>(null);
+  const [sendingReminderId, setSendingReminderId] = useState<string | null>(null);
 
   // Table Filters & Search
   const [searchQuery, setSearchQuery] = useState('');
@@ -218,9 +222,205 @@ export default function DashboardPage() {
     }
   };
 
+  const fetchArchivedInvoices = async () => {
+    setArchivedInvoicesLoading(true);
+    try {
+      const res = await fetch('/api/admin/manual-invoice', {
+        headers: { 'Authorization': `Bearer ${localStorage.getItem('admin_auth')}` },
+      });
+      const data = await res.json();
+      if (data.success) {
+        setArchivedInvoices(data.invoices || []);
+      }
+    } catch (err) {
+      console.error('Failed to load archived invoices:', err);
+    } finally {
+      setArchivedInvoicesLoading(false);
+    }
+  };
+
+  const handleDeleteArchivedInvoice = async (merchantId: string, invoiceId: string) => {
+    if (!confirm(t.deleteInvoiceConfirm || 'Möchtest du diese Rechnung wirklich aus dem Archiv löschen?')) {
+      return;
+    }
+    try {
+      const res = await fetch('/api/admin/manual-invoice', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('admin_auth')}`
+        },
+        body: JSON.stringify({ merchantId, invoiceId }),
+      });
+      const data = await res.json();
+      if (data.success) {
+        setArchivedInvoices(prev => prev.filter(inv => inv.id !== invoiceId));
+        showToast(t.invoiceDeletedToast || 'Rechnung aus dem Archiv gelöscht', 'success');
+      } else {
+        showToast(data.error || 'Fehler beim Löschen', 'error');
+      }
+    } catch (err) {
+      console.error('Failed to delete invoice:', err);
+      showToast('Fehler beim Löschen', 'error');
+    }
+  };
+
+  const handleSendPaymentReminderEmail = async (merchant: any) => {
+    const targetEmail = merchant.contact_email || merchant.push_settings?.contact_email;
+    if (!targetEmail) {
+      showToast(adminLang === 'fr' ? 'Aucune adresse e-mail trouvée pour ce commerçant' : 'Keine E-Mail-Adresse für diesen Händler hinterlegt', 'error');
+      return;
+    }
+    setSendingReminderId(merchant.id);
+    try {
+      const res = await fetch('/api/cron/payment-reminder', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('admin_auth')}`
+        },
+        body: JSON.stringify({ merchantId: merchant.id, force: true }),
+      });
+      const data = await res.json();
+      if (data.success && data.sentCount > 0) {
+        showToast(t.reminderEmailSent || 'Erinnerungs-E-Mail erfolgreich gesendet!', 'success');
+        setAllMerchants(prev => prev.map(m => {
+          if (m.id === merchant.id) {
+            return {
+              ...m,
+              push_settings: {
+                ...m.push_settings,
+                last_reminder_email_sent_at: new Date().toISOString(),
+              }
+            };
+          }
+          return m;
+        }));
+      } else {
+        showToast(data.details?.[0]?.error || (adminLang === 'fr' ? 'Impossible d\'envoyer l\'e-mail' : 'Konnte E-Mail nicht senden'), 'error');
+      }
+    } catch (err: any) {
+      console.error('Failed to send reminder email:', err);
+      showToast(adminLang === 'fr' ? 'Erreur lors de l\'envoi' : 'Fehler beim Senden der E-Mail', 'error');
+    } finally {
+      setSendingReminderId(null);
+    }
+  };
+
+  const handleExportCSV = () => {
+    const now = Date.now();
+    const listToExport = allMerchants.filter((m: any) => {
+      const isManual = m.stripe_subscription_id === 'manual_invoice';
+      const isStripe = !!m.stripe_subscription_id && !isManual;
+      const periodEndMs = m.current_period_end ? new Date(m.current_period_end).getTime() : null;
+      const isExpired = periodEndMs !== null ? periodEndMs < now : false;
+      const isActivePaid = (isStripe && (m.subscription_status === 'active' || m.subscription_status === 'trialing')) ||
+                           (isManual && !isExpired && m.subscription_status === 'active');
+      const isOverdue = (isManual && isExpired) || (isStripe && (m.subscription_status === 'past_due' || isExpired));
+
+      if (searchQuery) {
+        const q = searchQuery.toLowerCase();
+        const matchName = m.name?.toLowerCase().includes(q);
+        const matchSlug = m.slug?.toLowerCase().includes(q);
+        if (!matchName && !matchSlug) return false;
+      }
+      if (filterCountry !== 'all') {
+        const isFr = m.language === 'fr';
+        if (filterCountry === 'fr' && !isFr) return false;
+        if (filterCountry === 'de' && isFr) return false;
+      }
+      if (filterPayment !== 'all') {
+        if (filterPayment === 'manual' && (!isManual || isExpired)) return false;
+        if (filterPayment === 'manual_expired' && (!isManual || !isExpired)) return false;
+        if (filterPayment === 'stripe' && (!m.stripe_subscription_id || isManual)) return false;
+        if (filterPayment === 'none' && m.stripe_subscription_id) return false;
+      }
+      if (filterStatus !== 'all') {
+        if (filterStatus === 'active' && !isActivePaid) return false;
+        if (filterStatus === 'expired' && !isOverdue) return false;
+        if (filterStatus === 'unpaid' && (isActivePaid || isOverdue)) return false;
+        if (filterStatus === 'inactive' && m.is_active !== false) return false;
+      }
+      if (filterPackage !== 'all') {
+        const pkg = m.package_type || 'silber';
+        if (pkg !== filterPackage) return false;
+      }
+      return true;
+    });
+
+    const isFr = adminLang === 'fr';
+    const headers = isFr
+      ? ['ID', 'Nom du Partenaire', 'Slug', 'Pays', 'Forfait', 'Prix Mensuel (€)', 'Setup Payé', 'Clients', 'Statut', 'Mode de paiement', 'Date d\'échéance', 'Contact', 'Email', 'Téléphone', 'Adresse']
+      : ['ID', 'Partner Name', 'Slug', 'Land', 'Paket', 'Monatspreis (€)', 'Setup Bezahlt', 'Kunden', 'Status', 'Zahlungsart', 'Ablaufdatum', 'Ansprechpartner', 'E-Mail', 'Telefon', 'Adresse'];
+
+    const escapeCell = (val: any) => {
+      if (val === null || val === undefined) return '""';
+      const str = String(val).replace(/"/g, '""');
+      return `"${str}"`;
+    };
+
+    const rows = listToExport.map((m: any) => {
+      const isManual = m.stripe_subscription_id === 'manual_invoice';
+      const isStripe = !!m.stripe_subscription_id && !isManual;
+      const periodEndMs = m.current_period_end ? new Date(m.current_period_end).getTime() : null;
+      const isExpired = periodEndMs !== null ? periodEndMs < now : false;
+
+      let statusText = isFr ? 'Inconnu' : 'Unbekannt';
+      if (m.is_active === false) {
+        statusText = isFr ? 'Désactivé' : 'Deaktiviert';
+      } else if (isStripe) {
+        statusText = m.subscription_status === 'active' ? (isFr ? 'Actif (Stripe)' : 'Aktiv (Stripe)') : (isFr ? 'En retard' : 'Überfällig');
+      } else if (isManual) {
+        statusText = isExpired ? (isFr ? 'Expiré' : 'Abgelaufen') : (isFr ? 'Actif (Manuel)' : 'Aktiv (Manuell)');
+      } else {
+        statusText = isFr ? 'Sans abonnement' : 'Ohne Abo';
+      }
+
+      let paymentText = isFr ? 'Aucun' : 'Keine';
+      if (isStripe) paymentText = 'Stripe Abo';
+      else if (isManual) paymentText = isFr ? 'Facture manuelle / Espèces' : 'Manuelle Rechnung / Bar';
+
+      const pkgPrice = m.package_type === 'gold' ? '89' : (m.package_type === 'custom' ? (m.custom_price || '199') : '49');
+      const countryText = m.language === 'fr' ? 'Maroc' : 'Deutschland';
+      const setupPaidText = m.push_settings?.setup_fee_paid ? (isFr ? 'Oui' : 'Ja') : (isFr ? 'Non' : 'Nein');
+      const expiryText = m.current_period_end ? new Date(m.current_period_end).toLocaleDateString(isFr ? 'fr-FR' : 'de-DE') : '-';
+
+      return [
+        escapeCell(m.id),
+        escapeCell(m.name),
+        escapeCell(m.slug),
+        escapeCell(countryText),
+        escapeCell(m.package_type?.toUpperCase() || 'SILBER'),
+        escapeCell(pkgPrice),
+        escapeCell(setupPaidText),
+        escapeCell(m.customerCount || 0),
+        escapeCell(statusText),
+        escapeCell(paymentText),
+        escapeCell(expiryText),
+        escapeCell(m.contact_name || m.push_settings?.contact_name || ''),
+        escapeCell(m.contact_email || m.push_settings?.contact_email || ''),
+        escapeCell(m.contact_phone || m.push_settings?.contact_phone || ''),
+        escapeCell(m.address || ''),
+      ].join(';');
+    });
+
+    const csvContent = '\uFEFF' + [headers.map(escapeCell).join(';'), ...rows].join('\r\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `marketif-partner-export-${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+    showToast(t.exportCSVSuccess || 'Partnerliste erfolgreich als CSV exportiert!', 'success');
+  };
+
   useEffect(() => {
     if (activeTab === 'finances' && isAuthorized) {
       fetchFinances(financesYear);
+      fetchArchivedInvoices();
     }
   }, [activeTab, financesYear, isAuthorized]);
 
@@ -785,13 +985,23 @@ export default function DashboardPage() {
                   <h2 className="text-lg font-bold text-white">{t.partnerMerchants}</h2>
                   <span className="text-xs text-white/40 font-medium ml-2">{merchantCount} {t.total}</span>
                 </div>
-                <button 
-                  onClick={() => setShowCreateMerchant(true)}
-                  className="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
-                >
-                  <Users size={16} />
-                  {t.createMerchantBtn}
-                </button>
+                <div className="flex items-center gap-3">
+                  <button 
+                    onClick={handleExportCSV}
+                    className="px-3.5 py-2 bg-white/5 hover:bg-white/10 text-white text-sm font-semibold rounded-lg transition-colors flex items-center gap-2 border border-white/10"
+                    title={t.exportCSV || 'Als CSV exportieren'}
+                  >
+                    <Download size={16} className="text-[#D4AF37]" />
+                    <span className="hidden sm:inline">{t.exportCSV || 'CSV Export'}</span>
+                  </button>
+                  <button 
+                    onClick={() => setShowCreateMerchant(true)}
+                    className="px-4 py-2 bg-yellow-500 hover:bg-yellow-400 text-black text-sm font-bold rounded-lg transition-colors flex items-center gap-2"
+                  >
+                    <Users size={16} />
+                    {t.createMerchantBtn}
+                  </button>
+                </div>
               </div>
 
               {/* KPI Summary Cards: Auf einen Blick Übersicht */}
@@ -1251,6 +1461,22 @@ export default function DashboardPage() {
                                       >
                                         <MessageCircle size={14} />
                                       </a>
+                                    )}
+                                    {(m.contact_email || m.push_settings?.contact_email) && (
+                                      <button 
+                                        onClick={() => handleSendPaymentReminderEmail(m)}
+                                        disabled={sendingReminderId === m.id}
+                                        title={m.push_settings?.last_reminder_email_sent_at 
+                                          ? `${t.lastReminderBadge || 'Erinnerung gesendet:'} ${new Date(m.push_settings.last_reminder_email_sent_at).toLocaleDateString(adminLang === 'fr' ? 'fr-FR' : 'de-DE')}`
+                                          : (t.sendReminderEmail || 'Erinnerungs-E-Mail senden')}
+                                        className={`p-2 rounded-lg transition-colors border shrink-0 ${
+                                          m.push_settings?.last_reminder_email_sent_at 
+                                            ? 'bg-purple-500/15 text-purple-300 hover:bg-purple-500/25 border-purple-500/30' 
+                                            : 'bg-white/5 text-white/70 hover:bg-white/10 border-white/10'
+                                        }`}
+                                      >
+                                        <Mail size={14} className={sendingReminderId === m.id ? 'animate-pulse text-[#D4AF37]' : ''} />
+                                      </button>
                                     )}
                                     <button 
                                       onClick={() => setReportMerchant(m)}
@@ -1715,6 +1941,159 @@ export default function DashboardPage() {
                   </div>
                 );
               })()}
+            </div>
+
+            {/* Manuelle Rechnungen (Archiv) */}
+            <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
+              <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                <div className="flex items-center gap-3">
+                  <div className="p-2.5 bg-[#D4AF37]/10 text-[#D4AF37] rounded-xl border border-[#D4AF37]/20">
+                    <FileText size={20} />
+                  </div>
+                  <div>
+                    <h2 className="text-lg font-bold text-white flex items-center gap-2">
+                      {t.manualInvoicesArchive || 'Manuelle Rechnungen (Archiv)'}
+                      <span className="text-xs px-2.5 py-0.5 rounded-full bg-white/10 text-[#D4AF37] font-semibold">
+                        {archivedInvoices.length}
+                      </span>
+                    </h2>
+                    <p className="text-xs text-white/50">
+                      {t.manualInvoicesArchiveDesc || 'Alle bisher erstellten Rechnungen für Barzahler und Überweisungen im Überblick.'}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  onClick={fetchArchivedInvoices}
+                  disabled={archivedInvoicesLoading}
+                  className="px-3.5 py-2 bg-white/5 hover:bg-white/10 text-white text-xs font-semibold rounded-xl border border-white/10 transition-colors flex items-center gap-2"
+                >
+                  <RefreshCw size={14} className={archivedInvoicesLoading ? 'animate-spin text-[#D4AF37]' : ''} />
+                  <span>{adminLang === 'fr' ? 'Actualiser' : 'Aktualisieren'}</span>
+                </button>
+              </div>
+
+              {archivedInvoicesLoading ? (
+                <div className="py-12 text-center text-white/40 text-sm">
+                  <RefreshCw size={24} className="animate-spin mx-auto mb-2 text-[#D4AF37]" />
+                  {adminLang === 'fr' ? 'Chargement des archives...' : 'Lade Rechnungsarchiv...'}
+                </div>
+              ) : archivedInvoices.length === 0 ? (
+                <div className="py-10 text-center text-white/40 text-xs bg-white/[0.01] rounded-2xl border border-white/5 p-6">
+                  <FileText size={28} className="mx-auto mb-2 text-white/20" />
+                  {t.noArchivedInvoices || 'Noch keine archivierten Rechnungen vorhanden. Erstelle eine Rechnung oben, um sie hier automatisch zu archivieren.'}
+                </div>
+              ) : (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-left border-collapse">
+                    <thead>
+                      <tr className="border-b border-white/10 text-xs font-semibold text-white/40">
+                        <th className="py-3 px-4">{t.invoiceNumberCol || 'Rechnungs-Nr.'}</th>
+                        <th className="py-3 px-4">{t.invoiceDateCol || 'Datum'} / {t.invoiceDueDateCol || 'Fälligkeit'}</th>
+                        <th className="py-3 px-4">{t.invoiceMerchantCol || 'Händler'}</th>
+                        <th className="py-3 px-4">{t.invoiceAmountCol || 'Betrag'}</th>
+                        <th className="py-3 px-4">{t.invoicePaymentCol || 'Zahlungsart'}</th>
+                        <th className="py-3 px-4 text-right">{t.invoiceActionsCol || 'Aktionen'}</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/5 text-sm">
+                      {archivedInvoices.map((inv: any) => {
+                        const matchingMerchant = allMerchants.find((m: any) => m.id === inv.merchantId) || {
+                          id: inv.merchantId,
+                          name: inv.merchantName,
+                          slug: inv.merchantSlug,
+                          language: inv.merchantLanguage,
+                          contact_phone: inv.merchantContactPhone || inv.customerPhone,
+                          contact_email: inv.merchantContactEmail || inv.customerEmail,
+                          address: inv.merchantAddress || inv.customerAddress,
+                        };
+
+                        const currSymbol = inv.currency === 'MAD' ? 'MAD' : '€';
+                        const totalFormatted = `${Number(inv.total || 0).toFixed(2)} ${currSymbol}`;
+                        const formattedDate = inv.invoiceDate ? new Date(inv.invoiceDate).toLocaleDateString(adminLang === 'fr' ? 'fr-FR' : 'de-DE') : '-';
+                        const formattedDueDate = inv.dueDate ? new Date(inv.dueDate).toLocaleDateString(adminLang === 'fr' ? 'fr-FR' : 'de-DE') : '-';
+
+                        const paymentLabel = inv.paymentMethod === 'transfer' 
+                          ? (adminLang === 'fr' ? 'Virement' : 'Überweisung') 
+                          : inv.paymentMethod === 'cash' 
+                          ? (adminLang === 'fr' ? 'Espèces' : 'Barzahlung') 
+                          : (adminLang === 'fr' ? 'Carte' : 'Kartenzahlung');
+
+                        const handleWhatsAppClick = () => {
+                          let phone = (inv.customerPhone || matchingMerchant?.contact_phone || '').replace(/[^0-9+]/g, '');
+                          if (phone.startsWith('+')) phone = phone.substring(1);
+                          else if (phone.startsWith('00')) phone = phone.substring(2);
+                          else if (phone.startsWith('0')) phone = (inv.invoiceLang === 'fr' ? '212' : '49') + phone.substring(1);
+
+                          const greeting = inv.customerContactName 
+                            ? (inv.invoiceLang === 'fr' ? `Bonjour ${inv.customerContactName}` : `Hallo ${inv.customerContactName}`)
+                            : (inv.invoiceLang === 'fr' ? `Bonjour` : `Hallo`);
+
+                          const text = inv.invoiceLang === 'fr'
+                            ? `${greeting},\n\nVoici le récapitulatif de votre facture pour ${inv.period || 'Marketif Loyalty'} :\n\n📄 *N° Facture :* ${inv.invoiceNumber}\n💰 *Montant Total :* ${totalFormatted}\n📅 *Date :* ${formattedDate}\n💳 *Mode de paiement :* ${paymentLabel}\n\nMerci pour votre confiance !\n_Marketif Support_`
+                            : `${greeting},\n\nhier ist die Abrechnung für ${inv.period || 'Marketif Loyalty'} von Marketif:\n\n📄 *Rechnungs-Nr.:* ${inv.invoiceNumber}\n💰 *Gesamtbetrag:* ${totalFormatted}\n📅 *Rechnungsdatum:* ${formattedDate}\n💳 *Zahlungsart:* ${paymentLabel}\n\nVielen Dank für die partnerschaftliche Zusammenarbeit!\n_Marketif Support_`;
+
+                          if (!phone) {
+                            showToast(adminLang === 'fr' ? 'Aucun numéro de téléphone' : 'Keine Telefonnummer vorhanden', 'error');
+                            return;
+                          }
+                          window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank');
+                        };
+
+                        return (
+                          <tr key={inv.id} className="hover:bg-white/[0.02] transition-colors">
+                            <td className="py-3 px-4 font-mono font-bold text-[#D4AF37] text-xs">
+                              {inv.invoiceNumber}
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="text-white text-xs">{formattedDate}</div>
+                              <div className="text-white/40 text-[11px] mt-0.5">Fällig: {formattedDueDate}</div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="text-white font-medium text-xs">{inv.merchantName || inv.customerName}</div>
+                              <div className="text-white/40 text-[11px]">{inv.period}</div>
+                            </td>
+                            <td className="py-3 px-4 font-bold text-white text-xs">
+                              {totalFormatted}
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="inline-block px-2 py-0.5 rounded-full bg-white/5 border border-white/10 text-white/70 text-[11px]">
+                                {paymentLabel}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <button
+                                  onClick={() => setEditingArchivedInvoice({ merchant: matchingMerchant, invoice: inv })}
+                                  className="px-3 py-1.5 bg-[#D4AF37]/10 hover:bg-[#D4AF37] text-[#D4AF37] hover:text-black font-semibold text-xs rounded-lg transition-all flex items-center gap-1 border border-[#D4AF37]/20"
+                                  title={t.viewPrintInvoice || 'Ansehen / Drucken'}
+                                >
+                                  <FileText size={13} />
+                                  <span>{t.viewPrintInvoice || 'Öffnen'}</span>
+                                </button>
+                                <button
+                                  onClick={handleWhatsAppClick}
+                                  className="p-1.5 bg-[#25D366]/20 hover:bg-[#25D366] text-[#25D366] hover:text-white rounded-lg transition-all"
+                                  title="WhatsApp"
+                                >
+                                  <MessageCircle size={14} />
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteArchivedInvoice(inv.merchantId, inv.id)}
+                                  className="p-1.5 bg-red-500/10 hover:bg-red-500/20 text-red-400 rounded-lg transition-all"
+                                  title={t.delete || 'Löschen'}
+                                >
+                                  <Trash2 size={14} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
 
             <div className="p-6 rounded-3xl" style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)' }}>
@@ -2685,6 +3064,18 @@ export default function DashboardPage() {
           merchant={invoiceMerchant}
           onClose={() => setInvoiceMerchant(null)}
           adminLang={adminLang}
+          onInvoiceSaved={fetchArchivedInvoices}
+        />
+      )}
+
+      {/* Archived Invoice Modal */}
+      {editingArchivedInvoice && (
+        <InvoiceModal
+          merchant={editingArchivedInvoice.merchant}
+          initialInvoice={editingArchivedInvoice.invoice}
+          onClose={() => setEditingArchivedInvoice(null)}
+          adminLang={adminLang}
+          onInvoiceSaved={fetchArchivedInvoices}
         />
       )}
 

@@ -14,10 +14,12 @@ interface InvoiceModalProps {
   merchant: any;
   onClose: () => void;
   adminLang?: string;
+  initialInvoice?: any;
+  onInvoiceSaved?: () => void;
 }
 
-export default function InvoiceModal({ merchant, onClose, adminLang }: InvoiceModalProps) {
-  const initialLang = merchant?.language === 'fr' ? 'fr' : (merchant?.language === 'de' ? 'de' : (adminLang === 'fr' ? 'fr' : 'de'));
+export default function InvoiceModal({ merchant, onClose, adminLang, initialInvoice, onInvoiceSaved }: InvoiceModalProps) {
+  const initialLang = initialInvoice?.invoiceLang || (merchant?.language === 'fr' ? 'fr' : (merchant?.language === 'de' ? 'de' : (adminLang === 'fr' ? 'fr' : 'de')));
   const [invoiceLang, setInvoiceLang] = useState<'de' | 'fr'>(initialLang);
 
   // Generate default invoice number: RE-YYYYMM-XXXX or FAC-YYYYMM-XXXX
@@ -32,25 +34,28 @@ export default function InvoiceModal({ merchant, onClose, adminLang }: InvoiceMo
   const currentYear = today.getFullYear();
 
   const [invoiceNumber, setInvoiceNumber] = useState(
-    `${invoiceLang === 'fr' ? 'FAC' : 'RE'}-${currentYear}${String(today.getMonth() + 1).padStart(2, '0')}-${merchant?.slug?.toUpperCase()?.slice(0, 4) || '001'}`
+    initialInvoice?.invoiceNumber || `${invoiceLang === 'fr' ? 'FAC' : 'RE'}-${currentYear}${String(today.getMonth() + 1).padStart(2, '0')}-${merchant?.slug?.toUpperCase()?.slice(0, 4) || '001'}`
   );
-  const [invoiceDate, setInvoiceDate] = useState(dateStr);
-  const [dueDate, setDueDate] = useState(dueDateStr);
-  const [period, setPeriod] = useState(`${currentMonthName} ${currentYear}`);
-  const [paymentMethod, setPaymentMethod] = useState<'transfer' | 'cash' | 'card'>('transfer');
-  const [currency, setCurrency] = useState<'EUR' | 'MAD'>('EUR');
+  const [invoiceDate, setInvoiceDate] = useState(initialInvoice?.invoiceDate || dateStr);
+  const [dueDate, setDueDate] = useState(initialInvoice?.dueDate || dueDateStr);
+  const [period, setPeriod] = useState(initialInvoice?.period || `${currentMonthName} ${currentYear}`);
+  const [paymentMethod, setPaymentMethod] = useState<'transfer' | 'cash' | 'card'>(initialInvoice?.paymentMethod || 'transfer');
+  const [currency, setCurrency] = useState<'EUR' | 'MAD'>(initialInvoice?.currency || 'EUR');
 
   // Customer info
-  const [customerName, setCustomerName] = useState(merchant?.name || '');
-  const [customerContactName, setCustomerContactName] = useState(merchant?.contact_name || '');
-  const [customerPhone, setCustomerPhone] = useState(merchant?.contact_phone || '');
-  const [customerEmail, setCustomerEmail] = useState(merchant?.contact_email || '');
-  const [customerAddress, setCustomerAddress] = useState(merchant?.address || '');
-  const [customerTaxId, setCustomerTaxId] = useState('');
+  const [customerName, setCustomerName] = useState(initialInvoice?.customerName || merchant?.name || '');
+  const [customerContactName, setCustomerContactName] = useState(initialInvoice?.customerContactName || merchant?.contact_name || '');
+  const [customerPhone, setCustomerPhone] = useState(initialInvoice?.customerPhone || merchant?.contact_phone || '');
+  const [customerEmail, setCustomerEmail] = useState(initialInvoice?.customerEmail || merchant?.contact_email || '');
+  const [customerAddress, setCustomerAddress] = useState(initialInvoice?.customerAddress || merchant?.address || '');
+  const [customerTaxId, setCustomerTaxId] = useState(initialInvoice?.customerTaxId || '');
 
   // Tax Rate
-  const [taxRate, setTaxRate] = useState<number>(0);
-  const [customTaxNote, setCustomTaxNote] = useState('');
+  const [taxRate, setTaxRate] = useState<number>(initialInvoice?.taxRate ?? 0);
+  const [customTaxNote, setCustomTaxNote] = useState(initialInvoice?.customTaxNote || '');
+
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   // Default Items based on package
   const getPackagePrice = () => {
@@ -77,35 +82,41 @@ export default function InvoiceModal({ merchant, onClose, adminLang }: InvoiceMo
     return `Marketif Loyalty - Monatliche Softwarelizenz (Paket ${pkgName})`;
   };
 
-  const [items, setItems] = useState<InvoiceItem[]>([
-    {
-      id: '1',
-      description: getPackageTitle(initialLang),
-      quantity: 1,
-      unitPrice: getPackagePrice(),
-    },
-  ]);
+  const [items, setItems] = useState<InvoiceItem[]>(
+    initialInvoice?.items && initialInvoice.items.length > 0
+      ? initialInvoice.items
+      : [
+          {
+            id: '1',
+            description: getPackageTitle(initialLang),
+            quantity: 1,
+            unitPrice: getPackagePrice(),
+          },
+        ]
+  );
 
   // When language changes, update default labels
   useEffect(() => {
-    setInvoiceNumber((prev) => {
-      if (prev.startsWith('FAC-') && invoiceLang === 'de') return prev.replace('FAC-', 'RE-');
-      if (prev.startsWith('RE-') && invoiceLang === 'fr') return prev.replace('RE-', 'FAC-');
-      return prev;
-    });
+    if (!initialInvoice) {
+      setInvoiceNumber((prev) => {
+        if (prev.startsWith('FAC-') && invoiceLang === 'de') return prev.replace('FAC-', 'RE-');
+        if (prev.startsWith('RE-') && invoiceLang === 'fr') return prev.replace('RE-', 'FAC-');
+        return prev;
+      });
 
-    setPeriod(`${invoiceLang === 'fr' ? monthNamesFr[today.getMonth()] : monthNamesDe[today.getMonth()]} ${currentYear}`);
+      setPeriod(`${invoiceLang === 'fr' ? monthNamesFr[today.getMonth()] : monthNamesDe[today.getMonth()]} ${currentYear}`);
 
-    // Update item description if it's the default one
-    setItems((prev) =>
-      prev.map((it, idx) => {
-        if (idx === 0) {
-          return { ...it, description: getPackageTitle(invoiceLang) };
-        }
-        return it;
-      })
-    );
-  }, [invoiceLang]);
+      // Update item description if it's the default one
+      setItems((prev) =>
+        prev.map((it, idx) => {
+          if (idx === 0) {
+            return { ...it, description: getPackageTitle(invoiceLang) };
+          }
+          return it;
+        })
+      );
+    }
+  }, [invoiceLang, initialInvoice]);
 
   // Calculations
   const subtotal = items.reduce((sum, item) => sum + (Number(item.quantity) || 0) * (Number(item.unitPrice) || 0), 0);
@@ -166,7 +177,57 @@ export default function InvoiceModal({ merchant, onClose, adminLang }: InvoiceMo
         rib: 'Bankverbindung: Überweisung gemäß Vereinbarung',
       };
 
+  const handleSaveInvoice = async (silent = false) => {
+    if (!merchant?.id) return;
+    setIsSaving(true);
+    try {
+      const invoicePayload = {
+        id: initialInvoice?.id || `inv_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+        invoiceNumber,
+        invoiceDate,
+        dueDate,
+        period,
+        paymentMethod,
+        currency,
+        items,
+        subtotal,
+        taxRate,
+        taxAmount,
+        total,
+        customerName,
+        customerContactName,
+        customerPhone,
+        customerEmail,
+        customerAddress,
+        customerTaxId,
+        customTaxNote,
+        invoiceLang,
+        createdAt: initialInvoice?.createdAt || new Date().toISOString(),
+      };
+
+      const res = await fetch('/api/admin/manual-invoice', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          merchantId: merchant.id,
+          invoice: invoicePayload,
+        }),
+      });
+
+      if (res.ok) {
+        setSaveSuccess(true);
+        setTimeout(() => setSaveSuccess(false), 3000);
+        if (onInvoiceSaved) onInvoiceSaved();
+      }
+    } catch (err) {
+      console.error('Failed to auto-archive invoice:', err);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   const handlePrint = () => {
+    handleSaveInvoice(true);
     window.print();
   };
 
@@ -346,6 +407,27 @@ export default function InvoiceModal({ merchant, onClose, adminLang }: InvoiceMo
             >
               <MessageCircle size={16} />
               <span>WhatsApp</span>
+            </button>
+
+            {/* Save to Archive Button */}
+            <button
+              type="button"
+              onClick={() => handleSaveInvoice(false)}
+              disabled={isSaving}
+              className="flex items-center gap-1.5 px-4 py-2.5 bg-white/10 hover:bg-white/20 text-white font-bold text-sm rounded-xl transition-all border border-white/10"
+              title={invoiceLang === 'fr' ? 'Enregistrer dans les archives' : 'Im Archiv speichern'}
+            >
+              {saveSuccess ? (
+                <>
+                  <Check size={16} className="text-emerald-400" />
+                  <span className="text-emerald-400">{invoiceLang === 'fr' ? 'Enregistré !' : 'Gespeichert!'}</span>
+                </>
+              ) : (
+                <>
+                  <FileText size={16} className="text-[#D4AF37]" />
+                  <span>{isSaving ? (invoiceLang === 'fr' ? 'Enregistrement...' : 'Speichert...') : (invoiceLang === 'fr' ? 'Archiver' : 'Archivieren')}</span>
+                </>
+              )}
             </button>
 
             {/* Print / PDF Button */}
